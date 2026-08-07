@@ -3491,6 +3491,7 @@ const messages = {
       modeNote:
         "Ita rejista falta no oras extra de'it. Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain.",
       unrecorded: {
+        showFewer: "Hatudu uitoan",
         title: "Ema {{count}} laiha rejistu ba {{date}}",
         explain:
           "Xefe la assume katak sira servisu. To'o Ita hatete, folha la sura buat ida ba sira — la iha pagamentu, la iha falta.",
@@ -3501,6 +3502,11 @@ const messages = {
         marked: "Rejista loron servisu baibain ba ema {{count}}.",
       },
       absence: {
+        firstDay: "Loron dahuluk falta",
+        lastDay: "Loron ikus falta",
+        lastDayHint: "Husik hanesan loron dahuluk se falta loron ida de'it.",
+        spellLength: "Sei rejista loron servisu {{days}}.",
+        halfDay: "Loron balu de'it",
         nonWorkingDay:
           "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",
         action: "Rejista falta",

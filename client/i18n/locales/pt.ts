@@ -3568,6 +3568,7 @@ const messages = {
       modeNote:
         "Regista apenas faltas e horas extra. Quem não tiver registo num dia conta como tendo trabalhado normalmente.",
       unrecorded: {
+        showFewer: "Mostrar menos",
         title: "{{count}} pessoas não têm registo em {{date}}",
         explain:
           "O Xefe não assume que trabalharam. Até você dizer, a folha não conta nada para elas — nem vencimento nem falta.",
@@ -3578,6 +3579,11 @@ const messages = {
         marked: "Registado um dia normal de trabalho para {{count}} pessoas.",
       },
       absence: {
+        firstDay: "Primeiro dia de ausência",
+        lastDay: "Último dia de ausência",
+        lastDayHint: "Deixe igual ao primeiro dia para uma ausência de um só dia.",
+        spellLength: "Vão ser registados {{days}} dia(s) úteis.",
+        halfDay: "Apenas meio dia",
         nonWorkingDay:
           "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
         action: "Registar uma falta",

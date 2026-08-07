@@ -258,7 +258,18 @@ export default function EmployeeProfile() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{fullName}</h1>
           <p className="text-sm text-foreground/70">
-            {[j.position, j.employeeId].filter(Boolean).join(" • ")}
+            {[
+              j.position,
+              // `TEMP1786…` is AddEmployee's placeholder until an ID document
+              // is recorded (AddEmployee.tsx: primaryDocNumber || `TEMP${...}`).
+              // It is a database-shaped identifier and must not be shown as if
+              // it were the worker's ID — the directory already says "No ID yet".
+              j.employeeId && !j.employeeId.startsWith("TEMP")
+                ? j.employeeId
+                : t("employees.noIdYet"),
+            ]
+              .filter(Boolean)
+              .join(" • ")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
