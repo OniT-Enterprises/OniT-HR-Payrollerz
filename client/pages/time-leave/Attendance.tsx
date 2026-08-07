@@ -593,6 +593,14 @@ export default function Attendance() {
   const [markingWorked, setMarkingWorked] = useState(false);
   // A 300-employee tenant needs to reach the 40th name, not just the first 8.
   const [showAllUnrecorded, setShowAllUnrecorded] = useState(false);
+  // An `absent` record we are correcting. Art. 33(5) makes an unjustified
+  // absence a disciplinary fact — lost pay, deducted seniority, grounds for
+  // dismissal — so a day wrongly marked that way must be fixable, not just
+  // fixable-going-forward. Anything CSV-imported, or marked before the reason
+  // picker existed, is in that state.
+  const [reclassifying, setReclassifying] = useState<AttendanceRecord | null>(
+    null,
+  );
 
   /**
    * Record a normal working day for people who have none.
@@ -647,7 +655,22 @@ export default function Attendance() {
     }
   };
 
+  const openReclassifyDialog = (record: AttendanceRecord) => {
+    setReclassifying(record);
+    setAbsenceForm({
+      employeeId: record.employeeId,
+      date: record.date,
+      endDate: record.date,
+      halfDay: false,
+      reason: "",
+      hasCertificate: false,
+      notes: "",
+    });
+    setShowAbsenceDialog(true);
+  };
+
   const openAbsenceDialog = (date = selectedDate) => {
+    setReclassifying(null);
     setAbsenceForm({
       employeeId: "",
       date,
@@ -736,6 +759,14 @@ export default function Attendance() {
         );
       }
 
+      // Correcting an existing `absent` row: the leave request now covers the
+      // day, so the attendance record must go or the day counts twice — once as
+      // leave and once as an unjustified absence. Only for the leave-backed
+      // reasons; "did not come" just overwrites the same record in place.
+      if (reclassifying?.id && absenceForm.reason !== "unjustified") {
+        await deleteAttendanceMutation.mutateAsync(reclassifying.id);
+      }
+
       await queryClient.invalidateQueries({
         queryKey: attendanceKeys.all(tenantId),
       });
@@ -745,6 +776,7 @@ export default function Attendance() {
           name: employeeName,
         }),
       });
+      setReclassifying(null);
       setShowAbsenceDialog(false);
     } catch (error) {
       toast({
@@ -1631,7 +1663,9 @@ export default function Attendance() {
                 {t("timeLeave.attendance.absence.title")}
               </DialogTitle>
               <DialogDescription>
-                {t("timeLeave.attendance.absence.description")}
+                {reclassifying
+                  ? t("timeLeave.attendance.absence.reclassifyDescription")
+                  : t("timeLeave.attendance.absence.description")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -2188,6 +2222,16 @@ export default function Attendance() {
                   </span>
                   <div className="flex items-center justify-end gap-1">
                     {getStatusBadge(record.status)}
+                    {record.status === "absent" && canManageAttendance && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openReclassifyDialog(record)}
+                      >
+                        {t("timeLeave.attendance.absence.reclassify")}
+                      </Button>
+                    )}
                     {canManageAttendance && (
                       <Button
                         type="button"
@@ -2216,6 +2260,16 @@ export default function Attendance() {
                     </div>
                     <div className="flex items-center gap-1">
                       {getStatusBadge(record.status)}
+                      {record.status === "absent" && canManageAttendance && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openReclassifyDialog(record)}
+                        >
+                          {t("timeLeave.attendance.absence.reclassify")}
+                        </Button>
+                      )}
                       {canManageAttendance && (
                         <Button
                           type="button"
