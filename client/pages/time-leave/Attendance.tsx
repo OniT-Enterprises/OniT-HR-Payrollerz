@@ -64,6 +64,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useAllDepartments } from "@/hooks/useDepartments";
+import { useSettings } from "@/hooks/useSettings";
 import {
   useAttendanceByDate,
   useMarkAttendance,
@@ -193,6 +194,7 @@ export default function Attendance() {
   const tenantId = useTenantId();
   const currentEmployeeId = useCurrentEmployeeId() ?? undefined;
   const queryClient = useQueryClient();
+  const { data: settings } = useSettings();
   const role = session?.role;
   const isAttendanceAdmin = role === "owner" || role === "hr-admin";
   const isAttendanceManager = role === "manager";
@@ -532,6 +534,12 @@ export default function Attendance() {
     () => new Set(attendanceRecords.map((record) => record.employeeId)),
     [attendanceRecords],
   );
+  // In `exceptions` mode a day with no record MEANS "worked normally" by
+  // company policy, so the missing-record list is not a problem to solve —
+  // it is the expected state and flagging it would cry wolf every day.
+  const attendanceMode =
+    settings?.timeOffPolicies?.attendanceMode ?? "exceptions";
+
   const unrecordedEmployees = useMemo(() => {
     // A future day having no records is normal, not a gap worth flagging.
     if (selectedDate > today) return [];
@@ -1236,7 +1244,7 @@ export default function Attendance() {
             <Skeleton className="h-11 w-full rounded-lg" />
           </div>
 
-          {/* Attendance Records */}
+        {/* Attendance Records */}
           <div className="space-y-1.5">
             <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 px-5 py-2">
               <Skeleton className="h-3 w-20" />
@@ -1327,15 +1335,23 @@ export default function Attendance() {
                     {t("timeLeave.attendance.actions.import")}
                   </Button>
                 )}
-                {/* Secondary: a non-worked day is the less common case, but
-                    it must be reachable without inventing clock times. */}
+                {/* Which of these is the primary action follows the company's
+                    recording mode: in `exceptions` mode the only thing you
+                    routinely do here is record an absence. */}
                 <Button
-                  variant="outline"
+                  variant={
+                    attendanceMode === "exceptions" ? "default" : "outline"
+                  }
                   onClick={() => openAbsenceDialog()}
                 >
                   {t("timeLeave.attendance.absence.action")}
                 </Button>
-                <Button onClick={() => openMarkDialog()}>
+                <Button
+                  variant={
+                    attendanceMode === "exceptions" ? "outline" : "default"
+                  }
+                  onClick={() => openMarkDialog()}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   {isToday
                     ? t("timeLeave.attendance.actions.markToday")
@@ -1865,9 +1881,17 @@ export default function Attendance() {
           </div>
         </MoreDetailsSection>
 
+        {canManageAttendance && attendanceMode === "exceptions" && (
+          <p className="mb-4 text-xs text-muted-foreground">
+            {t("timeLeave.attendance.modeNote")}
+          </p>
+        )}
+
         {/* Nobody said what happened to these people. Named and actionable —
             a count with a grey dot is not something an owner can act on. */}
-        {canManageAttendance && unrecordedEmployees.length > 0 && (
+        {canManageAttendance &&
+          attendanceMode === "daily" &&
+          unrecordedEmployees.length > 0 && (
           <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 items-start gap-2 text-sm text-amber-800 dark:text-amber-200">

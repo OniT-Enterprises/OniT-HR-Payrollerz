@@ -1815,6 +1815,19 @@ const messages = {
         "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
       setPaidInFull: "Set to paid in full",
       rows: {
+        attendanceMode: {
+          title: "How you record attendance",
+          summaryExceptions: "You record absences and overtime only.",
+          summaryDaily: "You record every person every day.",
+          label: "What your team records",
+          optionExceptions: "Only absences and overtime",
+          optionDaily: "Every person, every day",
+          helpExceptions:
+            "Anyone with no record for a day counts as having worked normally. This is enough for staff on a monthly salary, and it is what the law asks for.",
+          helpDaily:
+            "Record a day for everyone. Choose this if pay depends on hours worked, or if you need to evidence lateness or night work.",
+          law: "The Labour Law asks you to keep a record of absences — justified and unjustified — in your personnel register (Art. 20(f)), and a record of when overtime started and ended (Art. 27(6)). It does not ask you to record that someone came to work on a normal day.",
+        },
         annual: {
           title: "Days off every year",
           summaryCarry:
@@ -3498,6 +3511,8 @@ const messages = {
       },
     },
     attendance: {
+      modeNote:
+        "You record absences and overtime only. Anyone with no record for a day counts as having worked normally.",
       unrecorded: {
         title: "{{count}} people have no record for {{date}}",
         explain:

@@ -374,6 +374,11 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // payroll derives the Art. 33(4) 6@100%/6@50% banding from leave_requests,
   // so an attendance-only "sick" would look right and pay nothing.
   await page.goto("/time-leave/attendance");
+  // Default posture is "record only the exceptions" — the page says so, and a
+  // day with no record must not be presented as a gap to chase.
+  await expect(
+    page.getByText(/you record absences and overtime only/i),
+  ).toBeVisible();
   await page.getByRole("button", { name: /record an absence/i }).click();
   // Never trust the default date: it is Timor-Leste's today, so the run lands
   // on a weekend whenever the machine clock is late enough in a western
