@@ -1419,9 +1419,13 @@ export const translations = {
       }
     },
     "settings": {
+      "integrations": {
+        "quickbooksTitle": "Export to QuickBooks or other accounting software"
+      },
       "headerTitle": "Company Settings",
       "headerSubtitle": "Configure your company, payroll, and HR policies",
       "access": {
+        "customAccessTitle": "Change what they can open",
         "title": "Team access",
         "description": "Invite people and control which parts of Xefe they can use.",
         "invite": "Invite person",
@@ -1577,6 +1581,9 @@ export const translations = {
         "save": "Save Structure"
       },
       "payment": {
+        "accountAdvancedTitle": "What this account is for, and its bookkeeping account",
+        "accountAdvancedHint": "Xefe already picks these. Change them only if your accountant asks you to.",
+        "accountPurposeLabel": "What this account is for",
         "ledgerAccount": "Ledger account",
         "ledgerOperatingBank": "Cash in Bank — Operating (1120)",
         "ledgerPayrollBank": "Cash in Bank — Payroll (1130)",
@@ -1618,6 +1625,13 @@ export const translations = {
         "save": "Save Payment Structure"
       },
       "timeOff": {
+        "changedDays": {
+          "title": "Days you turned into working days",
+          "hint": "Remove one to put the day back to the built-in Timor-Leste holiday calendar.",
+          "workingDay": "Working day",
+          "notAHoliday": "Not a public holiday"
+        },
+        "annualLeaveCashOutNote": "If someone leaves with annual leave they never took, it is not lost — it is paid out in cash on their final payslip (Labour Law Art. 32).",
         "statutoryNote": "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
         "companyGroupHeading": "What your company adds",
         "customTypes": {
@@ -1672,6 +1686,8 @@ export const translations = {
         "save": "Save Time Off Policies"
       },
       "payroll": {
+        "currentRatesTitle": "The rates you are using now",
+        "changeRatesTitle": "Change the legal rates",
         "title": "Payroll Configuration",
         "description": "Tax, social security, and overtime settings for Timor-Leste",
         "wit": "Wage Income Tax (WIT)",
@@ -1867,6 +1883,8 @@ export const translations = {
         "pageOf": "Page {{page}} of {{total}}"
       },
       "csvHeaders": {
+        "contractedWeeklyHours": "Contracted Weekly Hours",
+        "minimumWageTreatment": "Minimum Wage Treatment",
         "employeeId": "Employee ID",
         "firstName": "First Name",
         "lastName": "Last Name",
@@ -5821,6 +5839,14 @@ export const translations = {
         "allMethods": "All Methods"
       },
       "settings": {
+        "companyInfoReadOnlyDesc": "What your invoices show as your business. Change it in Company Settings.",
+        "logoReadOnly": "Your logo, as it prints on invoices and PDFs.",
+        "logoNotSet": "No logo yet. Add one in Company Settings.",
+        "notSet": "Not set",
+        "editInCompanySettings": "Change in Company Settings",
+        "identityOutOfStep": "Your invoices show an older copy of these details",
+        "identityOutOfStepHelp": "These were saved on this page before, so your Company Settings no longer update them. Contact support to line them up.",
+        "identityInCompanySettings": "in Company Settings",
         "title": "Invoice Settings",
         "subtitle": "Configure your invoice defaults and company information",
         "saved": "Invoice settings saved",
@@ -9057,9 +9083,13 @@ export const translations = {
       }
     },
     "settings": {
+      "integrations": {
+        "quickbooksTitle": "Esporta ba QuickBooks ka softuere kontabilidade seluk"
+      },
       "headerTitle": "Konfigurasaun Empresa",
       "headerSubtitle": "Konfigura empresa, folha no politika RH",
       "access": {
+        "customAccessTitle": "Muda saida mak sira bele loke",
         "title": "Asesu ekipa",
         "description": "Konvida ema no kontrola parte Xefe ne'ebé sira bele uza.",
         "invite": "Konvida ema",
@@ -9215,6 +9245,9 @@ export const translations = {
         "save": "Rai Estrutura"
       },
       "payment": {
+        "accountAdvancedTitle": "Konta ne'e ba saida, no ninia konta kontabilidade",
+        "accountAdvancedHint": "Xefe hili ona sira-ne'e. Muda deit se ita-nia kontabilista husu.",
+        "accountPurposeLabel": "Konta ne'e ba saida",
         "ledgerAccount": "Konta kontabilidade",
         "ledgerOperatingBank": "Banku — Operasaun (1120)",
         "ledgerPayrollBank": "Banku — Pagamentu Saláriu (1130)",
@@ -9256,6 +9289,13 @@ export const translations = {
         "save": "Rai Estrutura Pagamentu"
       },
       "timeOff": {
+        "changedDays": {
+          "title": "Loron sira ne'ebé ita muda ba loron servisu",
+          "hint": "Hasai ida atu fila fali loron ne'e ba kalendáriu feriadu Timor-Leste nian.",
+          "workingDay": "Loron servisu",
+          "notAHoliday": "La'ós feriadu"
+        },
+        "annualLeaveCashOutNote": "Se ema ida sai ho lisensa tinan nian ne'ebé nia seidauk goza, ne'e la lakon — selu ho osan iha nia resibu ikus (Lei Traballu Art. 32).",
         "statutoryNote": "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
         "companyGroupHeading": "Saida mak ita-nia empreza aumenta",
         "customTypes": {
@@ -9310,6 +9350,8 @@ export const translations = {
         "save": "Rai Politika Lisensa"
       },
       "payroll": {
+        "currentRatesTitle": "Valór ne'ebé ita uza agora",
+        "changeRatesTitle": "Muda valór legál sira",
         "title": "Konfigurasaun Folha",
         "description": "Impostu, seguransa sosial no horas extra",
         "wit": "Impostu Rendimentu (WIT)",
@@ -9515,6 +9557,8 @@ export const translations = {
         "pageOf": "Pajina {{page}} hosi {{total}}"
       },
       "csvHeaders": {
+        "contractedWeeklyHours": "Oras Semana Kontratadu",
+        "minimumWageTreatment": "Tratamentu Saláriu Mínimu",
         "employeeId": "ID Empregadu",
         "firstName": "Naran",
         "lastName": "Apelidu",
@@ -13459,6 +13503,14 @@ export const translations = {
         "allMethods": "Metodu Hotu"
       },
       "settings": {
+        "companyInfoReadOnlyDesc": "Saida mak ita-nia fatura hatudu nu'udar ita-nia negósiu. Muda iha Konfigurasaun Empresa.",
+        "logoReadOnly": "Ita-nia logo, hanesan sai iha fatura no PDF.",
+        "logoNotSet": "Seidauk iha logo. Hatama ida iha Konfigurasaun Empresa.",
+        "notSet": "Seidauk define",
+        "editInCompanySettings": "Muda iha Konfigurasaun Empresa",
+        "identityOutOfStep": "Ita-nia fatura hatudu kópia tuan husi dadus sira-ne'e",
+        "identityOutOfStepHelp": "Dadus sira-ne'e rai tiha ona iha pájina ne'e, entaun Konfigurasaun Empresa la atualiza sira ona. Kontaktu suporte atu hadi'a.",
+        "identityInCompanySettings": "iha Konfigurasaun Empresa",
         "title": "Definisaun Fatura",
         "subtitle": "Konfigura valor padraun no informasaun empreza",
         "saved": "Definisaun fatura rai tiha",
@@ -16695,9 +16747,13 @@ export const translations = {
       }
     },
     "settings": {
+      "integrations": {
+        "quickbooksTitle": "Exportar para o QuickBooks ou outro software de contabilidade"
+      },
       "headerTitle": "Definições da Empresa",
       "headerSubtitle": "Configure a sua empresa, folha de pagamento e políticas de RH",
       "access": {
+        "customAccessTitle": "Alterar o que podem abrir",
         "title": "Acesso da equipa",
         "description": "Convide pessoas e controle as áreas do Xefe que podem utilizar.",
         "invite": "Convidar pessoa",
@@ -16853,6 +16909,9 @@ export const translations = {
         "save": "Guardar Estrutura"
       },
       "payment": {
+        "accountAdvancedTitle": "Para que serve esta conta e a sua conta contabilística",
+        "accountAdvancedHint": "O Xefe já escolhe estes valores. Altere apenas se o seu contabilista pedir.",
+        "accountPurposeLabel": "Para que serve esta conta",
         "ledgerAccount": "Conta contabilística",
         "ledgerOperatingBank": "Banco — Operações (1120)",
         "ledgerPayrollBank": "Banco — Folha de Pagamento (1130)",
@@ -16894,6 +16953,13 @@ export const translations = {
         "save": "Guardar Estrutura de Pagamento"
       },
       "timeOff": {
+        "changedDays": {
+          "title": "Dias que transformou em dias de trabalho",
+          "hint": "Remova um para repor o dia no calendário de feriados de Timor-Leste.",
+          "workingDay": "Dia de trabalho",
+          "notAHoliday": "Não é feriado"
+        },
+        "annualLeaveCashOutNote": "Se alguém sair com férias que nunca gozou, não se perdem — são pagas em dinheiro no último recibo de vencimento (Lei do Trabalho Art. 32).",
         "statutoryNote": "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
         "companyGroupHeading": "O que a sua empresa acrescenta",
         "customTypes": {
@@ -16948,6 +17014,8 @@ export const translations = {
         "save": "Guardar Políticas de Licenças"
       },
       "payroll": {
+        "currentRatesTitle": "As taxas que está a usar agora",
+        "changeRatesTitle": "Alterar as taxas legais",
         "title": "Configuração da Folha",
         "description": "Impostos, segurança social e definições de horas extra para Timor-Leste",
         "wit": "Imposto sobre Rendimento do Trabalho (IRT)",
@@ -17143,6 +17211,8 @@ export const translations = {
         "pageOf": "Página {{page}} de {{total}}"
       },
       "csvHeaders": {
+        "contractedWeeklyHours": "Horas Semanais Contratadas",
+        "minimumWageTreatment": "Tratamento do Salário Mínimo",
         "employeeId": "ID do Funcionário",
         "firstName": "Primeiro Nome",
         "lastName": "Apelido",
@@ -21097,6 +21167,14 @@ export const translations = {
         "allMethods": "Todos os Métodos"
       },
       "settings": {
+        "companyInfoReadOnlyDesc": "O que as suas faturas mostram como o seu negócio. Altere em Definições da Empresa.",
+        "logoReadOnly": "O seu logótipo, tal como sai nas faturas e PDFs.",
+        "logoNotSet": "Ainda sem logótipo. Adicione um em Definições da Empresa.",
+        "notSet": "Não definido",
+        "editInCompanySettings": "Alterar em Definições da Empresa",
+        "identityOutOfStep": "As suas faturas mostram uma cópia antiga destes dados",
+        "identityOutOfStepHelp": "Estes dados foram guardados nesta página anteriormente, por isso as Definições da Empresa já não os atualizam. Contacte o suporte para os alinhar.",
+        "identityInCompanySettings": "em Definições da Empresa",
         "title": "Definições de Faturação",
         "subtitle": "Configure os padrões das suas faturas e informação da empresa",
         "saved": "Definições de faturação guardadas",

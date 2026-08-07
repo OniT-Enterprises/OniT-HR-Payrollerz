@@ -31,9 +31,9 @@ function mappedValue(
 }
 
 /**
- * Exported so the Employees-page CSV path shares ONE definition with this
- * validating importer. A non-ISO hireDate reaching Firestore makes
- * calculateSubsidioAnual throw a RangeError deep inside the payroll calculator.
+ * A non-ISO hireDate reaching Firestore makes calculateSubsidioAnual throw a
+ * RangeError deep inside the payroll calculator, so every import path must
+ * check dates through this one definition.
  */
 export function validISODate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -172,6 +172,17 @@ export function buildEmployeesFromCSV(
       rowErrors.push("Date of birth must use YYYY-MM-DD");
     }
 
+    // Status is only reachable from the positional template (the column mapper
+    // does not offer it). An unrecognised value used to be cast straight onto
+    // the record, which then matched no filter and no payroll query.
+    const statusText = mappedValue(row, mappings, "status").toLowerCase();
+    let status: Employee["status"] = "active";
+    if (statusText === "active" || statusText === "inactive" || statusText === "terminated") {
+      status = statusText;
+    } else if (statusText) {
+      rowErrors.push("Status must be active, inactive or terminated");
+    }
+
     if (rowErrors.length) {
       errors.push({ rowNumber, messages: rowErrors });
       return;
@@ -282,10 +293,89 @@ export function buildEmployeesFromCSV(
           workingVisaResidency: { number: "", expiryDate: "", fileUrl: "" },
         },
         isForeignWorker: !isTimorese,
-        status: "active",
+        status,
       },
     });
   });
 
   return { employees, errors };
+}
+
+/**
+ * Column order of the Employees-page CSV template (Employees → Import).
+ *
+ * That page has no column mapper — it identifies fields by POSITION — so this
+ * list IS the file contract for every template a customer has already
+ * downloaded. Only ever APPEND to it: reordering or inserting silently
+ * re-reads existing spreadsheets as different fields.
+ *
+ * Keep it in step with the header row built by handleDownloadTemplate in
+ * pages/staff/AllEmployees.tsx.
+ */
+export const EMPLOYEE_CSV_TEMPLATE_COLUMNS = [
+  "employeeId",
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "department",
+  "position",
+  "hireDate",
+  "employmentType",
+  "workLocation",
+  "monthlySalary",
+  "benefitsPackage",
+  "addressStreet",
+  "addressCity",
+  "addressState",
+  "addressPostalCode",
+  "emergencyContactName",
+  "emergencyContactPhone",
+  "dateOfBirth",
+  "status",
+  "contractedWeeklyHours",
+  "minimumWageTreatment",
+] as const;
+
+/** Template columns that are joined into the single `address` field. */
+const TEMPLATE_ADDRESS_PARTS: string[] = [
+  "addressStreet",
+  "addressCity",
+  "addressState",
+  "addressPostalCode",
+];
+
+/**
+ * Validate and convert rows of the positional Employees-page template.
+ *
+ * This exists so the Employees page cannot grow its own row -> Employee rules
+ * again: it only translates "column 7" into "hireDate" and then hands the rows
+ * to buildEmployeesFromCSV, which owns every default and every check. The two
+ * paths drifted twice before — once storing hire dates verbatim (a RangeError
+ * inside calculateSubsidioAnual), once on salary and annual leave days.
+ */
+export function buildEmployeesFromPositionalCSV(
+  rows: string[][],
+  options: EmployeeImportOptions,
+): EmployeeImportResult {
+  const mappings: EmployeeCSVMapping[] = [
+    ...EMPLOYEE_CSV_TEMPLATE_COLUMNS.filter(
+      (field) => !TEMPLATE_ADDRESS_PARTS.includes(field),
+    ).map((field) => ({ csvColumn: field, employeeField: field })),
+    // The four address columns are joined into the single address field below.
+    { csvColumn: "address", employeeField: "address" },
+  ];
+
+  const records = rows.map((cells) => {
+    const record: Record<string, string> = {};
+    EMPLOYEE_CSV_TEMPLATE_COLUMNS.forEach((field, index) => {
+      record[field] = (cells[index] ?? "").trim();
+    });
+    record.address = TEMPLATE_ADDRESS_PARTS.map((part) => record[part])
+      .filter(Boolean)
+      .join(", ");
+    return record;
+  });
+
+  return buildEmployeesFromCSV(records, mappings, options);
 }

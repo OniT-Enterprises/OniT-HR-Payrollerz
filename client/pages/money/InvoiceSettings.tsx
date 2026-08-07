@@ -1,11 +1,29 @@
 /**
  * Invoice Settings Page
- * Configure company info + logo, invoice template, payment accounts,
- * accepted payment methods, and invoice defaults
+ * Invoice template, payment accounts, accepted payment methods, and invoice
+ * defaults.
+ *
+ * Company identity (logo, name, TIN, address, phone, email) is NOT edited here.
+ * It has one home — Settings → Company (`settings/config.companyDetails`) — and
+ * this page only shows what invoices will actually print, read-only, with a link
+ * to that one home. Before 2026-08 this page offered a second editable copy in
+ * `settings/invoice`, so changing your address in Settings left invoices showing
+ * the old one.
+ *
+ * Two rules keep that honest:
+ *  - We display the EFFECTIVE values (`invoiceService.getSettings`, which falls
+ *    back per-field to companyDetails when the invoice copy is blank), never the
+ *    company profile directly — otherwise the page would advertise an address
+ *    the invoice does not carry.
+ *  - Save never writes the company-identity fields. Whatever a tenant froze into
+ *    `settings/invoice` before stays byte-for-byte as it is; sent invoices and
+ *    their frozen PDFs are untouched. Clearing a stale frozen copy would change
+ *    what an already-sent invoice re-renders, so it is deliberately not done
+ *    here — we surface the mismatch instead.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
@@ -29,8 +47,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { fileUploadService } from '@/services/fileUploadService';
 import { useInvoiceSettings } from '@/hooks/useInvoices';
+import { useSettings } from '@/hooks/useSettings';
 import { TemplatePicker } from '@/components/money/TemplatePicker';
 import {
   ACCEPTED_METHOD_OPTIONS,
@@ -48,10 +66,11 @@ import {
   ArrowLeft,
   Loader2,
   Palette,
-  Upload,
   Trash2,
   Plus,
   ImageIcon,
+  ArrowUpRight,
+  AlertTriangle,
 } from 'lucide-react';
 
 const DEFAULT_SETTINGS: Partial<InvoiceSettings> = {
@@ -81,6 +100,55 @@ const EMPTY_ACCOUNT_FORM = {
   bin: '',
 };
 
+/**
+ * Company-identity fields that live in Settings → Company. They are still
+ * READ from the invoice-settings doc (older tenants have a copy frozen there),
+ * but this page must never write them — see the file header.
+ */
+const COMPANY_IDENTITY_FIELDS = [
+  'companyName',
+  'companyTin',
+  'companyAddress',
+  'companyPhone',
+  'companyEmail',
+  'logoUrl',
+] as const satisfies readonly (keyof InvoiceSettings)[];
+
+/** Drop the company-identity fields from a settings payload before saving. */
+function withoutCompanyIdentity(
+  settings: Partial<InvoiceSettings>
+): Partial<InvoiceSettings> {
+  const next: Partial<InvoiceSettings> = { ...settings };
+  for (const field of COMPANY_IDENTITY_FIELDS) {
+    delete next[field];
+  }
+  return next;
+}
+
+/**
+ * Mirrors `joinAddressParts` in invoiceService (private there): same trim,
+ * same comma split, same case-insensitive de-dupe. It must match, or a
+ * company profile whose address already repeats the city would be reported
+ * as disagreeing with the invoice when it does not.
+ */
+function joinAddressParts(parts: Array<string | undefined | null>): string {
+  const seen = new Set<string>();
+  return parts
+    .flatMap((part) => (part || '').split(','))
+    .map((segment) => segment.trim())
+    .filter((segment) => {
+      if (!segment) return false;
+      const key = segment.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(', ');
+}
+
+const sameValue = (a: string, b: string) =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
+
 export default function InvoiceSettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -90,10 +158,8 @@ export default function InvoiceSettingsPage() {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>(DEFAULT_SETTINGS);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [accountForm, setAccountForm] = useState(EMPTY_ACCOUNT_FORM);
-  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data: loadedSettings,
@@ -103,17 +169,28 @@ export default function InvoiceSettingsPage() {
     refetch,
   } = useInvoiceSettings();
 
+  // The company profile — the one place company identity is edited.
+  const { data: tenantSettings } = useSettings();
+  const companyDetails = tenantSettings?.companyDetails;
+
   useEffect(() => {
     if (!loadedSettings || hasLocalChanges) {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing server state into local form state
     setSettings({ ...DEFAULT_SETTINGS, ...loadedSettings });
   }, [hasLocalChanges, loadedSettings]);
 
   const saveMutation = useMutation({
+    // `settings` holds the EFFECTIVE values, i.e. company fields already
+    // resolved from the company profile by getSettings. Saving them verbatim is
+    // what froze a stale copy into settings/invoice for every tenant who ever
+    // pressed Save (even just to change the invoice prefix). Strip them: stored
+    // values are left exactly as they are, and a tenant with none keeps
+    // following their company profile.
     mutationFn: (data: Partial<InvoiceSettings>) =>
-      invoiceService.updateSettings(tenantId, data),
+      invoiceService.updateSettings(tenantId, withoutCompanyIdentity(data)),
     onSuccess: () => {
       setHasLocalChanges(false);
       queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
@@ -162,57 +239,63 @@ export default function InvoiceSettingsPage() {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ----- Logo -----
+  // ----- Company identity (read-only, owned by Settings → Company) -----
 
-  const handleLogoSelected = async (file: File | undefined) => {
-    if (!file) return;
-    const validation = fileUploadService.validateImageFile(file);
-    if (!validation.valid) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: validation.error,
-        variant: 'destructive',
-      });
-      return;
-    }
+  // What invoices will actually print. `settings` came from getSettings, which
+  // already fell back per-field to the company profile where the invoice copy
+  // was blank — so this is the truth, not an aspiration.
+  const identityRows = [
+    {
+      key: 'companyName',
+      label: t('money.settings.companyName') || 'Company Name',
+      effective: settings.companyName || '',
+      profile: companyDetails?.tradingName || companyDetails?.legalName || '',
+    },
+    {
+      key: 'companyTin',
+      label: t('money.settings.companyTin') || 'TIN (Tax ID Number)',
+      effective: settings.companyTin || '',
+      profile: companyDetails?.tinNumber || '',
+    },
+    {
+      key: 'companyAddress',
+      label: t('money.settings.companyAddress') || 'Address',
+      effective: settings.companyAddress || '',
+      profile: companyDetails
+        ? joinAddressParts([
+            companyDetails.registeredAddress,
+            companyDetails.city,
+            companyDetails.country,
+          ])
+        : '',
+    },
+    {
+      key: 'companyPhone',
+      label: t('money.settings.companyPhone') || 'Phone',
+      effective: settings.companyPhone || '',
+      profile: companyDetails?.phone || '',
+    },
+    {
+      key: 'companyEmail',
+      label: t('money.settings.companyEmail') || 'Email',
+      effective: settings.companyEmail || '',
+      profile: companyDetails?.email || '',
+    },
+  ];
 
-    try {
-      setUploadingLogo(true);
-      const url = await fileUploadService.uploadCompanyLogo(file, tenantId);
-      // Persist right away — a logo left only in form state until "Save"
-      // silently vanishes when the user navigates off to try it out.
-      setSettings((prev) => ({ ...prev, logoUrl: url }));
-      await invoiceService.updateSettings(tenantId, { logoUrl: url });
-      queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
-      toast({
-        title: t('common.success') || 'Success',
-        description: t('money.settings.logoUploaded') || 'Logo uploaded',
-      });
-    } catch (_error) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.settings.logoUploadError') || 'Failed to upload logo',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingLogo(false);
-      if (logoInputRef.current) logoInputRef.current.value = '';
-    }
-  };
+  // A field only counts as out of step when the profile actually has a value to
+  // disagree with — a blank profile field means the invoice value came from the
+  // tenant record, not from an override, and there is nothing to reconcile.
+  const outOfStepRows = companyDetails
+    ? identityRows.filter(
+        (row) => row.profile && row.effective && !sameValue(row.effective, row.profile)
+      )
+    : [];
 
-  const handleLogoRemove = async () => {
-    setSettings((prev) => ({ ...prev, logoUrl: '' }));
-    try {
-      await invoiceService.updateSettings(tenantId, { logoUrl: '' });
-      queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
-    } catch (_error) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.settings.saveError') || 'Failed to save settings',
-        variant: 'destructive',
-      });
-    }
-  };
+  // The logo is deliberately NOT compared: every upload gets its own timestamped
+  // filename, so the same picture uploaded on both pages yields two different
+  // URLs. A mismatch we cannot verify is worse than none — and unlike an
+  // address, a wrong logo is obvious from the preview above.
 
   // ----- Payment accounts -----
 
@@ -297,44 +380,36 @@ export default function InvoiceSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-20 w-32 rounded-lg" />
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Skeleton className="h-8 w-32" />
-                      <Skeleton className="h-8 w-24" />
-                    </div>
-                    <Skeleton className="h-3 w-56" />
-                  </div>
+                  <Skeleton className="h-20 w-32 shrink-0 rounded-lg" />
+                  <Skeleton className="h-3 w-48" />
                 </div>
 
                 <Separator />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-full" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-4 w-40" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-14" />
                     <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-14" />
+                    <Skeleton className="h-4 w-44" />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-16 w-full" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
+                <Skeleton className="h-9 w-52" />
               </CardContent>
             </Card>
 
@@ -511,116 +586,85 @@ export default function InvoiceSettingsPage() {
                 {t('money.settings.companyInfo') || 'Company Information'}
               </CardTitle>
               <CardDescription>
-                {t('money.settings.companyInfoDesc') || 'This information appears on your invoices'}
+                {t('money.settings.companyInfoReadOnlyDesc') ||
+                  'What your invoices show as your business. Change it in Company Settings.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Logo */}
+              {/* Logo — uploaded once, in Company Settings */}
               <div className="flex items-center gap-4">
-                <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/40">
+                <div className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
                   {settings.logoUrl ? (
                     <img
                       src={settings.logoUrl}
-                      alt="Company logo"
+                      alt=""
                       className="max-h-full max-w-full object-contain"
                     />
                   ) : (
                     <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                   )}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploadingLogo}
-                      onClick={() => logoInputRef.current?.click()}
-                    >
-                      {uploadingLogo ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Upload className="h-4 w-4 mr-2" />
-                      )}
-                      {settings.logoUrl
-                        ? t('money.settings.changeLogo') || 'Change Logo'
-                        : t('money.settings.uploadLogo') || 'Upload Logo'}
-                    </Button>
-                    {settings.logoUrl && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleLogoRemove}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {t('common.remove') || 'Remove'}
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('money.settings.logoHint') || 'PNG or JPG recommended, max 5MB. Shown on invoices and PDFs.'}
-                  </p>
-                </div>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  className="hidden"
-                  onChange={(e) => handleLogoSelected(e.target.files?.[0])}
-                />
+                <p className="text-xs text-muted-foreground">
+                  {settings.logoUrl
+                    ? t('money.settings.logoReadOnly') || 'Your logo, as it prints on invoices and PDFs.'
+                    : t('money.settings.logoNotSet') || 'No logo yet. Add one in Company Settings.'}
+                </p>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('money.settings.companyName') || 'Company Name'}</Label>
-                  <Input
-                    value={settings.companyName || ''}
-                    onChange={(e) => updateField('companyName', e.target.value)}
-                    placeholder={t('money.settings.companyNamePlaceholder') || 'Your Company Name'}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('money.settings.companyTin') || 'TIN (Tax ID Number)'}</Label>
-                  <Input
-                    value={settings.companyTin || ''}
-                    onChange={(e) => updateField('companyTin', e.target.value)}
-                    placeholder={t('money.settings.tinPlaceholder') || 'e.g., 123456789'}
-                  />
-                </div>
-              </div>
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {identityRows.map((row) => (
+                  <div
+                    key={row.key}
+                    className={row.key === 'companyAddress' ? 'sm:col-span-2' : undefined}
+                  >
+                    <dt className="text-xs text-muted-foreground">{row.label}</dt>
+                    <dd
+                      className={`mt-0.5 text-sm ${
+                        row.effective
+                          ? 'whitespace-pre-line text-foreground'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      {row.effective || (t('money.settings.notSet') || 'Not set')}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
 
-              <div className="space-y-2">
-                <Label>{t('money.settings.companyAddress') || 'Address'}</Label>
-                <Textarea
-                  value={settings.companyAddress || ''}
-                  onChange={(e) => updateField('companyAddress', e.target.value)}
-                  placeholder={t('money.settings.addressPlaceholder') || 'Street address, City, District'}
-                  rows={2}
-                />
-              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/settings/company">
+                  {t('money.settings.editInCompanySettings') || 'Change in Company Settings'}
+                  <ArrowUpRight className="ml-1.5 h-4 w-4" />
+                </Link>
+              </Button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('money.settings.companyPhone') || 'Phone'}</Label>
-                  <Input
-                    value={settings.companyPhone || ''}
-                    onChange={(e) => updateField('companyPhone', e.target.value)}
-                    placeholder={t('money.settings.phonePlaceholder') || '+670 7XX XXXX'}
-                  />
+              {outOfStepRows.length > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium">
+                      {t('money.settings.identityOutOfStep') ||
+                        'Your invoices show an older copy of these details'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('money.settings.identityOutOfStepHelp') ||
+                        'These were saved on this page before, so your Company Settings no longer update them. Contact support to line them up.'}
+                    </p>
+                    <ul className="space-y-0.5 text-xs text-muted-foreground">
+                      {outOfStepRows.map((row) => (
+                        <li key={row.key}>
+                          <span className="text-foreground">{row.label}</span>{' '}
+                          {t('money.settings.identityInCompanySettings') ||
+                            'in Company Settings'}
+                          : {row.profile}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t('money.settings.companyEmail') || 'Email'}</Label>
-                  <Input
-                    type="email"
-                    value={settings.companyEmail || ''}
-                    onChange={(e) => updateField('companyEmail', e.target.value)}
-                    placeholder={t('money.settings.emailPlaceholder') || 'billing@yourcompany.tl'}
-                  />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

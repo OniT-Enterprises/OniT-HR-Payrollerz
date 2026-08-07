@@ -1570,9 +1570,13 @@ const messages = {
     },
   },
   settings: {
+    integrations: {
+      quickbooksTitle: "Export to QuickBooks or other accounting software",
+    },
     headerTitle: "Company Settings",
     headerSubtitle: "Configure your company, payroll, and HR policies",
     access: {
+      customAccessTitle: "Change what they can open",
       title: "Team access",
       description:
         "Invite people and control which parts of Xefe they can use.",
@@ -1740,6 +1744,9 @@ const messages = {
       save: "Save Structure",
     },
     payment: {
+      accountAdvancedTitle: "What this account is for, and its bookkeeping account",
+      accountAdvancedHint: "Xefe already picks these. Change them only if your accountant asks you to.",
+      accountPurposeLabel: "What this account is for",
       ledgerAccount: "Ledger account",
       ledgerOperatingBank: "Cash in Bank — Operating (1120)",
       ledgerPayrollBank: "Cash in Bank — Payroll (1130)",
@@ -1784,6 +1791,13 @@ const messages = {
       save: "Save Payment Structure",
     },
     timeOff: {
+      changedDays: {
+        title: "Days you turned into working days",
+        hint: "Remove one to put the day back to the built-in Timor-Leste holiday calendar.",
+        workingDay: "Working day",
+        notAHoliday: "Not a public holiday",
+      },
+      annualLeaveCashOutNote: "If someone leaves with annual leave they never took, it is not lost — it is paid out in cash on their final payslip (Labour Law Art. 32).",
       statutoryNote: "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
       companyGroupHeading: "What your company adds",
       customTypes: {
@@ -1851,6 +1865,8 @@ const messages = {
       save: "Save Time Off Policies",
     },
     payroll: {
+      currentRatesTitle: "The rates you are using now",
+      changeRatesTitle: "Change the legal rates",
       title: "Payroll Configuration",
       description:
         "Tax, social security, and overtime settings for Timor-Leste",
@@ -2078,6 +2094,8 @@ const messages = {
       pageOf: "Page {{page}} of {{total}}",
     },
     csvHeaders: {
+      contractedWeeklyHours: "Contracted Weekly Hours",
+      minimumWageTreatment: "Minimum Wage Treatment",
       employeeId: "Employee ID",
       firstName: "First Name",
       lastName: "Last Name",
@@ -6255,6 +6273,14 @@ const messages = {
       allMethods: "All Methods",
     },
     settings: {
+      companyInfoReadOnlyDesc: "What your invoices show as your business. Change it in Company Settings.",
+      logoReadOnly: "Your logo, as it prints on invoices and PDFs.",
+      logoNotSet: "No logo yet. Add one in Company Settings.",
+      notSet: "Not set",
+      editInCompanySettings: "Change in Company Settings",
+      identityOutOfStep: "Your invoices show an older copy of these details",
+      identityOutOfStepHelp: "These were saved on this page before, so your Company Settings no longer update them. Contact support to line them up.",
+      identityInCompanySettings: "in Company Settings",
       title: "Invoice Settings",
       subtitle: "Configure your invoice defaults and company information",
       saved: "Invoice settings saved",

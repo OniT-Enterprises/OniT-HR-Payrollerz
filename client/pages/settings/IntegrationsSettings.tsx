@@ -5,6 +5,7 @@
  */
 import { Link } from "react-router-dom";
 import MainNavigation from "@/components/layout/MainNavigation";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import PageHeader from "@/components/layout/PageHeader";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -40,9 +41,20 @@ export default function IntegrationsSettings() {
           iconColor="text-primary"
         />
 
-        {tenantId && <QuickBooksSettings tenantId={tenantId} />}
-        <AdvancedTaxModeCard />
+        {/* Far more TL businesses have an accountant than have QuickBooks, so
+            the partner card leads and the export mapping table waits behind a
+            disclosure. Nothing is removed — one tap reaches it. */}
         <AccountantPartnerCard />
+        <AdvancedTaxModeCard />
+
+        {tenantId && (
+          <MoreDetailsSection
+            title={t("settings.integrations.quickbooksTitle") || "Export to QuickBooks or other accounting software"}
+            className="mt-6"
+          >
+            <QuickBooksSettings tenantId={tenantId} />
+          </MoreDetailsSection>
+        )}
       </div>
     </div>
   );
