@@ -1244,12 +1244,6 @@ export default function Attendance() {
             <Skeleton className="h-11 w-full rounded-lg" />
           </div>
 
-          {canManageAttendance && attendanceMode === "exceptions" && (
-          <p className="mb-4 text-xs text-muted-foreground">
-            {t("timeLeave.attendance.modeNote")}
-          </p>
-        )}
-
         {/* Attendance Records */}
           <div className="space-y-1.5">
             <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 px-5 py-2">
@@ -1886,6 +1880,12 @@ export default function Attendance() {
             </Button>
           </div>
         </MoreDetailsSection>
+
+        {canManageAttendance && attendanceMode === "exceptions" && (
+          <p className="mb-4 text-xs text-muted-foreground">
+            {t("timeLeave.attendance.modeNote")}
+          </p>
+        )}
 
         {/* Nobody said what happened to these people. Named and actionable —
             a count with a grey dot is not something an owner can act on. */}
