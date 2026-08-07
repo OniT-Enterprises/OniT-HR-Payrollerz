@@ -3475,6 +3475,16 @@ const messages = {
       },
     },
     attendance: {
+      unrecorded: {
+        title: "Ema {{count}} laiha rejistu ba {{date}}",
+        explain:
+          "Xefe la assume katak sira servisu. To'o Ita hatete, folha la sura buat ida ba sira — la iha pagamentu, la iha falta.",
+        allWorked: "Sira hotu servisu baibain",
+        worked: "Servisu",
+        wasAway: "Falta",
+        andMore: "no {{count}} tan",
+        marked: "Rejista loron servisu baibain ba ema {{count}}.",
+      },
       absence: {
         nonWorkingDay:
           "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",

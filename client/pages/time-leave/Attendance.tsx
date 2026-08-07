@@ -79,6 +79,10 @@ import {
 } from "@/services/leaveService";
 import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 import {
+  DEFAULT_EXPECTED_START,
+  DEFAULT_EXPECTED_END,
+} from "@/lib/attendanceCalculations";
+import {
   attendanceService,
   computeEntryHours,
   needsBreakWarning,
@@ -516,6 +520,80 @@ export default function Attendance() {
       calculateWorkingDays(absenceForm.date, absenceForm.date, holidays) === 0
     );
   }, [absenceForm.date]);
+
+  // Who has NO record for the shown day.
+  //
+  // The count was already on screen as a grey dot with a number — no names, no
+  // action, and a bare colour, which the style guide forbids. It is also the
+  // most consequential state on the page: "not recorded" is UNKNOWN, not
+  // present and not absent, so these people are invisible to payroll until
+  // someone says what happened.
+  const recordedEmployeeIds = useMemo(
+    () => new Set(attendanceRecords.map((record) => record.employeeId)),
+    [attendanceRecords],
+  );
+  const unrecordedEmployees = useMemo(() => {
+    // A future day having no records is normal, not a gap worth flagging.
+    if (selectedDate > today) return [];
+    return employees.filter(
+      (employee) => employee.id && !recordedEmployeeIds.has(employee.id),
+    );
+  }, [employees, recordedEmployeeIds, selectedDate, today]);
+
+  const [markingWorked, setMarkingWorked] = useState(false);
+
+  /**
+   * Record a normal working day for people who have none.
+   *
+   * Deliberately writes an EXPLICIT record per employee rather than treating a
+   * blank day as present. Inferring attendance would pay people for days
+   * nobody checked and would erase the difference between "worked" and "we
+   * never looked" — the invariant in docs/TIME_LEAVE.md. This keeps the
+   * keystroke saving and keeps every day attributable.
+   */
+  const markWorkedNormally = async (list: Employee[]) => {
+    if (list.length === 0) return;
+    setMarkingWorked(true);
+    try {
+      // Chunked: a 300-employee tenant should not open 300 parallel writes.
+      for (let i = 0; i < list.length; i += 10) {
+        await Promise.all(
+          list.slice(i, i + 10).map((employee) =>
+            attendanceService.markAttendance(tenantId, {
+              employeeId: employee.id!,
+              employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+              department: employee.jobDetails.department,
+              departmentId: departments.find(
+                (department) =>
+                  department.name === employee.jobDetails.department,
+              )?.id,
+              date: selectedDate,
+              clockIn: DEFAULT_EXPECTED_START,
+              clockOut: DEFAULT_EXPECTED_END,
+              source: "manual",
+            }),
+          ),
+        );
+      }
+      await queryClient.invalidateQueries({
+        queryKey: attendanceKeys.all(tenantId),
+      });
+      toast({
+        title: t("timeLeave.attendance.toast.successTitle"),
+        description: t("timeLeave.attendance.unrecorded.marked", {
+          count: list.length,
+        }),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setMarkingWorked(false);
+    }
+  };
 
   const openAbsenceDialog = (date = selectedDate) => {
     setAbsenceForm({
@@ -1786,6 +1864,90 @@ export default function Attendance() {
             </Button>
           </div>
         </MoreDetailsSection>
+
+        {/* Nobody said what happened to these people. Named and actionable —
+            a count with a grey dot is not something an owner can act on. */}
+        {canManageAttendance && unrecordedEmployees.length > 0 && (
+          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {t("timeLeave.attendance.unrecorded.title", {
+                      count: unrecordedEmployees.length,
+                      date: formatDateTL(parseDateISO(selectedDate)),
+                    })}
+                  </p>
+                  <p className="mt-0.5">
+                    {t("timeLeave.attendance.unrecorded.explain")}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={markingWorked}
+                onClick={() => markWorkedNormally(unrecordedEmployees)}
+              >
+                {markingWorked && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t("timeLeave.attendance.unrecorded.allWorked")}
+              </Button>
+            </div>
+            <div className="mt-3 space-y-2">
+              {unrecordedEmployees.slice(0, 8).map((employee) => (
+                <div
+                  key={employee.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-background/60 px-3 py-2"
+                >
+                  <span className="min-w-0 truncate text-sm">
+                    {employee.personalInfo.firstName}{" "}
+                    {employee.personalInfo.lastName}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={markingWorked}
+                      onClick={() => markWorkedNormally([employee])}
+                    >
+                      {t("timeLeave.attendance.unrecorded.worked")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAbsenceForm({
+                          employeeId: employee.id!,
+                          date: selectedDate,
+                          reason: "",
+                          hasCertificate: false,
+                          notes: "",
+                        });
+                        setShowAbsenceDialog(true);
+                      }}
+                    >
+                      {t("timeLeave.attendance.unrecorded.wasAway")}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {unrecordedEmployees.length > 8 && (
+                <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                  {t("timeLeave.attendance.unrecorded.andMore", {
+                    count: unrecordedEmployees.length - 8,
+                  })}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Attendance Records */}
         {filteredRecords.length === 0 ? (

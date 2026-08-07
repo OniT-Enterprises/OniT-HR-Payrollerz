@@ -3552,6 +3552,16 @@ const messages = {
       },
     },
     attendance: {
+      unrecorded: {
+        title: "{{count}} pessoas não têm registo em {{date}}",
+        explain:
+          "O Xefe não assume que trabalharam. Até você dizer, a folha não conta nada para elas — nem vencimento nem falta.",
+        allWorked: "Trabalharam todos normalmente",
+        worked: "Trabalhou",
+        wasAway: "Faltou",
+        andMore: "e mais {{count}}",
+        marked: "Registado um dia normal de trabalho para {{count}} pessoas.",
+      },
       absence: {
         nonWorkingDay:
           "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
@@ -6826,6 +6836,8 @@ const messages = {
         "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
       failed:
         "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
+      foreignCurrency:
+        "Este documento está em {{currency}}. O Xefe registа os valores em dólares americanos — introduza o valor que pagou efetivamente em USD.",
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',
