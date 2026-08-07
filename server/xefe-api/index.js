@@ -5280,6 +5280,19 @@ const extractLimiter = rateLimit({
   message: { success: false, message: 'Too many extraction requests, please slow down.' },
 });
 
+// Spreadsheet normalisation is chunked: ONE attendance import sends up to a dozen
+// requests (a wide monthly grid expands into a record per employee per day, so it
+// cannot be one call). Sharing the per-document budget of 30 meant a third import
+// in ten minutes would 429 partway through and half-import a month. Same window,
+// a budget sized for whole imports rather than single documents.
+const extractTableLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many import requests, please slow down.' },
+});
+
 app.post('/api/tenants/:tenantId/ai/extract-document', extractLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, async (req, res) => {
   const requestId = genId();
   const { role, canWrite, isSuperAdmin } = req.tenantAccess || {};
@@ -5333,7 +5346,7 @@ app.post('/api/tenants/:tenantId/ai/extract-document', extractLimiter, authentic
 // returns rows normalized into a fixed schema (kind: 'attendance'). The model
 // only reformats; matching rows to real records stays in the client.
 
-app.post('/api/tenants/:tenantId/ai/extract-table', extractLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, async (req, res) => {
+app.post('/api/tenants/:tenantId/ai/extract-table', extractTableLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, async (req, res) => {
   const requestId = genId();
   const { role, canWrite, isSuperAdmin } = req.tenantAccess || {};
   if (!canWrite && role !== 'accountant' && role !== 'manager' && !isSuperAdmin) {
