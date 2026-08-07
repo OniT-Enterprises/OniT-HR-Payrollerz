@@ -156,6 +156,27 @@ change is enough.
 On phones, keep the primary and secondary completion actions in a sticky bottom
 bar when a form is long. Important targets are at least 44px high and wide.
 
+## Application shell and scrolling
+
+`AppLayout` owns the height and the scrolling. The shell is `flex h-dvh
+overflow-hidden`; the only scroll container is
+`<main className="flex-1 overflow-y-auto">`.
+
+The flex column between them carries **`min-h-0`**, and that class is
+load-bearing. A flex item defaults to `min-height: auto` and refuses to shrink
+below its content, so without it the column grows to fit the page, bursts the
+`h-dvh` shell, and the whole DOCUMENT scrolls — taking the sidebar with it —
+while `main`'s `overflow-y-auto` never engages. This was live app-wide until
+2026-08-07 and was only noticeable on the longest page.
+
+Pages therefore do not own height. Do not add a scroll container inside `main`,
+and treat a page-level `min-h-screen` as suspect: it can never fit inside a
+container that is already viewport-minus-top-bar.
+
+Symptom to recognise: if the sidebar scrolls away with the content, the
+document is scrolling and the shell has been burst — look at the shell, not the
+page.
+
 ## Forms
 
 - Mobile input, select, and textarea text is at least 16px.
@@ -166,6 +187,29 @@ bar when a form is long. Important targets are at least 44px high and wide.
 - Defer optional fields behind “More details” or a later settings screen.
 - Checkbox and radio labels are part of the tap target.
 - Errors appear next to the field and in plain language.
+
+
+### Dates
+
+Use `DatePicker` (`client/components/ui/date-picker.tsx`). **Never
+`<input type="date">`** — there are none left in the app and none should come
+back:
+
+- its popup ignores our theme and renders as a white sheet in dark mode;
+- its hit targets are below the 44px minimum;
+- `MM/DD/YYYY` segments are ambiguous for readers of Tetun and Portuguese.
+
+`DatePicker` accepts and emits ISO `YYYY-MM-DD`, so it is a drop-in for the old
+`value` / `onChange(e.target.value)` call sites, and supports `min`, `max`,
+`disabled`, `clearable` and `required`. Month names come from the app's own
+`common.months.*`, so the label reads correctly in all three locales.
+
+With react-hook-form, wrap it in a `Controller` — it is not an `<input>` and
+cannot be `register`ed.
+
+Automation and tests address it through `[data-datepicker]` on the trigger and
+`[data-date="YYYY-MM-DD"]` on each calendar day. Those hooks exist because the
+accessible names are localized prose; do not remove them.
 
 For long workflows, use a stepper with one decision per step. Phones show
 “step X of Y” plus the current step name; the full diagram is desktop-only.
@@ -242,4 +286,10 @@ Before merging interface work, verify:
 - dark and light themes pass contrast checks;
 - English, Tetun, and Portuguese do not clip;
 - loading and error states preserve user confidence;
-- `pnpm typecheck && pnpm test` pass.
+- `pnpm typecheck && pnpm test` pass;
+- **`pnpm e2e` passes** for any change to shared UI, layout, or a form. On
+  2026-08-07 five user-facing bugs — a date picker that was completely dead
+  inside every modal, unclickable calendar arrows, form edits wiped by a
+  background refetch, and the app-shell scroll above — passed typecheck, lint
+  and 1,100+ unit tests. Each was a global rule colliding with a local
+  assumption, and only driving the real UI finds those.

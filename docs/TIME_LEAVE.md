@@ -199,6 +199,20 @@ payroll owns the *payment*. Xefe never derives the payable balance automatically
 because it cannot know what was actually taken — `accruedAnnualLeaveDays` only supplies
 the accrual side as a suggestion.
 
+**Open gap — an employer who grants MORE than 12 days is only half-honoured.**
+Raising `annualLeave.daysPerYear` above 12 increases the leave *balance*
+(`functions/src/timeleave.ts`), but the termination accrual is hard-capped at
+`TL_ANNUAL_LEAVE.daysPerYear = 12` (`client/lib/payroll/constants-tl.ts` via
+`accruedAnnualLeaveDays`, `calculations-tl.ts`, consumed by
+`client/pages/hiring/Offboarding.tsx`). So a tenant configured for 15 sees 15
+accrue during employment and only 12 suggested at final pay. Since the reviewer
+records the payable day count by hand, this is a wrong *suggestion*, not a wrong
+payment — but it is a suggestion in the employer's favour, which is the wrong
+direction. Surfaced 2026-08-07 when the Art. 32 cash-out was first stated in the
+Time Off settings UI; a customer can now see the promise, so the gap is visible.
+Not yet resolved: is the 12 cap correct (statutory minimum accrues, extra is
+contractual and lapses), or should the accrual follow the configured policy?
+
 The Art. 32(5) double-pay penalty applies only where the **employer** prevented the
 leave being taken, so it is an explicit reviewer assertion and never inferred from a
 balance. Background and evidence: `docs/MINED_ANSWERS_TERMINATION_AUG2026.md` §A3.
