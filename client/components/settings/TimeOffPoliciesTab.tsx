@@ -160,16 +160,23 @@ function AmberNote({ children }: { children: ReactNode }) {
   );
 }
 
-/** Read-only fact block — the StatutoryRatesCard shape, stacked, never a table. */
-function FactBlock({ children }: { children: ReactNode }) {
-  return <div className="divide-y rounded-lg border">{children}</div>;
-}
-
-function Fact({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * The statutory text for a row, shown INLINE at the bottom of its body.
+ *
+ * It used to sit behind a second `MoreDetailsSection`. That was one tap too
+ * many: the row itself is already the disclosure, so anyone reading this has
+ * chosen to look at the topic — and burying the article number behind another
+ * collapse made the law read as optional fine print, which is exactly backwards
+ * for a compliance product. Kept visually subordinate with the house eyebrow,
+ * not hidden.
+ */
+function LawNote({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="space-y-1 p-3">
-      <p className="text-sm font-medium">{label}</p>
-      <p className="text-sm text-muted-foreground">{children}</p>
+    <div className="space-y-1.5 border-t border-border/60 pt-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      {children}
     </div>
   );
 }
@@ -736,64 +743,62 @@ export function TimeOffPoliciesTab({
         </div>
         {invalidNote(key)}
 
-        <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
+        {/* The deliberate employer-paid option: legal, so it must stay
+            reachable; rare and consequential, so it stays the deepest thing on
+            the page — and the Art. 21(3) warning sits ABOVE the input, not only
+            after the value goes positive. This one is a CONTROL, not law, which
+            is why it keeps its collapse while the statute below does not. */}
+        <MoreDetailsSection
+          title={t("settings.timeOff.rows.parental.payYourselfTitle")}
+        >
           <div className="space-y-3 pb-1">
-            <p className="text-xs text-muted-foreground">
-              {t(hintKey) || hintFallback}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t("settings.timeOff.parentalInssExplainer") ||
-                "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave."}
-            </p>
-
-            {/* The deliberate employer-paid option: legal, so it must stay
-                reachable; rare and consequential, so it is the deepest thing
-                on the page — and the Art. 21(3) warning sits ABOVE the input,
-                not only after the value goes positive. */}
-            <MoreDetailsSection
-              title={t("settings.timeOff.rows.parental.payYourselfTitle")}
-            >
-              <div className="space-y-3 pb-1">
-                <AmberNote>
-                  <p>
-                    {t("settings.timeOff.parentalPaidWarning") ||
-                      "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy."}
-                  </p>
-                </AmberNote>
-                <div className="space-y-2">
-                  <Label htmlFor={`${key}-paid`}>
-                    {t("settings.timeOff.paidPercentage")}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id={`${key}-paid`}
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={leave.paidPercentage}
-                      onChange={(e) => {
-                        // A percentage > 0 is the deliberate employer-paid
-                        // option — keep isPaid in sync so the payroll engines
-                        // (which require isPaid === true) honor it.
-                        const paidPercentage =
-                          parseInt(e.target.value, 10) || 0;
-                        setTimeOffPolicies({
-                          ...timeOffPolicies,
-                          [policyKey]: {
-                            ...leave,
-                            paidPercentage,
-                            isPaid: paidPercentage > 0,
-                          },
-                        });
-                      }}
-                    />
-                    <Percent className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
+            <AmberNote>
+              <p>
+                {t("settings.timeOff.parentalPaidWarning") ||
+                  "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy."}
+              </p>
+            </AmberNote>
+            <div className="space-y-2">
+              <Label htmlFor={`${key}-paid`}>
+                {t("settings.timeOff.paidPercentage")}
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`${key}-paid`}
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={leave.paidPercentage}
+                  onChange={(e) => {
+                    // A percentage > 0 is the deliberate employer-paid
+                    // option — keep isPaid in sync so the payroll engines
+                    // (which require isPaid === true) honor it.
+                    const paidPercentage = parseInt(e.target.value, 10) || 0;
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      [policyKey]: {
+                        ...leave,
+                        paidPercentage,
+                        isPaid: paidPercentage > 0,
+                      },
+                    });
+                  }}
+                />
+                <Percent className="h-4 w-4 text-muted-foreground" />
               </div>
-            </MoreDetailsSection>
+            </div>
           </div>
         </MoreDetailsSection>
+
+        <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+          <p className="text-xs text-muted-foreground">
+            {t(hintKey) || hintFallback}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t("settings.timeOff.parentalInssExplainer") ||
+              "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave."}
+          </p>
+        </LawNote>
       </>
     );
   };
@@ -912,8 +917,8 @@ export function TimeOffPoliciesTab({
             </div>
             {invalidNote("annual")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <div className="space-y-2 pb-1">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
                   {t("settings.timeOff.annualLeaveHint")}
                 </p>
@@ -926,7 +931,7 @@ export function TimeOffPoliciesTab({
                   {t("settings.timeOff.annualLeaveCashOutNote")}
                 </p>
               </div>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
 
           {/* Public holidays */}
@@ -1278,11 +1283,11 @@ export function TimeOffPoliciesTab({
               </div>
             </MoreDetailsSection>
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.rows.holidays.law")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
 
           {/* Extra leave your company offers */}
@@ -1507,11 +1512,11 @@ export function TimeOffPoliciesTab({
             </div>
             {invalidNote("custom")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.rows.custom.noLaw")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
 
           {/* Waiting time before annual leave */}
@@ -1558,11 +1563,11 @@ export function TimeOffPoliciesTab({
             </div>
             {invalidNote("probation")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.probationHint")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
         </div>
       </section>
@@ -1603,15 +1608,14 @@ export function TimeOffPoliciesTab({
             </p>
             {invalidNote("sick")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <div className="pb-1">
-                <FactBlock>
-                  <Fact label={t("settings.timeOff.sickPayBandsTitle")}>
-                    {t("settings.timeOff.sickPayBandsText")}
-                  </Fact>
-                </FactBlock>
-              </div>
-            </MoreDetailsSection>
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs font-medium">
+                {t("settings.timeOff.sickPayBandsTitle")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.timeOff.sickPayBandsText")}
+              </p>
+            </LawNote>
           </PolicyRow>
 
           {/* Maternity */}
@@ -1768,11 +1772,11 @@ export function TimeOffPoliciesTab({
             )}
             {invalidNote("special")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.specialLeaveHint")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
 
           {/* Exam days — statutory PAID entitlement (Art. 76.3) whose annual
@@ -1825,11 +1829,11 @@ export function TimeOffPoliciesTab({
             )}
             {invalidNote("study")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.studyLeaveHint")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
 
           {/* Unpaid time off — enforced today by findEntitlementBreaches in
@@ -1855,11 +1859,11 @@ export function TimeOffPoliciesTab({
             </p>
             {invalidNote("unpaid")}
 
-            <MoreDetailsSection title={t("settings.timeOff.whatTheLawSays")}>
-              <p className="pb-1 text-xs text-muted-foreground">
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.rows.unpaid.noStatute")}
               </p>
-            </MoreDetailsSection>
+            </LawNote>
           </PolicyRow>
         </div>
       </section>
