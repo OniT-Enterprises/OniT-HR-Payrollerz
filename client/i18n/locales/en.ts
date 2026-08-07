@@ -6770,6 +6770,10 @@ const messages = {
         "XefeBot read this file but it isn't a bill or receipt — enter the details below.",
       pdfProtected:
         "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.",
+      looksLikeCreditMemo:
+        "This looks like a credit note, which reduces what you owe rather than adding a bill. Record it against the original bill instead.",
+      multipleDocuments:
+        "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
       vendorAdded: 'Vendor "{{name}}" added',

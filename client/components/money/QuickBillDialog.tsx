@@ -124,10 +124,14 @@ export default function QuickBillDialog({
   >("idle");
   // What the document turned out to be, when it is not a bill — a bank payment
   // slip is a large share of real uploads and deserves a truthful message.
-  const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "other" | null>(null);
+  const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "credit_memo" | "other" | null>(null);
   // A password-protected PDF cannot be read by anything; say that instead of
   // implying the file was unreadable for some unknown reason.
   const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
+  // Set when one file holds several invoices. The form makes ONE bill, so the
+  // amount and number are ambiguous — pre-filling either would create a bill for
+  // the wrong document and silently drop the rest.
+  const [aiMultipleDocuments, setAiMultipleDocuments] = useState(false);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Set when the document is priced in a currency Xefe cannot book (bills are
   // USD-only). The amount is then left blank rather than pre-filled with a
@@ -167,6 +171,7 @@ export default function QuickBillDialog({
       setAiVendorTaxId(null);
       setAiOtherKind(null);
       setAiProtectedPdf(false);
+      setAiMultipleDocuments(false);
       return;
     }
     const file = initialFiles[0];
@@ -179,6 +184,7 @@ export default function QuickBillDialog({
     setAiVendorTaxId(null);
     setAiOtherKind(null);
     setAiProtectedPdf(false);
+    setAiMultipleDocuments(false);
     extractDocument(file, tenantId, "bill")
       .then(async (fields) => {
         if (aiRun.current !== run) return;
@@ -186,6 +192,13 @@ export default function QuickBillDialog({
         // claiming the file could not be read.
         if (fields.documentType === "payment_proof") {
           setAiOtherKind("payment_proof");
+          setAiStatus("notABill");
+          return;
+        }
+        // A credit note reduces what is owed; booking it as a bill would pay out
+        // money the business is owed back.
+        if (fields.documentType === "credit_memo") {
+          setAiOtherKind("credit_memo");
           setAiStatus("notABill");
           return;
         }
@@ -203,12 +216,15 @@ export default function QuickBillDialog({
           setAiStatus("failed");
           return;
         }
+        const multiple = fields.containsMultipleDocuments === true;
+        setAiMultipleDocuments(multiple);
+
         const foreign = isForeignExtractedCurrency(fields.currency);
         setAiForeignCurrency(
           foreign ? foreignCurrencyLabel(fields.currency) : null,
         );
         // A foreign-currency total must not land in a USD field.
-        if (fields.amount != null && !foreign) setAmount(String(fields.amount));
+        if (fields.amount != null && !foreign && !multiple) setAmount(String(fields.amount));
 
         // An already-issued bill cannot be dated in the future; that reading is
         // a day/month swap. Both dates come from the same misreading, so hold
@@ -219,7 +235,7 @@ export default function QuickBillDialog({
         if (fields.dueDate && !suspectDate) setDueDate(fields.dueDate);
         if (fields.description) setDescription(fields.description);
         if (fields.category) setCategory(fields.category as ExpenseCategory);
-        if (fields.billNumber) setBillNumber(fields.billNumber);
+        if (fields.billNumber && !multiple) setBillNumber(fields.billNumber);
         if (fields.vendorName) setAiVendorName(fields.vendorName);
         setAiVendorTaxId(fields.vendorTaxId);
         setAiStatus("done");
@@ -419,14 +435,17 @@ export default function QuickBillDialog({
           )}
           {aiStatus === "notABill" && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-              {aiOtherKind === "payment_proof"
+              {aiOtherKind === "credit_memo"
+                ? t("money.ai.looksLikeCreditMemo") ||
+                  "This looks like a credit note, which reduces what you owe rather than adding a bill. Record it against the original bill instead."
+                : aiOtherKind === "payment_proof"
                 ? t("money.ai.looksLikePaymentProof") ||
                   "This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below."
                 : t("money.ai.notABill") ||
                   "XefeBot read this file but it isn't a bill or receipt — enter the details below."}
             </div>
           )}
-          {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate) && (
+          {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate || aiMultipleDocuments) && (
             <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
               {aiForeignCurrency && (
                 <p>
@@ -434,6 +453,12 @@ export default function QuickBillDialog({
                     t("money.ai.foreignCurrency") ||
                     "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD."
                   ).replace("{{currency}}", aiForeignCurrency)}
+                </p>
+              )}
+              {aiMultipleDocuments && (
+                <p>
+                  {t("money.ai.multipleDocuments") ||
+                    "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately."}
                 </p>
               )}
               {aiSuspectDate && (

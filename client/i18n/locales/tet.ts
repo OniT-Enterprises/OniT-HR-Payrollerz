@@ -6748,6 +6748,10 @@ const messages = {
         "XefeBot lee ona fixeiru ne’e maibé la’ós fatura ka resibu — hatama dadus iha kraik.",
       pdfProtected:
         "PDF ne’e iha proteksaun senha, tan ne’e buat ida la bele lee. Grava kópia ida ne’ebé la iha proteksaun, ka hatama dadus iha kraik.",
+      looksLikeCreditMemo:
+        "Ne’e hanesan nota kréditu, ne’ebé hakotu osan ne’ebé Ita tenke selu, la’ós aumenta fatura foun. Rejista nia hasoru fatura orijinál.",
+      multipleDocuments:
+        "Fixeiru ne’e iha fatura liu husi ida. Hatama montante no númeru husi ida ne’ebé Ita aumenta hela, no hatama seluk sira ketak-ketak.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',

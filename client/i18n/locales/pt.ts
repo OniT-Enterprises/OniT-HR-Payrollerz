@@ -6870,6 +6870,10 @@ const messages = {
         "O XefeBot leu este ficheiro, mas não é uma fatura nem um recibo — introduza os dados abaixo.",
       pdfProtected:
         "Este PDF está protegido por palavra-passe, por isso nada o consegue ler. Guarde uma cópia sem proteção ou introduza os dados abaixo.",
+      looksLikeCreditMemo:
+        "Isto parece uma nota de crédito, que reduz o que deve em vez de acrescentar uma fatura. Registe-a contra a fatura original.",
+      multipleDocuments:
+        "Este ficheiro contém mais do que uma fatura. Introduza o valor e o número da que está a adicionar e carregue as outras separadamente.",
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',

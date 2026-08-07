@@ -21,7 +21,7 @@ const { sanitizeFields, parseJsonReply } = require('../extract.js');
 const EXPECTED_KEYS = [
   'documentType', 'vendorName', 'vendorTaxId', 'billNumber', 'billDate',
   'dueDate', 'amount', 'taxAmount', 'currency', 'description', 'category',
-  'confidence',
+  'containsMultipleDocuments', 'confidence',
 ];
 
 describe('sanitizeFields — shape', () => {
@@ -46,14 +46,28 @@ describe('sanitizeFields — shape', () => {
 });
 
 describe('sanitizeFields — documentType and category are closed sets', () => {
-  it('accepts only the four known document types', () => {
-    for (const type of ['bill', 'receipt', 'payment_proof']) {
+  it('accepts only the known document types', () => {
+    // credit_memo matters as much as the others: a credit note REDUCES what is
+    // owed, so booking one as a bill pays out money the business is owed back.
+    for (const type of ['bill', 'receipt', 'payment_proof', 'credit_memo']) {
       assert.equal(sanitizeFields({ documentType: type }).documentType, type);
     }
-    for (const type of ['invoice', 'BILL', 'payment', '', null, 42, ['bill']]) {
+    for (const type of ['invoice', 'BILL', 'payment', 'credit note', '', null, 42, ['bill']]) {
       assert.equal(sanitizeFields({ documentType: type }).documentType, 'other',
         `unknown type ${JSON.stringify(type)} must fall back to other`);
     }
+  });
+
+  it('treats containsMultipleDocuments as true ONLY when explicitly true', () => {
+    // A file holding several invoices makes the amount and number ambiguous, and
+    // the forms withhold both. A fuzzy value must not make every ordinary
+    // single-invoice upload look ambiguous and stop pre-filling money.
+    assert.equal(sanitizeFields({ containsMultipleDocuments: true }).containsMultipleDocuments, true);
+    for (const value of ['true', 'yes', 1, {}, [], null, undefined, false, 'no']) {
+      assert.equal(sanitizeFields({ containsMultipleDocuments: value }).containsMultipleDocuments,
+        false, `value ${JSON.stringify(value)} must not count as multiple`);
+    }
+    assert.equal(sanitizeFields({}).containsMultipleDocuments, false);
   });
 
   it('falls back to the "other" category rather than inventing one', () => {
