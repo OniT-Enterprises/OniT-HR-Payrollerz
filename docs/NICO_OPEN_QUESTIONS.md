@@ -50,6 +50,30 @@ be read either way.
 
 ---
 
+### A6. Is Saturday a working day for leave, or a rest day?
+Art. 30(2) makes **Sunday** the weekly rest day, and Xefe's attendance and payroll
+treat Saturday work as ordinary (only Sunday earns the 2× rest-day rate). But the
+leave-duration function excludes **both** Saturday and Sunday, so a worker at a
+Saturday-opening shop who is sick Monday to Saturday is counted as **5 sick days,
+not 6** — they lose a day of pay, and a day of entitlement is left unconsumed.
+
+Which is right for a business that genuinely opens six days: does leave consume
+the Saturday? We assume yes, and that Xefe is currently wrong, but the fix means
+each company declaring its own working week, so we would rather ask once than
+guess for everyone. **Cost today: one day of pay per six-day sick spell, for any
+six-day-week employer.**
+
+### A7. Art. 64 — five days a year to care for a sick child. Are we right to omit it?
+"Os trabalhadores com filhos menores de 10 anos têm direito a faltar ao trabalho,
+até ao limite máximo de 5 dias por ano, para prestar assistência, inadiável e
+imprescindível, em caso de doença ou acidente daquele" — and Art. 64(2) makes it
+**unpaid** ("determina apenas a perda de remuneração relativa aos dias em causa").
+
+Xefe has no leave type for this. An employer refusing it would be refusing a
+statutory right; today the absence would be recorded as ordinary unpaid leave,
+which loses the fact that it could not lawfully be refused. Is a distinct type
+worth having, or is unpaid leave with a note good enough in practice?
+
 ## B. Precision — smaller amounts, same certainty problem
 
 ### B6. For the $500 resident WIT exemption, is "month" the month wages were earned or paid?
@@ -131,6 +155,39 @@ who did not have the card to hand. The customer-facing copy says the number is
   We deliberately did **not** invent a domestic threshold.
 - **Question:** *for ordinary non-petroleum employment, is a worker TIN required
   at any income level — or is it genuinely optional?*
+
+### B13. Sick leave is Art. 33(4) — please confirm the reading
+We had this wrong in two places (`Art. 42`, which is wage deductions, and
+`Art. 34`, which is occupational-safety principles). The official Lei 4/2012 text
+puts it in **Art. 33(4)**, the same article as the three days of special leave:
+
+> "O trabalhador pode igualmente faltar justificadamente ao trabalho por motivo de
+> doença ou acidente, mediante a apresentação de atestado médico, até 12 dias por
+> ano, dos quais 6 são remunerados por inteiro e os 6 dias restantes remunerados a
+> 50 por cento do valor da remuneração diária."
+
+That is exactly what Xefe's engine pays, so no money moves either way. Two things
+follow that we would like confirmed rather than assumed:
+
+1. **The citation itself** — the sick-leave row in Settings still carries a
+   "Pending confirmation" badge waiting on you.
+2. **The certificate is statutory, not optional.** "mediante a apresentação de
+   atestado médico" reads as a condition of the absence being justified. Xefe used
+   to offer a company toggle for it; that toggle is gone and the requirement is now
+   stated as law. Is that right — and should Xefe ever *block* a sick day with no
+   certificate, or only record that one is outstanding? We do the latter, on the
+   grounds that the certificate usually arrives after the absence starts.
+
+### B14. Does Art. 14 authorise deferring annual leave for a waiting period?
+Xefe lets a company set a waiting period (default 3 months) before a new worker may
+take annual leave, and the copy cites **Art. 14**. But Art. 14 probation is
+8/15/30/90 **days** depending on category, so a 3-month wait exceeds statutory
+probation for everyone except managerial staff, and we cannot find the provision
+that permits delaying Art. 32 leave specifically.
+
+The row is badged "Pending confirmation" and tells the owner to ask their
+accountant. Is the practice lawful, and if so under what? If it is not, the setting
+should go.
 
 ## C. Low stakes — answer if convenient
 
