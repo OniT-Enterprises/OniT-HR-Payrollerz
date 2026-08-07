@@ -2283,6 +2283,12 @@ const messages = {
     },
   },
   addEmployee: {
+    section: {
+      who: "Quem está a adicionar?",
+      job: "O que faz e quanto lhe paga",
+      ids: "Documento de identificação e número INSS",
+      idsHelp: "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário.",
+    },
     wizard: {
       basicTitle: "Informação Básica",
       basicDesc: "Nome, contactos e contacto de emergência",

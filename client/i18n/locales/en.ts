@@ -2241,6 +2241,12 @@ const messages = {
     },
   },
   addEmployee: {
+    section: {
+      who: "Who are you adding?",
+      job: "What they do and what you pay them",
+      ids: "ID and INSS number",
+      idsHelp: "Nothing here stops you saving. We will ask again when you need it.",
+    },
     wizard: {
       basicTitle: "Basic Info",
       basicDesc: "Name, contact details, and emergency contact",

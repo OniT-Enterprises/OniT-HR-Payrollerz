@@ -2025,6 +2025,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Who are you adding?",
+        "job": "What they do and what you pay them",
+        "ids": "ID and INSS number",
+        "idsHelp": "Nothing here stops you saving. We will ask again when you need it."
+      },
       "wizard": {
         "basicTitle": "Basic Info",
         "basicDesc": "Name, contact details, and emergency contact",
@@ -9655,6 +9661,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Ita hatama sé?",
+        "job": "Sira halo saida no ita selu hira",
+        "ids": "Dokumentu identidade no númeru INSS",
+        "idsHelp": "Buat ida iha ne'e la bandu ita rai. Ami sei husu fali bainhira presiza."
+      },
       "wizard": {
         "basicTitle": "Info Basiku",
         "basicDesc": "Naran, kontaktu no kontaktu emerjensia",
@@ -17285,6 +17297,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Quem está a adicionar?",
+        "job": "O que faz e quanto lhe paga",
+        "ids": "Documento de identificação e número INSS",
+        "idsHelp": "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário."
+      },
       "wizard": {
         "basicTitle": "Informação Básica",
         "basicDesc": "Nome, contactos e contacto de emergência",

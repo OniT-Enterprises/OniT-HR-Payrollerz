@@ -1124,9 +1124,12 @@ export default function AddEmployee() {
           })}
           className="space-y-6 pb-24"
         >
-          {/* Step 1: Basic Info */}
+          {/* Who they are — the only two fields every employee must have. */}
           <>
             <div className="space-y-6">
+              <h2 className="text-base font-semibold">
+                {t("addEmployee.section.who") || "Who are you adding?"}
+              </h2>
               {/* Name Row */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -1152,6 +1155,7 @@ export default function AddEmployee() {
                 </div>
               </div>
 
+              <MoreDetailsSection contentClassName="space-y-6">
               {/* Date of Birth + Address Row */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
@@ -1284,12 +1288,16 @@ export default function AddEmployee() {
                   </div>
                 </div>
               </div>
+              </MoreDetailsSection>
             </div>
           </>
 
-          {/* Step 2: Job Details */}
+          {/* What they do and what you get paid to get right. */}
           <>
             <div className="space-y-6">
+              <h2 className="text-base font-semibold">
+                {t("addEmployee.section.job") || "What they do and what you pay them"}
+              </h2>
               {/* Department & Title */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -1761,9 +1769,19 @@ export default function AddEmployee() {
             </div>
           </>
 
-          {/* Step 4: Documents */}
+          {/* ID papers and the INSS number. Collected here when the owner has
+              them to hand, but never a blocker: the INSS number is chased
+              before the first filing, not at hire, and a shop owner adding a
+              guard today usually does not have the card in front of them. */}
           <>
-            <div className="space-y-6">
+            <MoreDetailsSection
+              title={t("addEmployee.section.ids") || "ID and INSS number"}
+              contentClassName="space-y-6"
+            >
+              <p className="mb-3 text-xs text-muted-foreground">
+                {t("addEmployee.section.idsHelp") ||
+                  "Nothing here stops you saving. We will ask again when you need it."}
+              </p>
               {/* Nationality — drives document requirements */}
               <div className="space-y-2">
                 <Label htmlFor="nationality">{t("addEmployee.documents.nationality")}</Label>
@@ -1949,7 +1967,7 @@ export default function AddEmployee() {
                   </AlertDescription>
                 </Alert>
               )}
-            </div>
+            </MoreDetailsSection>
           </>
 
           {/* Sticky save bar: on a phone this sits where the thumb already

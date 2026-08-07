@@ -2237,6 +2237,12 @@ const messages = {
     },
   },
   addEmployee: {
+    section: {
+      who: "Ita hatama sé?",
+      job: "Sira halo saida no ita selu hira",
+      ids: "Dokumentu identidade no númeru INSS",
+      idsHelp: "Buat ida iha ne'e la bandu ita rai. Ami sei husu fali bainhira presiza.",
+    },
     wizard: {
       basicTitle: "Info Basiku",
       basicDesc: "Naran, kontaktu no kontaktu emerjensia",
