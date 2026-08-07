@@ -45,6 +45,7 @@ import {
   isForeignExtractedCurrency,
 } from "@/lib/extracted-currency";
 import { isImplausibleDocumentDate } from "@/lib/extracted-date";
+import { isProtectedPdf } from "@/lib/pdf-protected";
 import type { ExpenseCategory } from "@/types/money";
 import { Building2, Loader2, Sparkles } from "lucide-react";
 
@@ -124,6 +125,9 @@ export default function QuickBillDialog({
   // What the document turned out to be, when it is not a bill — a bank payment
   // slip is a large share of real uploads and deserves a truthful message.
   const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "other" | null>(null);
+  // A password-protected PDF cannot be read by anything; say that instead of
+  // implying the file was unreadable for some unknown reason.
+  const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Set when the document is priced in a currency Xefe cannot book (bills are
   // USD-only). The amount is then left blank rather than pre-filled with a
@@ -162,6 +166,7 @@ export default function QuickBillDialog({
       setAiSuspectDate(null);
       setAiVendorTaxId(null);
       setAiOtherKind(null);
+      setAiProtectedPdf(false);
       return;
     }
     const file = initialFiles[0];
@@ -173,8 +178,9 @@ export default function QuickBillDialog({
     setAiSuspectDate(null);
     setAiVendorTaxId(null);
     setAiOtherKind(null);
+    setAiProtectedPdf(false);
     extractDocument(file, tenantId, "bill")
-      .then((fields) => {
+      .then(async (fields) => {
         if (aiRun.current !== run) return;
         // Read successfully, but it is not a bill: say which, rather than
         // claiming the file could not be read.
@@ -189,6 +195,7 @@ export default function QuickBillDialog({
             setAiStatus("notABill");
             return;
           }
+          setAiProtectedPdf(await isProtectedPdf(file));
           setAiStatus("failed");
           return;
         }
@@ -403,8 +410,11 @@ export default function QuickBillDialog({
           )}
           {aiStatus === "failed" && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-              {t("money.ai.failed") ||
-                "XefeBot couldn't read this file — fill in the details manually."}
+              {aiProtectedPdf
+                ? t("money.ai.pdfProtected") ||
+                  "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below."
+                : t("money.ai.failed") ||
+                  "XefeBot couldn't read this file — fill in the details manually."}
             </div>
           )}
           {aiStatus === "notABill" && (

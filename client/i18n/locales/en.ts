@@ -6759,6 +6759,8 @@ const messages = {
         "This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below.",
       notABill:
         "XefeBot read this file but it isn't a bill or receipt — enter the details below.",
+      pdfProtected:
+        "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
       vendorAdded: 'Vendor "{{name}}" added',

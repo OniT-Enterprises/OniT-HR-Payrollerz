@@ -6737,6 +6737,8 @@ const messages = {
         "Ne’e hanesan komprovativu pagamentu banku, la’ós fatura fornesedor. Anexa ba fatura ne’ebé nia paga, no hatama dadus fatura iha kraik.",
       notABill:
         "XefeBot lee ona fixeiru ne’e maibé la’ós fatura ka resibu — hatama dadus iha kraik.",
+      pdfProtected:
+        "PDF ne’e iha proteksaun senha, tan ne’e buat ida la bele lee. Grava kópia ida ne’ebé la iha proteksaun, ka hatama dadus iha kraik.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',

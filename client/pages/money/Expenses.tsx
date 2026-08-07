@@ -48,6 +48,7 @@ import { fileUploadService } from '@/services/fileUploadService';
 import { canExtractFile, extractDocument } from '@/lib/aiExtract';
 import { foreignCurrencyLabel, isForeignExtractedCurrency } from '@/lib/extracted-currency';
 import { isImplausibleDocumentDate } from '@/lib/extracted-date';
+import { isProtectedPdf } from '@/lib/pdf-protected';
 import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -234,6 +235,8 @@ export default function Expenses() {
   const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed' | 'notABill'>('idle');
   // A bank slip or ATM receipt read fine but is not an expense document.
   const [aiOtherKind, setAiOtherKind] = useState<'payment_proof' | 'other' | null>(null);
+  // A password-protected PDF cannot be read by anything — say so specifically.
+  const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Receipts priced in another currency: expenses are booked in USD only, so the
   // extracted amount is withheld rather than pre-filled (see extracted-currency).
@@ -272,6 +275,7 @@ export default function Expenses() {
       setAiForeignCurrency(null);
       setAiSuspectDate(null);
       setAiOtherKind(null);
+      setAiProtectedPdf(false);
       return;
     }
     const run = ++aiRun.current;
@@ -280,8 +284,9 @@ export default function Expenses() {
     setAiForeignCurrency(null);
     setAiSuspectDate(null);
     setAiOtherKind(null);
+    setAiProtectedPdf(false);
     extractDocument(file, tenantId, 'expense')
-      .then((fields) => {
+      .then(async (fields) => {
         if (aiRun.current !== run) return;
         // Read successfully but not an expense document: say which.
         if (fields.documentType === 'payment_proof') {
@@ -295,6 +300,7 @@ export default function Expenses() {
             setAiStatus('notABill');
             return;
           }
+          setAiProtectedPdf(await isProtectedPdf(file));
           setAiStatus('failed');
           return;
         }
@@ -924,7 +930,10 @@ export default function Expenses() {
             )}
             {!editingExpense && aiStatus === 'failed' && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                {t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+                {aiProtectedPdf
+                  ? t('money.ai.pdfProtected')
+                    || 'This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.'
+                  : t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
               </div>
             )}
             {!editingExpense && aiStatus === 'notABill' && (
