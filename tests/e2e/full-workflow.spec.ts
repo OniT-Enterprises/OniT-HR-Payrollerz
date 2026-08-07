@@ -368,6 +368,37 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   });
   await expect(page.getByRole("row").filter({ hasText: "Operations" })).toBeVisible();
 
+  // ── 3c. A sick day is recordable, and lands as LEAVE not absence ────────
+  // The Mark dialog requires a clock-in, so before this there was no way to
+  // record a non-worked day here at all. Sick must go through the leave path:
+  // payroll derives the Art. 33(4) 6@100%/6@50% banding from leave_requests,
+  // so an attendance-only "sick" would look right and pay nothing.
+  await page.goto("/time-leave/attendance");
+  await page.getByRole("button", { name: /record an absence/i }).click();
+  // Never trust the default date: it is Timor-Leste's today, so the run lands
+  // on a weekend whenever the machine clock is late enough in a western
+  // timezone, and a weekend carries no leave. Pick a known Wednesday.
+  const absenceDialog = page.getByRole("dialog");
+  await pickDate(
+    page,
+    absenceDialog.locator("[data-datepicker]").first(),
+    "2026-01-07",
+  );
+  await page.getByLabel(/employee/i).first().click();
+  await page
+    .getByRole("option", { name: `${EMPLOYEE.first} ${EMPLOYEE.last}` })
+    .click();
+  await page.getByLabel(/why were they away/i).click();
+  await page.getByRole("option", { name: "Sick", exact: true }).click();
+  // The statutory bands are stated before the day is recorded, not after.
+  await expect(page.getByText(/first 6 days a year at full pay/i)).toBeVisible();
+  await page.getByRole("button", { name: /^record it$/i }).click();
+  await expect(page.getByText(/recorded for/i).first()).toBeVisible({
+    timeout: 20_000,
+  });
+  // It must NOT have become an unjustified absence.
+  await expect(page.getByText(/did not come to work/i)).toHaveCount(0);
+
   await page.goto("/reports/attendance");
   await expect(page.getByRole("heading", { name: /attendance reports/i })).toBeVisible({
     timeout: 30_000,

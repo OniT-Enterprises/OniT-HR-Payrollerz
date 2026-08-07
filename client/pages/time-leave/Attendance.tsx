@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Switch } from "@/components/ui/switch";
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -55,6 +57,7 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -69,6 +72,12 @@ import {
   attendanceKeys,
 } from "@/hooks/useAttendance";
 import { type Employee } from "@/services/employeeService";
+import {
+  leaveService,
+  calculateWorkingDays,
+  type LeaveType,
+} from "@/services/leaveService";
+import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 import {
   attendanceService,
   computeEntryHours,
@@ -200,6 +209,21 @@ export default function Attendance() {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
+
+  // "Record an absence" — the missing half of this screen. The Mark dialog
+  // hard-requires a clock-in, so until now a non-worked day could not be
+  // recorded here at all: the owner either invented clock times or left the
+  // day blank, and a blank day is UNKNOWN, not an absence (docs/TIME_LEAVE.md).
+  // A sick worker therefore silently got no sick pay and no record.
+  const [showAbsenceDialog, setShowAbsenceDialog] = useState(false);
+  const [savingAbsence, setSavingAbsence] = useState(false);
+  const [absenceForm, setAbsenceForm] = useState({
+    employeeId: "",
+    date: "",
+    reason: "" as "" | "sick" | "special" | "unpaid" | "unjustified",
+    hasCertificate: false,
+    notes: "",
+  });
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editRecord, setEditRecord] = useState<AttendanceRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(
@@ -471,6 +495,134 @@ export default function Attendance() {
       clockOut: "",
       notes: "",
     });
+  };
+
+  // Sick balance for the picked employee, so the owner can see what the day
+  // costs BEFORE recording it — the Art. 33(4) bands drop to half pay after 6
+  // days and stop after 12.
+  const absenceBalance = useLeaveBalance(absenceForm.employeeId || undefined);
+
+  // A weekend or public holiday carries no leave, and the callable rejects it
+  // with "Leave must include at least one working day". The default date is
+  // `getTodayTL()` — Timor-Leste's today — so an owner working Friday evening
+  // in another timezone lands on Saturday by default and would have hit that
+  // raw server error. Say it plainly here instead.
+  const absenceIsNonWorkingDay = useMemo(() => {
+    if (!absenceForm.date) return false;
+    const year = Number(absenceForm.date.slice(0, 4));
+    if (!Number.isFinite(year)) return false;
+    const holidays = getTLPublicHolidays(year).map((holiday) => holiday.date);
+    return (
+      calculateWorkingDays(absenceForm.date, absenceForm.date, holidays) === 0
+    );
+  }, [absenceForm.date]);
+
+  const openAbsenceDialog = (date = selectedDate) => {
+    setAbsenceForm({
+      employeeId: "",
+      date,
+      reason: "",
+      hasCertificate: false,
+      notes: "",
+    });
+    setShowAbsenceDialog(true);
+  };
+
+  /**
+   * Record a non-worked day.
+   *
+   * Everything except "didn't show up" is written as an ALREADY-APPROVED leave
+   * request, never as an attendance status. That is deliberate: payroll derives
+   * sick banding and paid-leave hours from `leave_requests`, so an
+   * attendance-only "sick" would look right on screen and pay nothing. The
+   * attendance row then shows `leave`, exactly as it does for a request raised
+   * on the Leave page — one source of truth, money chain untouched.
+   */
+  const handleRecordAbsence = async () => {
+    const employee = employees.find((e) => e.id === absenceForm.employeeId);
+    if (!employee || !absenceForm.date || !absenceForm.reason) {
+      toast({
+        title: t("timeLeave.attendance.toast.validationTitle"),
+        description: t("timeLeave.attendance.absence.chooseReason"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const employeeName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
+    const departmentId = departments.find(
+      (department) => department.name === employee.jobDetails.department,
+    )?.id;
+
+    setSavingAbsence(true);
+    try {
+      if (absenceForm.reason === "unjustified") {
+        // No clock times => determineStatus() yields `absent`. This is the ONLY
+        // reason that carries Art. 33(5) weight (lost pay, deducted seniority,
+        // and grounds for dismissal), which is why it is never the default.
+        await attendanceService.markAttendance(tenantId, {
+          employeeId: employee.id!,
+          employeeName,
+          department: employee.jobDetails.department,
+          departmentId,
+          date: absenceForm.date,
+          source: "manual",
+          notes: absenceForm.notes || "",
+        });
+      } else {
+        const leaveType = absenceForm.reason as LeaveType;
+        const requestId = await leaveService.createLeaveRequest(tenantId, {
+          employeeId: employee.id!,
+          employeeName,
+          department: employee.jobDetails.department,
+          departmentId: departmentId ?? "",
+          leaveType,
+          leaveTypeLabel: t(
+            `timeLeave.attendance.absence.reasons.${absenceForm.reason}`,
+          ),
+          startDate: absenceForm.date,
+          endDate: absenceForm.date,
+          duration: 1,
+          reason:
+            absenceForm.notes ||
+            t(`timeLeave.attendance.absence.reasons.${absenceForm.reason}`),
+          // Art. 33(4) requires a medical certificate for sick leave. Recorded,
+          // never blocking — it routinely arrives after the absence starts.
+          hasCertificate:
+            absenceForm.reason === "sick" ? absenceForm.hasCertificate : false,
+        });
+        // The owner is recording a day that already happened, so it is decided
+        // on the spot rather than left pending against themselves.
+        await leaveService.approveLeaveRequest(
+          tenantId,
+          requestId,
+          user?.uid || "unknown",
+          session?.config?.name || "Xefe",
+        );
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: attendanceKeys.all(tenantId),
+      });
+      toast({
+        title: t("timeLeave.attendance.toast.successTitle"),
+        description: t("timeLeave.attendance.absence.recorded", {
+          name: employeeName,
+        }),
+      });
+      setShowAbsenceDialog(false);
+    } catch (error) {
+      toast({
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description:
+          error instanceof Error
+            ? error.message
+            : t("timeLeave.attendance.toast.saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAbsence(false);
+    }
   };
 
   const openMarkDialog = (date = selectedDate) => {
@@ -1097,6 +1249,14 @@ export default function Attendance() {
                     {t("timeLeave.attendance.actions.import")}
                   </Button>
                 )}
+                {/* Secondary: a non-worked day is the less common case, but
+                    it must be reachable without inventing clock times. */}
+                <Button
+                  variant="outline"
+                  onClick={() => openAbsenceDialog()}
+                >
+                  {t("timeLeave.attendance.absence.action")}
+                </Button>
                 <Button onClick={() => openMarkDialog()}>
                   <Plus className="h-4 w-4 mr-2" />
                   {isToday
@@ -1305,6 +1465,191 @@ export default function Attendance() {
             </form>
           </DialogContent>
         </Dialog>
+        {/* Record an absence — a non-worked day, reason first. */}
+        <Dialog open={showAbsenceDialog} onOpenChange={setShowAbsenceDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t("timeLeave.attendance.absence.title")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("timeLeave.attendance.absence.description")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="absence-employee">
+                  {t("timeLeave.attendance.mark.employee")}
+                </Label>
+                <Select
+                  value={absenceForm.employeeId}
+                  onValueChange={(employeeId) =>
+                    setAbsenceForm((current) => ({ ...current, employeeId }))
+                  }
+                >
+                  <SelectTrigger id="absence-employee">
+                    <SelectValue
+                      placeholder={t("timeLeave.attendance.mark.employeePlaceholder")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id!}>
+                        {employee.personalInfo.firstName}{" "}
+                        {employee.personalInfo.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("common.date")}</Label>
+                <DatePicker
+                  value={absenceForm.date}
+                  onChange={(date) =>
+                    setAbsenceForm((current) => ({ ...current, date }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="absence-reason">
+                  {t("timeLeave.attendance.absence.reasonLabel")}
+                </Label>
+                <Select
+                  value={absenceForm.reason}
+                  onValueChange={(reason) =>
+                    setAbsenceForm((current) => ({
+                      ...current,
+                      reason: reason as typeof current.reason,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="absence-reason">
+                    <SelectValue
+                      placeholder={t(
+                        "timeLeave.attendance.absence.reasonPlaceholder",
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="sick" value="sick">
+                      {t("timeLeave.attendance.absence.reasons.sick")}
+                    </SelectItem>
+                    <SelectItem key="special" value="special">
+                      {t("timeLeave.attendance.absence.reasons.special")}
+                    </SelectItem>
+                    <SelectItem key="unpaid" value="unpaid">
+                      {t("timeLeave.attendance.absence.reasons.unpaid")}
+                    </SelectItem>
+                    <SelectItem key="unjustified" value="unjustified">
+                      {t("timeLeave.attendance.absence.reasons.unjustified")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {absenceForm.reason && (
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      `timeLeave.attendance.absence.help.${absenceForm.reason}`,
+                    )}
+                  </p>
+                )}
+              </div>
+
+              {absenceForm.reason === "sick" && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="absence-certificate"
+                      checked={absenceForm.hasCertificate}
+                      onCheckedChange={(hasCertificate) =>
+                        setAbsenceForm((current) => ({
+                          ...current,
+                          hasCertificate,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="absence-certificate">
+                      {t("timeLeave.attendance.absence.certificate")}
+                    </Label>
+                  </div>
+                  {!absenceForm.hasCertificate && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("timeLeave.attendance.absence.certificateHint")}
+                    </p>
+                  )}
+                  {absenceBalance.data?.sick && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("timeLeave.attendance.absence.sickBalance", {
+                        used: absenceBalance.data.sick.used,
+                        entitled: absenceBalance.data.sick.entitled,
+                      })}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {absenceIsNonWorkingDay && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>{t("timeLeave.attendance.absence.nonWorkingDay")}</p>
+                </div>
+              )}
+
+              {/* The one reason that counts against the worker. Amber, with
+                  words — never a bare colour. */}
+              {absenceForm.reason === "unjustified" && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>{t("timeLeave.attendance.absence.unjustifiedWarning")}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="absence-notes">
+                  {t("timeLeave.attendance.mark.notes")}
+                </Label>
+                <Input
+                  id="absence-notes"
+                  value={absenceForm.notes}
+                  onChange={(event) =>
+                    setAbsenceForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAbsenceDialog(false)}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRecordAbsence}
+                disabled={
+                  savingAbsence ||
+                  absenceIsNonWorkingDay ||
+                  !absenceForm.employeeId ||
+                  !absenceForm.date ||
+                  !absenceForm.reason
+                }
+              >
+                {savingAbsence && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t("timeLeave.attendance.absence.save")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Inline Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}
