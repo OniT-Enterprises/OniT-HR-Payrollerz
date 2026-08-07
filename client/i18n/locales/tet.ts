@@ -3475,6 +3475,37 @@ const messages = {
       },
     },
     attendance: {
+      absence: {
+        nonWorkingDay:
+          "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",
+        action: "Rejista falta",
+        title: "Rejista falta",
+        description:
+          "Loron ida ne'ebé ema la servisu. Hili motivu uluk — ne'e mak deside loron ne'e selu ka lae, no oinsá.",
+        reasonLabel: "Tanba sá mak nia falta?",
+        reasonPlaceholder: "Hili motivu",
+        reasons: {
+          sick: "Moras",
+          special: "Kazamentu, funerál ka loron komunidade",
+          unpaid: "Falta laiha pagamentu, ho akordu",
+          unjustified: "La mai servisu",
+        },
+        help: {
+          sick: "Lei Trabálhu selu: loron 6 primeiru kada tinan ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
+          special: "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 33.3).",
+          unpaid: "La selu. Sura ba loron 30 laiha pagamentu kada tinan ne'ebé Xefe permite.",
+          unjustified: "La selu, no rejista hasoru traballadór.",
+        },
+        certificate: "Ami iha sertifikadu médiku",
+        certificateHint:
+          "Lei husu sertifikadu médiku (Art. 33.4). Ita bele rejista loron ne'e agora no tau sertifikadu bainhira to'o.",
+        sickBalance: "Loron moras {{used}} husi {{entitled}} uza ona tinan ne'e.",
+        unjustifiedWarning:
+          "Hili ida-ne'e de'it se nia simplesmente la mai. Falta lahó justifikasaun lakon pagamentu loron ne'e nian, deskonta husi traballadór nia tempu servisu, no bele sai fundamentu ba hasai husi servisu (Lei Trabálhu Art. 33.5). Se nia moras, hili Moras.",
+        chooseReason: "Hili traballadór, loron no motivu.",
+        recorded: "Rejista ona ba {{name}}.",
+        save: "Rejista",
+      },
       title: "Prezensa",
       titleToday: "Prezensa Ohin",
       payrollHint: "Ba folha pagamentu",

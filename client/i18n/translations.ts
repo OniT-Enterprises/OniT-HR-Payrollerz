@@ -3173,6 +3173,33 @@ export const translations = {
         }
       },
       "attendance": {
+        "absence": {
+          "nonWorkingDay": "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
+          "action": "Record an absence",
+          "title": "Record an absence",
+          "description": "A day someone did not work. Pick the reason first — it decides whether the day is paid, and how.",
+          "reasonLabel": "Why were they away?",
+          "reasonPlaceholder": "Choose a reason",
+          "reasons": {
+            "sick": "Sick",
+            "special": "Wedding, funeral or community day",
+            "unpaid": "Unpaid time off, agreed",
+            "unjustified": "Did not come to work"
+          },
+          "help": {
+            "sick": "Paid by the Labour Law: the first 6 days a year at full pay, the next 6 at half pay (Art. 33.4).",
+            "special": "Paid in full — the law requires it (Labour Law Art. 33.3).",
+            "unpaid": "Not paid. Counts against the 30 unpaid days a year Xefe allows.",
+            "unjustified": "Not paid, and recorded against the worker."
+          },
+          "certificate": "We have the medical certificate",
+          "certificateHint": "The law asks for a medical certificate (Art. 33.4). You can record the day now and add it when it arrives.",
+          "sickBalance": "{{used}} of {{entitled}} sick days used this year.",
+          "unjustifiedWarning": "Only choose this if they simply did not come. An unjustified absence loses the day's pay, is deducted from the worker's seniority, and can be grounds for dismissal (Labour Law Art. 33.5). If they were sick, choose Sick instead.",
+          "chooseReason": "Choose the employee, the day and the reason.",
+          "recorded": "Recorded for {{name}}.",
+          "save": "Record it"
+        },
         "title": "Attendance",
         "titleToday": "Today's Attendance",
         "payrollHint": "Feeds into payroll",
@@ -10977,6 +11004,33 @@ export const translations = {
         }
       },
       "attendance": {
+        "absence": {
+          "nonWorkingDay": "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",
+          "action": "Rejista falta",
+          "title": "Rejista falta",
+          "description": "Loron ida ne'ebé ema la servisu. Hili motivu uluk — ne'e mak deside loron ne'e selu ka lae, no oinsá.",
+          "reasonLabel": "Tanba sá mak nia falta?",
+          "reasonPlaceholder": "Hili motivu",
+          "reasons": {
+            "sick": "Moras",
+            "special": "Kazamentu, funerál ka loron komunidade",
+            "unpaid": "Falta laiha pagamentu, ho akordu",
+            "unjustified": "La mai servisu"
+          },
+          "help": {
+            "sick": "Lei Trabálhu selu: loron 6 primeiru kada tinan ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
+            "special": "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 33.3).",
+            "unpaid": "La selu. Sura ba loron 30 laiha pagamentu kada tinan ne'ebé Xefe permite.",
+            "unjustified": "La selu, no rejista hasoru traballadór."
+          },
+          "certificate": "Ami iha sertifikadu médiku",
+          "certificateHint": "Lei husu sertifikadu médiku (Art. 33.4). Ita bele rejista loron ne'e agora no tau sertifikadu bainhira to'o.",
+          "sickBalance": "Loron moras {{used}} husi {{entitled}} uza ona tinan ne'e.",
+          "unjustifiedWarning": "Hili ida-ne'e de'it se nia simplesmente la mai. Falta lahó justifikasaun lakon pagamentu loron ne'e nian, deskonta husi traballadór nia tempu servisu, no bele sai fundamentu ba hasai husi servisu (Lei Trabálhu Art. 33.5). Se nia moras, hili Moras.",
+          "chooseReason": "Hili traballadór, loron no motivu.",
+          "recorded": "Rejista ona ba {{name}}.",
+          "save": "Rejista"
+        },
         "title": "Prezensa",
         "titleToday": "Prezensa Ohin",
         "payrollHint": "Ba folha pagamentu",
@@ -18781,6 +18835,33 @@ export const translations = {
         }
       },
       "attendance": {
+        "absence": {
+          "nonWorkingDay": "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
+          "action": "Registar uma falta",
+          "title": "Registar uma falta",
+          "description": "Um dia em que a pessoa não trabalhou. Escolha primeiro o motivo — é ele que decide se o dia é pago, e como.",
+          "reasonLabel": "Porque faltou?",
+          "reasonPlaceholder": "Escolha um motivo",
+          "reasons": {
+            "sick": "Doença",
+            "special": "Casamento, funeral ou dia comunitário",
+            "unpaid": "Falta sem vencimento, acordada",
+            "unjustified": "Não veio trabalhar"
+          },
+          "help": {
+            "sick": "Pago pela Lei do Trabalho: os primeiros 6 dias por ano por inteiro, os 6 seguintes a meio salário (art. 33.º/4).",
+            "special": "Pago por inteiro — a lei exige-o (Lei do Trabalho, art. 33.º/3).",
+            "unpaid": "Não pago. Conta para os 30 dias sem vencimento por ano que o Xefe permite.",
+            "unjustified": "Não pago, e registado contra o trabalhador."
+          },
+          "certificate": "Temos o certificado médico",
+          "certificateHint": "A lei pede certificado médico (art. 33.º/4). Pode registar o dia agora e juntá-lo quando chegar.",
+          "sickBalance": "{{used}} de {{entitled}} dias de doença usados este ano.",
+          "unjustifiedWarning": "Só escolha isto se a pessoa simplesmente não veio. Uma falta injustificada perde a remuneração do dia, é descontada na antiguidade do trabalhador e pode servir de fundamento para despedimento (Lei do Trabalho, art. 33.º/5). Se esteve doente, escolha Doença.",
+          "chooseReason": "Escolha o trabalhador, o dia e o motivo.",
+          "recorded": "Registado para {{name}}.",
+          "save": "Registar"
+        },
         "title": "Assiduidade",
         "titleToday": "Assiduidade de Hoje",
         "payrollHint": "Alimenta a folha de pagamento",

@@ -3498,6 +3498,37 @@ const messages = {
       },
     },
     attendance: {
+      absence: {
+        nonWorkingDay:
+          "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
+        action: "Record an absence",
+        title: "Record an absence",
+        description:
+          "A day someone did not work. Pick the reason first — it decides whether the day is paid, and how.",
+        reasonLabel: "Why were they away?",
+        reasonPlaceholder: "Choose a reason",
+        reasons: {
+          sick: "Sick",
+          special: "Wedding, funeral or community day",
+          unpaid: "Unpaid time off, agreed",
+          unjustified: "Did not come to work",
+        },
+        help: {
+          sick: "Paid by the Labour Law: the first 6 days a year at full pay, the next 6 at half pay (Art. 33.4).",
+          special: "Paid in full — the law requires it (Labour Law Art. 33.3).",
+          unpaid: "Not paid. Counts against the 30 unpaid days a year Xefe allows.",
+          unjustified: "Not paid, and recorded against the worker.",
+        },
+        certificate: "We have the medical certificate",
+        certificateHint:
+          "The law asks for a medical certificate (Art. 33.4). You can record the day now and add it when it arrives.",
+        sickBalance: "{{used}} of {{entitled}} sick days used this year.",
+        unjustifiedWarning:
+          "Only choose this if they simply did not come. An unjustified absence loses the day's pay, is deducted from the worker's seniority, and can be grounds for dismissal (Labour Law Art. 33.5). If they were sick, choose Sick instead.",
+        chooseReason: "Choose the employee, the day and the reason.",
+        recorded: "Recorded for {{name}}.",
+        save: "Record it",
+      },
       title: "Attendance",
       titleToday: "Today's Attendance",
       payrollHint: "Feeds into payroll",

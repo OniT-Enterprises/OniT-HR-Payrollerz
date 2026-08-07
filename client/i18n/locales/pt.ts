@@ -3552,6 +3552,37 @@ const messages = {
       },
     },
     attendance: {
+      absence: {
+        nonWorkingDay:
+          "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
+        action: "Registar uma falta",
+        title: "Registar uma falta",
+        description:
+          "Um dia em que a pessoa não trabalhou. Escolha primeiro o motivo — é ele que decide se o dia é pago, e como.",
+        reasonLabel: "Porque faltou?",
+        reasonPlaceholder: "Escolha um motivo",
+        reasons: {
+          sick: "Doença",
+          special: "Casamento, funeral ou dia comunitário",
+          unpaid: "Falta sem vencimento, acordada",
+          unjustified: "Não veio trabalhar",
+        },
+        help: {
+          sick: "Pago pela Lei do Trabalho: os primeiros 6 dias por ano por inteiro, os 6 seguintes a meio salário (art. 33.º/4).",
+          special: "Pago por inteiro — a lei exige-o (Lei do Trabalho, art. 33.º/3).",
+          unpaid: "Não pago. Conta para os 30 dias sem vencimento por ano que o Xefe permite.",
+          unjustified: "Não pago, e registado contra o trabalhador.",
+        },
+        certificate: "Temos o certificado médico",
+        certificateHint:
+          "A lei pede certificado médico (art. 33.º/4). Pode registar o dia agora e juntá-lo quando chegar.",
+        sickBalance: "{{used}} de {{entitled}} dias de doença usados este ano.",
+        unjustifiedWarning:
+          "Só escolha isto se a pessoa simplesmente não veio. Uma falta injustificada perde a remuneração do dia, é descontada na antiguidade do trabalhador e pode servir de fundamento para despedimento (Lei do Trabalho, art. 33.º/5). Se esteve doente, escolha Doença.",
+        chooseReason: "Escolha o trabalhador, o dia e o motivo.",
+        recorded: "Registado para {{name}}.",
+        save: "Registar",
+      },
       title: "Assiduidade",
       titleToday: "Assiduidade de Hoje",
       payrollHint: "Alimenta a folha de pagamento",
