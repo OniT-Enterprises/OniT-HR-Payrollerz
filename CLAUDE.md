@@ -133,10 +133,22 @@ PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
 ```
 
 **Local Firestore emulator port.** 8081 is regularly held by another project on
-this machine (rezerva's Metro). Override it in `firebase.e2e.json` /
-`firebase.dev.json` **and** export `FIRESTORE_EMULATOR_HOST`, because
-`tests/e2e/helpers/admin.ts` hardcodes the port with `||=`. Revert the JSON
-before committing.
+this machine (rezerva's Metro). THREE things need the new port, and missing the
+third looks like a product bug, not a config one — the app renders, the form
+fills, and the create button sits on "Creating…" forever because the browser is
+talking to Metro:
+
+```bash
+# 1. firebase.e2e.json / firebase.dev.json — emulators.firestore.port
+# 2. FIRESTORE_EMULATOR_HOST=localhost:<port>   (tests/e2e/helpers/admin.ts uses ||=)
+# 3. VITE_FIREBASE_FIRESTORE_EMULATOR_PORT=<port>   (the BROWSER app; defaults to
+#    8081 in client/lib/firebase-core.ts)
+```
+
+Revert the JSON before committing. Also kill leftover emulators from a failed
+run before retrying — a stale `cloud-firestore-emulator` jar keeps the port and
+the next start dies with "port taken":
+`pgrep -fl cloud-firestore-emulator`.
 
 ### Verifying from a git worktree
 
