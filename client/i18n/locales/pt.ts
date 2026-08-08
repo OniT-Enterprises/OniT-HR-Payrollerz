@@ -1174,16 +1174,17 @@ const messages = {
         "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
       labourSub: "Lei laboral",
       labour: {
-        hours: "Semana de 44 horas, dia de 8 horas",
+        hours: "Período normal de trabalho limitado a 44 h por semana e 8 h por dia",
         ot: "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
         night: "Trabalho noturno das 21h00 às 06h00 com +25%",
         otCap:
           "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
         sick: "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
         cap: "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
-        thirteenth: "13.º mês, proporcional, a pagar até 20 de dezembro",
+        thirteenth:
+          "13.º mês: valor não inferior a 1 salário mensal base, proporcional, a pagar até 20 de dezembro",
         severance:
-          "Compensação: um mês por cada cinco anos completos de serviço",
+          "Compensação: pelo menos um mês por cada cinco anos completos de serviço — o mínimo legal",
       },
       taxSub: "Imposto sobre salários e retenções",
       tax: {
@@ -1191,7 +1192,7 @@ const messages = {
           "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
         nonResident: "Não residentes: 10% desde o primeiro dólar",
         periods: "Limiar ajustado aos períodos de pagamento reais do mês",
-        wht: "Retenção a fornecedores: nove categorias, da renda à construção",
+        wht: "Retenção a fornecedores: oito categorias, da renda à construção",
         refuse: "Folhas do regime petrolífero são recusadas, nunca adivinhadas",
       },
       inssSub: "Segurança social",

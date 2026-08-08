@@ -1161,22 +1161,22 @@ const messages = {
         "The payroll core implements Law 4/2012, Law 8/2008, Law 12/2016, DL 20/2017 and DL 30/2021 — with the statutory text quoted in the code next to the arithmetic it governs. These are tested rules, not lookup tables.",
       labourSub: "Labour law",
       labour: {
-        hours: "44-hour week, 8-hour day",
+        hours: "Normal hours capped at 44 a week and 8 a day",
         ot: "Overtime ×1.5 · rest day and public holiday ×2.0",
         night: "Night work 21:00–06:00 at +25%",
         otCap:
           "Overtime capped at 16 h/week and 4 h/day, validated on every run",
         sick: "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
         cap: "30% monthly deduction ceiling, reconciled to the cent",
-        thirteenth: "13th month, prorated, due 20 December",
-        severance: "Severance: one month per completed five years of service",
+        thirteenth: "13th month: at least one month's base salary, prorated, payable by 20 December",
+        severance: "Severance: at least one month per completed five years of service — the statutory minimum",
       },
       taxSub: "Wage income tax & withholding",
       tax: {
         resident: "Residents: 10% on wages above $500/month, per employee",
         nonResident: "Non-residents: flat 10% from the first dollar",
         periods: "Threshold prorated by the actual pay periods in the month",
-        wht: "Supplier withholding: nine categories, from rent to construction",
+        wht: "Supplier withholding: eight categories, from rent to construction",
         refuse: "Petroleum-regime payrolls are refused, never guessed",
       },
       inssSub: "Social security",
@@ -1481,7 +1481,7 @@ const messages = {
       },
       modeTitle: "Advanced detail appears only when it helps.",
       modeDescription:
-        "Accountants see specialist tax controls automatically. An owner can turn on the same mode if their accountant asks. Everyone else keeps the simple flow.",
+        "Accountants see specialist tax controls automatically, and any owner can switch them off to keep the simple flow. Withholding, VAT and the detailed filing screens all live behind that one switch.",
     },
     workflow: {
       eyebrow: "How work moves through Xefe",

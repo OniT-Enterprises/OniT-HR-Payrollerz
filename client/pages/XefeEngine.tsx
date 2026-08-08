@@ -115,8 +115,11 @@ export default function XefeEngine() {
       title: "Lei Tributária — Lei 8/2008",
       subKey: "enginePage.law.taxSub",
       items: [
-        { key: "enginePage.law.tax.resident", art: "Anexo V" },
-        { key: "enginePage.law.tax.nonResident", art: "Art. 20–22" },
+        // The RATES live in Schedule V, not in the sections that delegate to
+        // it: Secs. 20 and 22 both defer, and para 1(b) is where the
+        // non-resident figure is actually printed.
+        { key: "enginePage.law.tax.resident", art: "Anexo V(1)(a)" },
+        { key: "enginePage.law.tax.nonResident", art: "Anexo V(1)(b)" },
         { key: "enginePage.law.tax.periods", art: "" },
         { key: "enginePage.law.tax.wht", art: "Art. 53–60" },
         { key: "enginePage.law.tax.refuse", art: "" },
@@ -372,7 +375,7 @@ export default function XefeEngine() {
                     <p
                       className={cn(
                         "font-mono text-[11px] font-bold uppercase tracking-[0.2em]",
-                        tier.top ? "text-amber-300" : "text-zinc-500",
+                        tier.top ? "text-amber-300" : "text-zinc-400",
                       )}
                     >
                       {t("enginePage.proof.tierLabel")} {index + 1}
@@ -415,7 +418,7 @@ export default function XefeEngine() {
                               "inline-block whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                               row.confirmed
                                 ? "border-lime-400/30 text-lime-300"
-                                : "border-white/15 text-zinc-500",
+                                : "border-white/15 text-zinc-400",
                             )}
                           >
                             {t(

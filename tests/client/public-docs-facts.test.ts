@@ -199,3 +199,74 @@ describe('public docs — capability claims match the product', () => {
     expect(gettingStarted).toContain('DL 20/2017, art. 3.º(2)');
   });
 });
+
+/**
+ * The SHOULD-FIX tier from the same 2026-08-08 fact-check. None of these
+ * misled about money; each was a claim an accountant would check and find
+ * wrong, on a page whose credibility rests on being checkable.
+ */
+const en = readFileSync(join(process.cwd(), 'client/i18n/locales/en.ts'), 'utf8');
+const runningPayroll = docs('running-payroll');
+
+describe('/engine — counts and citations an accountant can check', () => {
+  it('says EIGHT withholding categories, not nine', () => {
+    // Taxes and Duties Act Part VI: services (a)-(d) = 4, plus Royalties,
+    // Rent, Prizes and Non-resident = 8. "Nine" came from a 9-member TS enum
+    // whose `dividend` member withholds NOTHING — it is exempt income under
+    // Sec. 29(f). The rendered rate table on the same page has eight rows, so
+    // the page contradicted itself in the one place a reader can count.
+    expect(en).toContain('eight categories');
+    expect(en).not.toContain('nine categories');
+  });
+
+  it('pins the wage rates to Schedule V, which is where they are printed', () => {
+    // Secs. 20 and 22 both DELEGATE to Schedule V; neither states a rate. A
+    // reader who opens Sec. 20-22 looking for 10% finds a cross-reference.
+    expect(engine).toContain('art: "Anexo V(1)(a)"');
+    expect(engine).toContain('art: "Anexo V(1)(b)"');
+    expect(engine).not.toContain('art: "Art. 20–22"');
+  });
+
+  it('states the 44-hour week as the ceiling Art. 25(1) makes it', () => {
+    // "não pode ultrapassar 8 horas por dia, nem 44 horas por semana", and
+    // Art. 29(2) calls those "os limites máximos". Publishing it as a norm
+    // invites an employer to treat 44 as a target rather than a cap.
+    expect(en).toContain('Normal hours capped at 44 a week');
+    expect(en).not.toContain('hours: "44-hour week, 8-hour day"');
+  });
+});
+
+describe('/engine — floors read as floors', () => {
+  it('calls the Art. 56 severance figure the statutory minimum', () => {
+    // Our own guide records that TL employers commonly contract a month per
+    // YEAR — five times the floor. The engine can only ever emit the floor
+    // (there is no override path), so the page must not present it as the
+    // answer.
+    expect(en).toContain('the statutory minimum');
+  });
+
+  it('says the 13th month is AT LEAST one month of base salary', () => {
+    // Art. 44(1): "valor não inferior a 1 salário mensal". Base salary, and a
+    // floor — two qualifiers the old string carried neither of.
+    expect(en).toContain("at least one month's base salary");
+  });
+});
+
+describe('public docs — capability claims match the shipped defaults', () => {
+  it('does not promise a bank pack to a company that pays cash', () => {
+    // Cash is a first-class path in Xefe (it posts against cash on hand), and
+    // it is the norm in Timor-Leste. The claim was stated universally.
+    expect(runningPayroll).toContain('If you pay by bank transfer');
+    expect(runningPayroll).not.toContain(
+      'Marking a run paid also generates your salary bank pack.',
+    );
+  });
+
+  it('describes the advanced-tax default the way the code actually behaves', () => {
+    // TenantContext: `advancedTaxMode !== false`, so a tenant that has never
+    // touched the setting gets advanced mode. The page said the opposite —
+    // "Everyone else keeps the simple flow" — which is the inversion.
+    expect(en).not.toContain('Everyone else keeps the simple flow');
+    expect(en).toContain('any owner can switch them off');
+  });
+});

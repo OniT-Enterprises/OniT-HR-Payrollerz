@@ -1066,21 +1066,21 @@ export const translations = {
         "description": "The payroll core implements Law 4/2012, Law 8/2008, Law 12/2016, DL 20/2017 and DL 30/2021 — with the statutory text quoted in the code next to the arithmetic it governs. These are tested rules, not lookup tables.",
         "labourSub": "Labour law",
         "labour": {
-          "hours": "44-hour week, 8-hour day",
+          "hours": "Normal hours capped at 44 a week and 8 a day",
           "ot": "Overtime ×1.5 · rest day and public holiday ×2.0",
           "night": "Night work 21:00–06:00 at +25%",
           "otCap": "Overtime capped at 16 h/week and 4 h/day, validated on every run",
           "sick": "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
           "cap": "30% monthly deduction ceiling, reconciled to the cent",
-          "thirteenth": "13th month, prorated, due 20 December",
-          "severance": "Severance: one month per completed five years of service"
+          "thirteenth": "13th month: at least one month's base salary, prorated, payable by 20 December",
+          "severance": "Severance: at least one month per completed five years of service — the statutory minimum"
         },
         "taxSub": "Wage income tax & withholding",
         "tax": {
           "resident": "Residents: 10% on wages above $500/month, per employee",
           "nonResident": "Non-residents: flat 10% from the first dollar",
           "periods": "Threshold prorated by the actual pay periods in the month",
-          "wht": "Supplier withholding: nine categories, from rent to construction",
+          "wht": "Supplier withholding: eight categories, from rent to construction",
           "refuse": "Petroleum-regime payrolls are refused, never guessed"
         },
         "inssSub": "Social security",
@@ -1346,7 +1346,7 @@ export const translations = {
           }
         },
         "modeTitle": "Advanced detail appears only when it helps.",
-        "modeDescription": "Accountants see specialist tax controls automatically. An owner can turn on the same mode if their accountant asks. Everyone else keeps the simple flow."
+        "modeDescription": "Accountants see specialist tax controls automatically, and any owner can switch them off to keep the simple flow. Withholding, VAT and the detailed filing screens all live behind that one switch."
       },
       "workflow": {
         "eyebrow": "How work moves through Xefe",
@@ -9015,21 +9015,21 @@ export const translations = {
         "description": "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
         "labourSub": "Lei laboral",
         "labour": {
-          "hours": "Semana oras 44, loron oras 8",
+          "hours": "Oras servisu normál: máximu oras 44 kada semana no oras 8 kada loron",
           "ot": "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
           "night": "Servisu kalan oras 21:00–06:00 ho +25%",
           "otCap": "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
           "sick": "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
           "cap": "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
-          "thirteenth": "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
-          "severance": "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak"
+          "thirteenth": "Subsídiu anuál (fulan-13): valór la menus husi saláriu báziku fulan ida, proporsionál, tenke selu to'o 20 Dezembru",
+          "severance": "Kompensasaun servisu: pelu menus fulan ida ba tinan 5 kompletu ida-idak — mínimu tuir lei"
         },
         "taxSub": "Impostu saláriu no retensaun",
         "tax": {
           "resident": "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
           "nonResident": "La'ós rezidente: 10% husi dolar primeiru",
           "periods": "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
-          "wht": "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+          "wht": "Retensaun ba fornesedór: kategoria walu, husi renda to'o konstrusaun",
           "refuse": "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha"
         },
         "inssSub": "Seguransa sosiál",
@@ -16964,21 +16964,21 @@ export const translations = {
         "description": "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
         "labourSub": "Lei laboral",
         "labour": {
-          "hours": "Semana de 44 horas, dia de 8 horas",
+          "hours": "Período normal de trabalho limitado a 44 h por semana e 8 h por dia",
           "ot": "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
           "night": "Trabalho noturno das 21h00 às 06h00 com +25%",
           "otCap": "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
           "sick": "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
           "cap": "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
-          "thirteenth": "13.º mês, proporcional, a pagar até 20 de dezembro",
-          "severance": "Compensação: um mês por cada cinco anos completos de serviço"
+          "thirteenth": "13.º mês: valor não inferior a 1 salário mensal base, proporcional, a pagar até 20 de dezembro",
+          "severance": "Compensação: pelo menos um mês por cada cinco anos completos de serviço — o mínimo legal"
         },
         "taxSub": "Imposto sobre salários e retenções",
         "tax": {
           "resident": "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
           "nonResident": "Não residentes: 10% desde o primeiro dólar",
           "periods": "Limiar ajustado aos períodos de pagamento reais do mês",
-          "wht": "Retenção a fornecedores: nove categorias, da renda à construção",
+          "wht": "Retenção a fornecedores: oito categorias, da renda à construção",
           "refuse": "Folhas do regime petrolífero são recusadas, nunca adivinhadas"
         },
         "inssSub": "Segurança social",

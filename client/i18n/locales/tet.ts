@@ -1162,7 +1162,7 @@ const messages = {
         "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
       labourSub: "Lei laboral",
       labour: {
-        hours: "Semana oras 44, loron oras 8",
+        hours: "Oras servisu normál: máximu oras 44 kada semana no oras 8 kada loron",
         ot: "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
         night: "Servisu kalan oras 21:00–06:00 ho +25%",
         otCap:
@@ -1170,9 +1170,9 @@ const messages = {
         sick: "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
         cap: "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
         thirteenth:
-          "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
+          "Subsídiu anuál (fulan-13): valór la menus husi saláriu báziku fulan ida, proporsionál, tenke selu to'o 20 Dezembru",
         severance:
-          "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak",
+          "Kompensasaun servisu: pelu menus fulan ida ba tinan 5 kompletu ida-idak — mínimu tuir lei",
       },
       taxSub: "Impostu saláriu no retensaun",
       tax: {
@@ -1180,7 +1180,7 @@ const messages = {
           "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
         nonResident: "La'ós rezidente: 10% husi dolar primeiru",
         periods: "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
-        wht: "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+        wht: "Retensaun ba fornesedór: kategoria walu, husi renda to'o konstrusaun",
         refuse: "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha",
       },
       inssSub: "Seguransa sosiál",
