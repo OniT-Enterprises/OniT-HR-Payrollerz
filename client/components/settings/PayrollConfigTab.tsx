@@ -414,6 +414,30 @@ export function PayrollConfigTab({
                   </p>
                 </div>
               </div>
+
+              {/* Lei 8/2008 Sec. 72.2 + Schedule IX. A Contractor's employees are
+                  a different tax REGIME, not a different rate — so Xefe refuses
+                  the run rather than computing it wrong. */}
+              <div className="flex items-start gap-2 pt-1">
+                <Switch
+                  id="petroleum-contractor"
+                  checked={payrollConfig.petroleumContractor ?? false}
+                  onCheckedChange={(checked) =>
+                    setPayrollConfig({
+                      ...payrollConfig,
+                      petroleumContractor: checked,
+                    })
+                  }
+                />
+                <div>
+                  <Label htmlFor="petroleum-contractor">
+                    {t('settings.payroll.petroleumLabel')}
+                  </Label>
+                  <p className="text-xs text-muted-foreground max-w-prose">
+                    {t('settings.payroll.petroleumHint')}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <Separator />
