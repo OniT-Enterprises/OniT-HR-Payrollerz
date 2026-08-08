@@ -222,6 +222,33 @@ Heads or full-time equivalents? And do foreign rotational workers count toward t
   the whole payroll, so it is all-or-nothing per tenant.
 - **Xefe today:** counts heads on the run.
 
+### B10. Does the employer-paid maternity duty revive if the worker fails the INSS garantia? — **we now think NO, and the worker bears it**
+
+Read DL 18/2017 in full on 2026-08-08 (it was in the mining directory all along;
+our earlier searches missed it because the text reads "N.º 18 **/**2017" with a
+space). Three things are now on the record:
+
+- **Art. 15(1)** — "A atribuição dos subsídios depende de os beneficiários, à data
+  do facto determinante da proteção, terem cumprido um prazo de garantia de
+  **seis meses civis, seguidos ou interpolados**, com registo de remunerações nos
+  últimos 12 meses." Confirms the 6-in-12 rule Xefe states.
+- **Art. 18** — reference wage is **R/180**, R being the remuneration registered in
+  the six civil months preceding the second month before the event. And
+  "**não é considerado o subsídio anual**" — the 13th month is excluded from it.
+- **Art. 19(1)** — subsidies are due "a partir do primeiro dia do mês **seguinte**
+  à data de apresentação do requerimento". A late claim loses months.
+
+**On the question itself: neither instrument creates an employer fallback.**
+DL 18/2017 governs only the subsidy and is silent on the employer. Lei 4/2012
+Art. 61 conditioned the employer's duty on "**até ao estabelecimento do sistema de
+segurança social**" — a condition about the SYSTEM existing, not about an
+individual qualifying. The system exists, so on the plain text the duty is spent
+for everyone, and a worker who misses the garantia is simply unprotected.
+
+That is what Xefe assumes (employer-unpaid, with a "confirm with your accountant"
+note). We would rather hear you say it than keep inferring it — and if the real
+practice is that the employer pays anyway, that is a money default we have wrong.
+
 ### B10. Does the employer-paid maternity duty revive if the worker fails the INSS garantia?
 DL 18/2017 has INSS pay a parental subsidy at 100% of the reference wage to a
 worker with 6 months of contributions in the last 12. If she does **not** qualify,

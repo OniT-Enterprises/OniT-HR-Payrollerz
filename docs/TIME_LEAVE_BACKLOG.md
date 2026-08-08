@@ -225,13 +225,26 @@ statute does not settle it**, which we can now say positively.
   worker) and the substance-over-form rationale is defensible — but Art. 9(d) is
   unqualified. Flagged, not called a defect.
 
-### 3b.4 Still unverifiable
+### 3b.4 ~~Still unverifiable~~ — DISCHARGED 2026-08-08
 
-**Lei 8/2008 Secs. 36.1–36.11** (depreciation pooling) are missing from *both*
-local sources — `tda2008.txt` jumps from Sec. 35 to 36.12. The July §7 caveat
-stands. 36.12–36.17 and Schedule VII survive, so the 100% rate is safe; the pool
-definitions and add/dispose arithmetic are not verifiable. Needs a clean ATTL or
-Jornal da República copy of Chapter VII Part II.
+**Lei 8/2008 Secs. 36.1–36.11** are now read, from the Government's own published
+copy (`timor-leste.gov.tl/.../Law_2008_8_Taxes_and_Duties_.pdf`, saved to
+`~/Sites/m365-mail-export/laws/tda2008_official_gov.pdf`). Both earlier sources
+were truncated; this one is complete.
+
+Schedule VII makes the pooling mechanics nearly vacuous — **one pool, 100% rate**
+— so the deduction is full expensing of additions less disposals. Xefe's land
+handling and Form C options both check out. Detail in
+`docs/STATUTE_RECHECK_AUG2026.md` §6.
+
+**Newly open, small:** under full expensing the written-down value is always zero,
+so Sec. 36.11 makes disposal proceeds taxable income in the year. Whether Form C's
+`full_expensing` path nets disposals is unverified.
+
+**Also found:** a separate **Schedule X, "Depreciation and Amortisation for
+Contractors"**. Petroleum differs on depreciation as well as wage tax, which
+strengthens §3b.1 — refusing a petroleum payroll run is right because it is a
+parallel regime, not a rate tweak.
 
 ---
 
