@@ -5,7 +5,8 @@ Ordered by consequence, not by effort. Each item says what is wrong **today**, s
 none of them needs this session's context to pick up.
 
 Legal questions are not here — they live in `docs/NICO_OPEN_QUESTIONS.md`
-(**A6** Saturday, **A7** Art. 64 childcare, **B13** sick-leave citation and the
+(**A6** Saturday, **A7** Art. 64 childcare — now BUILT, two narrower questions
+left, **B13** sick-leave citation and the
 certificate, **B14** the annual-leave waiting period). This file is engineering.
 
 ---

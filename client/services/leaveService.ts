@@ -40,6 +40,10 @@ export type LeaveType =
   // remuneração ou de quaisquer direitos, para realização de provas de
   // avaliação".
   | "study"
+  // Childcare assistance — Lei 4/2012 Art. 64(1): up to 5 days/year for a
+  // parent of a child under 10, "em caso de doença ou acidente daquele".
+  // Unpaid by Art. 64(2), which costs the day's pay and nothing further.
+  | "childcare"
   | "custom"
   // Legacy render-only: bereavement/marriage no longer exist as requestable
   // types (they were never separate types in TL law — Art. 33(3) pools them
@@ -249,6 +253,20 @@ export const TL_LEAVE_TYPES = [
     requiresCertificate: false,
     description:
       "Paid absence for exams (Labour Law Art. 76.3, worker-students only). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
+  },
+  {
+    // Lei 4/2012 Art. 64(1): "Os trabalhadores com filhos menores de 10 anos
+    // têm direito a faltar ao trabalho, até ao limite máximo de 5 dias por
+    // ano, para prestar assistência, inadiável e imprescindível, em caso de
+    // doença ou acidente daquele, devendo apresentar justificação."
+    // Art. 64(2) makes it unpaid — and only unpaid.
+    id: "childcare",
+    name: "Childcare Leave (Assistência a Filhos, Art. 64)",
+    daysPerYear: 5,
+    isPaid: false,
+    requiresCertificate: true,
+    description:
+      "Up to 5 days a year to care for your own child under 10 when the child is ill or has had an accident and the care cannot wait (Labour Law Art. 64.1). Justification is required. These days are unpaid — and that is the only consequence: they are not taken out of annual leave and are not an unjustified absence (Art. 64.2).",
   },
 ];
 

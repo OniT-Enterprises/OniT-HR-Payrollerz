@@ -118,10 +118,17 @@ numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
 | `special`     | `specialLeave`       | Art. 33(3)                                                                      | 3                                         | 100%                                                                | One pooled allotment: marriage + family death + community/religious events; proof per Art. 33(7)                                 |
 | `unpaid`      | `unpaidLeave`        | —                                                                               | 30                                        | 0%                                                                  |                                                                                                                                  |
 | `study`       | `studyLeave`         | Art. 76(3): “sem perda da remuneração … para realização de provas de avaliação” | 3 (Xefe default; the statute sets no cap) | 100%                                                                | Exams only, worker-students; proof of enrolment/exam schedule per Art. 76(5)                                                     |
+| `childcare`   | `childcareLeave`     | Art. 64(1): “até ao limite máximo de 5 dias por ano … em caso de doença ou acidente” | 5 (statutory floor — see below)           | **0%** — Art. 64(2)                                                 | Parent of a child under 10, care that cannot wait; justification required. Art. 64(2) bounds the cost: the day’s pay and NOTHING else — never netted off annual leave, never “unjustified” |
 | (custom)      | `customLeaveTypes[]` | —                                                                               | tenant-set                                | tenant-set                                                          | Created in Settings → Time Off Policies; id charset `[a-zA-Z0-9_-]`, must not shadow built-ins; deactivate instead of delete     |
 
 Legacy render-only ids `bereavement`/`marriage` still display but are not
 requestable (pooled into `special`).
+
+**`childcare`’s 5 days are a FLOOR, not a cap.** Art. 64(1) says “limite
+máximo”, but that phrase caps what the *worker* may claim, which makes it the
+minimum the *employer* must offer — the same direction as Art. 32’s 12 days.
+Settings warns below 5 and offers a one-tap repair; going above 5 is a lawful
+contractual choice and is left alone.
 
 **Sick-leave citation, settled 2026-08-07.** The repo carried two different
 and both-wrong articles for sick leave: `constants-tl.ts` said Art. 42 (that

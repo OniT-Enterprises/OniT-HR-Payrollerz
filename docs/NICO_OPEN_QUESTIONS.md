@@ -147,10 +147,22 @@ até ao limite máximo de 5 dias por ano, para prestar assistência, inadiável 
 imprescindível, em caso de doença ou acidente daquele" — and Art. 64(2) makes it
 **unpaid** ("determina apenas a perda de remuneração relativa aos dias em causa").
 
-Xefe has no leave type for this. An employer refusing it would be refusing a
-statutory right; today the absence would be recorded as ordinary unpaid leave,
-which loses the fact that it could not lawfully be refused. Is a distinct type
-worth having, or is unpaid leave with a note good enough in practice?
+**BUILT 2026-08-08 — the question below is now narrower.** Xefe has a distinct
+`childcare` type: 5 days, unpaid, justification required, its own entitlement
+bucket so it is never drawn from annual leave. The 5 days are treated as a
+**floor** on the employer (Settings warns below 5, as it does for Art. 32's 12),
+on the reading that "limite máximo" caps the worker's claim rather than the
+employer's generosity.
+
+Two things still worth a second opinion:
+
+1. **Is the floor reading right?** If "limite máximo" is instead a hard cap on
+   what may be granted *as this type*, the warning is wrong and days above 5
+   should be ordinary unpaid leave.
+2. **Does "filhos menores de 10 anos" reach beyond biological children** —
+   adopted, fostered, or a dependent child of the household? Xefe does not ask
+   who the child is, which is permissive; if the statute is narrower, employers
+   relying on Xefe would be granting more than they owe.
 
 ### A8. Is the leave year the calendar year, or the worker's own year?
 Art. 32(1) reads **"O trabalhador tem direito a férias remuneradas por cada ano de

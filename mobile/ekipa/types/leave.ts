@@ -18,6 +18,9 @@ export type LeaveType =
   | 'unpaid'
   // Worker-student exam leave — Lei 4/2012 Art. 76(3), paid.
   | 'study'
+  // Assistance to a sick child under 10 — Lei 4/2012 Art. 64, 5 days/year,
+  // unpaid by Art. 64(2) and unpaid is the whole of the consequence.
+  | 'childcare'
   | 'custom'
   // Legacy render-only: no longer requestable (pooled into 'special');
   // kept so existing requests keep rendering.

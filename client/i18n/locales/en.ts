@@ -1949,6 +1949,15 @@ const messages = {
             "{{days}} paid days a year for exams. The law sets no limit — this number is yours.",
           daysLabel: "Exam days your company allows each year",
         },
+        childcare: {
+          title: "Caring for a sick child",
+          summary:
+            "{{days}} unpaid days a year, for a child under 10 who is ill or hurt.",
+          daysLabel: "Days a year for caring for a sick child",
+          belowMinimum:
+            "The law gives every parent of a child under 10 at least 5 of these days a year (Art. 64.1). Fewer than 5 is below the legal minimum.",
+          setMinimum: "Set to 5 days",
+        },
         unpaid: {
           title: "Unpaid time off",
           summary: "Up to {{days}} days a year.",
@@ -1984,6 +1993,9 @@ const messages = {
       studyLeave: "Study Leave (Art. 76.3)",
       studyLeaveHint:
         "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment.",
+      childcareLeave: "Childcare Leave (Art. 64)",
+      childcareLeaveHint:
+        "Up to 5 days a year for a worker with a child under 10, to give care that cannot wait when that child is ill or has had an accident (Labour Law Art. 64.1). The worker must give a justification. The days are unpaid — and Art. 64.2 says that is the whole of the consequence: the absence costs that day's pay and nothing else. It does not come out of annual leave, and it is never treated as an unjustified absence.",
       parentalInssExplainer:
         "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave.",
       parentalPaidWarning:
@@ -3394,6 +3406,8 @@ const messages = {
         submit: "Submit Request",
       },
       dialog: {
+        childcareLeaveHint:
+          "Up to 5 days a year to care for your own child under 10 when the child is ill or has had an accident and the care cannot wait (Labour Law Art. 64.1). Justification is required. These days are unpaid — and that is the only consequence: they do not come out of your annual leave and are not an unjustified absence (Art. 64.2).",
         studyLeaveHint:
           "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
         miscarriageInssHint:
@@ -3497,6 +3511,7 @@ const messages = {
         unpaid: "Unpaid Leave",
         marriage: "Marriage Leave",
         study: "Study Leave",
+        childcare: "Childcare Leave",
         custom: "Custom Leave",
       },
       certificates: {

@@ -1971,6 +1971,15 @@ const messages = {
             "{{days}} dias pagos por ano para exames. A lei não fixa limite — este número é seu.",
           daysLabel: "Dias de exame que a sua empresa concede por ano",
         },
+        childcare: {
+          title: "Assistência a filho doente",
+          summary:
+            "{{days}} dias por ano, sem vencimento, para filho menor de 10 anos doente ou acidentado.",
+          daysLabel: "Dias por ano para assistência a filho doente",
+          belowMinimum:
+            "A lei dá a qualquer trabalhador com filho menor de 10 anos pelo menos 5 destes dias por ano (Art. 64.1). Menos de 5 fica abaixo do mínimo legal.",
+          setMinimum: "Definir 5 dias",
+        },
         unpaid: {
           title: "Licença sem vencimento",
           summary: "Até {{days}} dias por ano.",
@@ -2007,6 +2016,9 @@ const messages = {
       studyLeave: "Licença de Estudo (art. 76.º(3))",
       studyLeaveHint:
         "Ausência paga para os trabalhadores-estudantes realizarem provas de avaliação, sem perda de remuneração (Lei do Trabalho, art. 76.º(3)). Apenas para provas — o empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)). A lei não fixa um limite anual; os dias por ano aqui são a alocação da empresa.",
+      childcareLeave: "Falta para Assistência a Filhos (art. 64.º)",
+      childcareLeaveHint:
+        "Até 5 dias por ano para o trabalhador com filho menor de 10 anos prestar assistência inadiável e imprescindível em caso de doença ou acidente desse filho (Lei do Trabalho, art. 64.º(1)). O trabalhador deve apresentar justificação. Os dias não são pagos — e o art. 64.º(2) diz que essa é toda a consequência: a falta determina apenas a perda da remuneração desses dias. Não é descontada nas férias nem tratada como falta injustificada.",
       parentalInssExplainer:
         "Pago a 100% pelo INSS diretamente ao trabalhador quando este tem 6 meses de contribuições nos últimos 12 (DL 18/2017) — normalmente o empregador não paga nada durante a licença.",
       parentalPaidWarning:
@@ -3445,6 +3457,8 @@ const messages = {
         submit: "Submeter Pedido",
       },
       dialog: {
+        childcareLeaveHint:
+          "Até 5 dias por ano para prestar assistência ao seu filho menor de 10 anos quando este está doente ou sofreu um acidente e a assistência é inadiável (Lei do Trabalho, art. 64.º(1)). É necessário apresentar justificação. Estes dias não são pagos — e essa é a única consequência: não são descontados nas suas férias nem tratados como falta injustificada (art. 64.º(2)).",
         studyLeaveHint:
           "Ausência paga apenas para provas de avaliação — os trabalhadores-estudantes mantêm a remuneração nos dias de avaliação (Lei do Trabalho, art. 76.º(3)). O empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)).",
         miscarriageInssHint:
@@ -3549,6 +3563,7 @@ const messages = {
         unpaid: "Licença sem Vencimento",
         marriage: "Licença por Casamento",
         study: "Licença de Estudo",
+        childcare: "Assistência a Filhos",
         custom: "Licença Personalizada",
       },
       certificates: {

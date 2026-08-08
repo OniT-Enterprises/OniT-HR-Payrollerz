@@ -88,6 +88,9 @@ interface ShiftInput {
 // after a pregnancy interruption (4 calendar weeks ≈ 20 working days).
 // study — Lei 4/2012 Art. 76(3): worker-student exam absence "sem perda da
 // remuneração"; 3 working days/year is Xefe's configurable default.
+// childcare — Lei 4/2012 Art. 64(1): 5 days/year, statutory cap not a default,
+// for a parent of a child under 10 giving "assistência, inadiável e
+// imprescindível" during that child's illness or accident.
 const DEFAULT_ENTITLEMENTS: Record<string, number> = {
   annual: 12,
   sick: 12,
@@ -97,6 +100,7 @@ const DEFAULT_ENTITLEMENTS: Record<string, number> = {
   unpaid: 30,
   special: 3,
   study: 3,
+  childcare: 5,
   custom: 0,
 };
 
@@ -381,6 +385,7 @@ function entitlementsFromConfig(
     "specialLeave",
     "unpaidLeave",
     "studyLeave",
+    "childcareLeave",
   ];
   for (const key of policyKeys) {
     const policy = policies[key] as Record<string, unknown> | undefined;
@@ -581,6 +586,7 @@ function leavePayFraction(
         policies.specialLeave,
         policies.unpaidLeave,
         policies.studyLeave,
+        policies.childcareLeave,
         ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
       ]
       .map((policy) => policy as Record<string, unknown> | undefined)
@@ -599,10 +605,16 @@ function leavePayFraction(
   // salary. A tenant that explicitly configures a paid percentage for these
   // types keeps it (deliberate employer-paid option, above). Study leave
   // (Art. 76(3) "sem perda da remuneração") falls through to paid.
+  // Childcare is unpaid by statute — Art. 64(2) is explicit that the absence
+  // "determina apenas a perda de remuneração relativa aos dias em causa". The
+  // "apenas" is the protection: the day costs its own pay and NOTHING else,
+  // so it must never be quietly taken out of annual leave or treated as
+  // unjustified. An employer may still choose to pay it (configured, above).
   return leaveType === "unpaid"
     || leaveType === "maternity"
     || leaveType === "paternity"
     || leaveType === "miscarriage"
+    || leaveType === "childcare"
     ? 0
     : 1;
 }
@@ -1172,6 +1184,7 @@ export const createLeaveRequest = onCall(async (request) => {
         policies.specialLeave,
         policies.unpaidLeave,
         policies.studyLeave,
+        policies.childcareLeave,
         ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
       ].map((policy) => policy as Record<string, unknown> | undefined)
     : [];
@@ -1218,7 +1231,8 @@ export const createLeaveRequest = onCall(async (request) => {
 
   // Probation gate (tenant policy): annual leave cannot start before hire date
   // + probationMonthsBeforeLeave. Statutorily protected absences (sick,
-  // maternity, miscarriage, special, study) are never blocked by probation,
+  // maternity, miscarriage, special, study, childcare) are never blocked by
+  // probation,
   // and owners/HR admins may knowingly override, same as the balance override.
   if (leaveType === "annual" && !overrideBalance) {
     const eligibleFrom = probationEligibleFromDate(
