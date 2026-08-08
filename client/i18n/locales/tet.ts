@@ -6752,6 +6752,8 @@ const messages = {
         "Komprovativu ne’e hanesan ho fatura {{count}} ne’ebé sei loke. Rejista pagamentu ba ida?",
       recordPayment: "Rejista pagamentu",
       paymentRecorded: "Pagamentu rejista ona ba fatura",
+      paymentRecordedNoFile:
+        "Pagamentu rejista ona, maibé la konsege anexa komprovativu — aumenta ba fatura ho ita-nia liman.",
       paymentFromSlip: "Rejista husi komprovativu ne’ebé hatama",
       paymentFailed: "La konsege rejista pagamentu",
       looksLikeCreditMemo:

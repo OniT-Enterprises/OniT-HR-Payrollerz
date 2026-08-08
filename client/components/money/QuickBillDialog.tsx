@@ -43,6 +43,7 @@ import {
   useCreateBill,
   useOpenBills,
   useRecordBillPayment,
+  useUpdateBill,
   useVendorBills,
 } from "@/hooks/useBills";
 import { findDuplicateBills } from "@/lib/money/duplicate-bill";
@@ -339,6 +340,7 @@ export default function QuickBillDialog({
   // payment does not dead-end at "this is a bank slip".
   const { data: openBills = [] } = useOpenBills(Boolean(aiPayment));
   const recordPaymentMutation = useRecordBillPayment();
+  const updateBillMutation = useUpdateBill();
   const settlementCandidates = aiPayment
     ? findBillsSettledBy(openBills, { amount: aiPayment.amount, date: aiPayment.date }).slice(0, 3)
     : [];
@@ -357,9 +359,38 @@ export default function QuickBillDialog({
           notes: t("money.ai.paymentFromSlip") || "Recorded from an uploaded payment slip",
         },
       });
+      // Keep the evidence with the bill. A TL business keeps the slip precisely
+      // so it can prove payment later, and this is the moment it is in hand.
+      // Best-effort and deliberately after the payment: losing the file is a
+      // nuisance, but failing to attach it must never undo a recorded payment.
+      let attachmentFailed = false;
+      const slip = files[0];
+      if (slip) {
+        try {
+          // From the full Bill, not the matcher's narrowed view of it.
+          const existing = openBills.find((b) => b.id === billId)?.attachmentUrls ?? [];
+          const url = await fileUploadService.uploadBillAttachment(
+            slip,
+            tenantId,
+            billId,
+            existing.length,
+          );
+          await updateBillMutation.mutateAsync({
+            id: billId,
+            data: { attachmentUrls: [...existing, url] },
+          });
+        } catch (attachError) {
+          console.error("Error attaching payment slip to bill:", attachError);
+          attachmentFailed = true;
+        }
+      }
+
       toast({
         title: t("common.success") || "Success",
-        description: t("money.ai.paymentRecorded") || "Payment recorded against the bill",
+        description: attachmentFailed
+          ? t("money.ai.paymentRecordedNoFile")
+            || "Payment recorded, but the slip could not be attached — add it to the bill manually."
+          : t("money.ai.paymentRecorded") || "Payment recorded against the bill",
       });
       onOpenChange(false);
     } catch (error) {

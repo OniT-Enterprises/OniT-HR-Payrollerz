@@ -6774,6 +6774,8 @@ const messages = {
         "This payment slip matches {{count}} open bill(s). Record the payment against one?",
       recordPayment: "Record payment",
       paymentRecorded: "Payment recorded against the bill",
+      paymentRecordedNoFile:
+        "Payment recorded, but the slip could not be attached — add it to the bill manually.",
       paymentFromSlip: "Recorded from an uploaded payment slip",
       paymentFailed: "Could not record the payment",
       looksLikeCreditMemo:

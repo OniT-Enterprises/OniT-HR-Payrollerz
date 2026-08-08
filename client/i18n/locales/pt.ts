@@ -6874,6 +6874,8 @@ const messages = {
         "Este comprovativo corresponde a {{count}} fatura(s) em aberto. Registar o pagamento numa delas?",
       recordPayment: "Registar pagamento",
       paymentRecorded: "Pagamento registado na fatura",
+      paymentRecordedNoFile:
+        "Pagamento registado, mas não foi possível anexar o comprovativo — adicione-o à fatura manualmente.",
       paymentFromSlip: "Registado a partir de um comprovativo carregado",
       paymentFailed: "Não foi possível registar o pagamento",
       looksLikeCreditMemo:
