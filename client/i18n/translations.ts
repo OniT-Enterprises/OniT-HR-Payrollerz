@@ -9561,7 +9561,7 @@ export const translations = {
             "saveDay": "Rai loron ne'e",
             "savesImmediately": "Loron ne'e rai mesak, kedas.",
             "formIncomplete": "Hatama data no naran molok rai.",
-            "law": "Lista ne'ebé tama ona iha laran inklui data legál fiksu sira, feriadu Páskua nian (Sesta-Feira Santa, Korpu de Deus), no feriadu muçulmanu ne'ebé anunsia ona. Aumenta mudansa ba loron ne'ebé Governu deklara ikus mai (Toleránsia), ka loron ne'ebé ita-nia empreza taka."
+            "law": "Lista ne'ebé tama ona iha laran inklui data legál fiksu sira, feriadu Páskua nian (Sesta-Feira Santa, Korpu de Deus), no feriadu musulmanu ne'ebé anunsia ona. Aumenta mudansa ba loron ne'ebé Governu deklara ikus mai (Toleránsia), ka loron ne'ebé ita-nia empreza taka."
           },
           "custom": {
             "title": "Lisensa aumenta ne'ebé ita-nia empreza fó",
@@ -9581,7 +9581,7 @@ export const translations = {
             "summary": "Loron {{days}} kada tinan. Loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu.",
             "pendingExplainer": "Ami kompara ona banda sira-ne'e ho Lei Trabálhu no daudaun konfirma leitura ne'e ho ami-nia revizór kontabilidade nian. Regra pagamentu rasik mak folha aplika.",
             "certificateOn": "Presiza sertifikadu médiku ba lisensa doensa (Lei Trabálhu Art. 33.4).",
-            "certificateOff": "Ita-nia empreza taka tiha ida-ne’e, maié lei husu sertifikadu médiku ba lisensa doensa.",
+            "certificateOff": "Ita-nia empreza taka tiha ida-ne'e, maibé lei husu sertifikadu médiku ba lisensa doensa.",
             "setCertificateRequired": "Presiza sertifikadu"
           },
           "parental": {
@@ -9783,7 +9783,7 @@ export const translations = {
     "employees": {
       "profile": {
         "notProvided": "Seidauk hatama",
-        "notFound": "Ami la hetan traballadór ne’e. Karik hasai tiha ona.",
+        "notFound": "Ami la hetan traballadór ne'e. Karik hasai tiha ona.",
         "backToEmployees": "Traballadór hotu",
         "sectionPersonal": "Nia sé",
         "sectionJob": "Nia halo saida no ita selu hira",
@@ -9795,10 +9795,10 @@ export const translations = {
         "inviteExistsDesc": "{{email}} sai membru ona — nia bele tama ka uza “Haluha senha”.",
         "inviteFailedTitle": "La bele haruka konvite",
         "cvPdf": "CV PDF",
-        "needsAttention": "Item {{count}} presiza atenção",
+        "needsAttention": "Item {{count}} presiza atensaun",
         "fixedTermTitle": "Kontratu tenke sai permanente",
-        "fixedTermElapsed": "Kontrata iha {{date}} ho kontratu ho prazu. Tuir Lei Trabálhu Timor-Leste, servisu ho prazu ne’ebé kontinua liu tinan 3 sai permanente tuir lei. Haree fila fali no konverte kontratu ne’e.",
-        "fixedTermSpan": "Kontratu ne’e, tuir data ({{from}} to’o {{to}}), liu tinan 3. Tuir Lei Trabálhu Timor-Leste, servisu ho prazu la bele liu tinan 3 inklui renovação — sai permanente tuir lei. Haree fila fali no konverte kontratu ne’e.",
+        "fixedTermElapsed": "Kontrata iha {{date}} ho kontratu ho prazu. Tuir Lei Trabálhu Timor-Leste, servisu ho prazu ne'ebé kontinua liu tinan 3 sai permanente tuir lei. Haree fila fali no konverte kontratu ne'e.",
+        "fixedTermSpan": "Kontratu ne'e, tuir data ({{from}} to'o {{to}}), liu tinan 3. Tuir Lei Trabálhu Timor-Leste, servisu ho prazu la bele liu tinan 3 inklui renovasaun — sai permanente tuir lei. Haree fila fali no konverte kontratu ne'e.",
         "convertNow": "Konverte agora",
         "converting": "Konverte hela…",
         "convertedTitle": "Kontratu konverte ona",
@@ -9811,7 +9811,7 @@ export const translations = {
         "noNationality": "Seidauk iha nasionalidade",
         "docSocialSecurity": "Númeru Seguransa Sosíál",
         "docTin": "NIF traballadór nian",
-        "docElectoral": "Kartãu eleitorál",
+        "docElectoral": "Kartaun eleitorál",
         "docIdCard": "Billete identidade",
         "docPassport": "Pasaporte",
         "employmentDocuments": "Dokumentu servisu nian",
