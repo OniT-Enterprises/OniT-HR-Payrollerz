@@ -280,3 +280,39 @@ Contractor differs from the domestic regime on **depreciation as well as wage
 tax** (Schedule IX — `TIME_LEAVE_BACKLOG.md` §3b.1). That widens the case for
 payroll refusing a petroleum run rather than guessing: it is a parallel regime,
 not a rate tweak.
+
+
+---
+
+## 7. DL 18/2017 — it was local all along (2026-08-08)
+
+Reported as "not present in the mining directory". It is present, at
+`~/Sites/m365-mail-export/mining/signoff-jul20/serie_I_20_2017a.txt` lines
+5864–6305 — exactly where the July gap matrix's own header said it was.
+
+**Why it was missed twice:** the text reads `DECRETO-LEI N.º 18 /2017`, with a
+space before the slash, so every `grep "18/2017"` returned nothing. A negative
+result from a search is not evidence of absence — it is evidence about the search
+string. Worth remembering before trusting the next "could not verify", including
+one produced by an agent.
+
+### What it says
+
+| | |
+|---|---|
+| **Art. 15(1)** | Garantia: **six civil months, consecutive or interpolated**, with remuneration records in the last 12 — confirms Xefe's 6-in-12 |
+| **Art. 15(3)** | After six consecutive months with no record, the garantia clock **restarts** from the next record |
+| **Art. 18(1)** | Reference wage = **R/180**, R = remuneration in the six civil months preceding the second month before the event |
+| **Art. 18(3)** | The **subsídio anual is excluded** from R |
+| **Art. 19(1)** | Subsidies run from the **first day of the month following the claim** — a late claim loses months |
+| **Art. 19(2)** | If requirements are unmet, benefits run only from when the deficiencies are cured |
+
+Xefe computes none of this (INSS pays the worker directly), so it is reference
+rather than implementation. The two operationally useful facts are Art. 19(1) —
+which is why the employer declaration PDF matters, and why prompting the worker
+to claim promptly is worth real money — and Art. 18(3), if Xefe ever estimates a
+subsidy.
+
+**B10 updated:** neither DL 18/2017 nor Lei 4/2012 Art. 61 creates an employer
+fallback for a worker who misses the garantia. Art. 61's duty was conditioned on
+the SYSTEM being established, not on the individual qualifying.
