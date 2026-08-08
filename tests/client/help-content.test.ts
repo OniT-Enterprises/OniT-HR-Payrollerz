@@ -15,6 +15,8 @@
  * against their accountant's.
  */
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   HELP_ARTICLES,
   articlesFor,
@@ -375,5 +377,79 @@ describe('getArticle', () => {
 
   it('returns undefined rather than throwing on a bad slug', () => {
     expect(getArticle('nope')).toBeUndefined();
+  });
+});
+
+/**
+ * The help page must not fall behind the open-questions doc.
+ *
+ * `docs/NICO_OPEN_QUESTIONS.md` is where a question gets written down first;
+ * `/help` is where a CUSTOMER can actually read it. On 2026-08-08 two
+ * questions raised that same day — B16 (may a notice shortfall be set off
+ * against the final wage?) and B17 (which Art. 55 routes should Xefe surface?)
+ * — existed only in the doc. The customer-facing page silently lagged.
+ *
+ * That is the same propagation failure that put a wrong sick-leave citation on
+ * the public site for a day: a correction landing in one surface and not its
+ * twin. This asserts the mapping so the next question added to the doc has to
+ * be answered here too, or deliberately exempted with a reason.
+ */
+describe('the help page covers every open question we have written down', () => {
+  const nico = readFileSync(
+    join(process.cwd(), 'docs/NICO_OPEN_QUESTIONS.md'),
+    'utf8',
+  );
+
+  /**
+   * Question id -> the help entry that carries it. Exempt entries state WHY,
+   * because an unexplained exemption is how a page quietly stops being
+   * complete.
+   */
+  const MAPPING: Record<string, string | { exempt: string }> = {
+    A1: 'severance-cause',
+    A2: 'severance-blocks',
+    A3: 'leave-cash-out',
+    A4: 'rehire',
+    A5: 'inss-premiums',
+    A6: 'working-week',
+    A7: 'childcare-floor',
+    A8: 'leave-year',
+    B6: 'wit-month',
+    B7: 'job-search-credit',
+    B8: 'minimum-wage',
+    B9: 'small-employer-inss',
+    B10: 'maternity-fallback',
+    B11: 'identifiers',
+    B12: 'identifiers',
+    B13: 'sick-certificate',
+    B14: 'leave-waiting-period',
+    B15: 'worker-student-minor',
+    B16: 'notice-setoff',
+    B17: 'art55-routes',
+  };
+
+  const entryIds = new Set(
+    HELP_ARTICLES.flatMap((a) => a.groups.flatMap((g) => g.entries.map((e) => e.id))),
+  );
+
+  it('has an entry for every question the doc raises', () => {
+    for (const [question, target] of Object.entries(MAPPING)) {
+      if (typeof target !== 'string') continue;
+      expect(entryIds.has(target), `${question} -> ${target}`).toBe(true);
+    }
+  });
+
+  it('maps every question heading in the doc, so a new one cannot slip past', () => {
+    // Headings look like "### B16. May a notice shortfall be set off…".
+    const raised = [...nico.matchAll(/^### ([AB]\d+)\./gm)].map((m) => m[1]);
+    const unique = [...new Set(raised)];
+    expect(unique.length).toBeGreaterThan(15); // sanity: the doc parsed
+
+    const unmapped = unique.filter((q) => !(q in MAPPING));
+    expect(
+      unmapped,
+      `Questions in NICO_OPEN_QUESTIONS.md with no /help entry: ${unmapped.join(', ')}. ` +
+        'Add an entry, or add an { exempt: "reason" } to MAPPING.',
+    ).toEqual([]);
   });
 });
