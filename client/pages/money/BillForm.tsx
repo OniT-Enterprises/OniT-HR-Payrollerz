@@ -39,7 +39,15 @@ import { SEO } from '@/components/SEO';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
 import { useActiveVendors } from '@/hooks/useVendors';
-import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
+import {
+  useBill,
+  useBillPayments,
+  useCreateBill,
+  useUpdateBill,
+  useRecordBillPayment,
+  useVendorBills,
+} from '@/hooks/useBills';
+import { findDuplicateBills } from '@/lib/money/duplicate-bill';
 import { fileUploadService } from '@/services/fileUploadService';
 import { doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -189,6 +197,21 @@ export default function BillForm() {
 
   // Watch form values for summary calculation
   const formData = watch();
+
+  // Same guard as the quick-add dialog: nothing else stops one invoice being
+  // recorded twice, and a second bill queues the supplier to be paid twice.
+  // Warn, never block — one supplier really can issue two invoices in a day.
+  const { data: vendorBills = [] } = useVendorBills(formData.vendorId || undefined);
+  const duplicateMatch = formData.vendorId && Number(formData.amount) > 0
+    ? findDuplicateBills(vendorBills, {
+      vendorId: formData.vendorId,
+      billNumber: formData.billNumber?.trim() || null,
+      billDate: formData.billDate,
+      amount: Number(formData.amount),
+      // Never flag the bill being edited against itself.
+      excludeId: id,
+    })[0]
+    : undefined;
 
   // Set preselected vendor if provided
   useEffect(() => {
@@ -962,6 +985,18 @@ export default function BillForm() {
               <CardTitle>{t('money.bills.details') || 'Bill Details'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {duplicateMatch && (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+                  {(duplicateMatch.reason === 'same_number'
+                    ? t('money.bills.duplicateSameNumber')
+                      || 'Bill "{{number}}" from this vendor is already recorded ({{date}}, {{amount}}). Saving this adds a second one.'
+                    : t('money.bills.duplicateSameAmount')
+                      || 'A bill from this vendor for {{amount}} on {{date}} is already recorded. Saving this adds a second one.')
+                    .replace('{{number}}', duplicateMatch.bill.billNumber || '')
+                    .replace('{{date}}', duplicateMatch.bill.billDate)
+                    .replace('{{amount}}', formatCurrency(duplicateMatch.bill.total ?? duplicateMatch.bill.amount ?? 0))}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   {t('money.bills.vendor') || 'Vendor'} *
