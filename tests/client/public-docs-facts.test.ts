@@ -340,3 +340,30 @@ describe('/engine and the landing payslip — the INSS base is legible', () => {
     expect(en).toContain('representation expenses');
   });
 });
+
+describe('the annual income tax form is named as each edition names itself', () => {
+  const pt = readFileSync(join(process.cwd(), 'client/i18n/locales/pt.ts'), 'utf8');
+  const tet = readFileSync(join(process.cwd(), 'client/i18n/locales/tet.ts'), 'utf8');
+
+  it('keeps TADR-IT 1 in English — that is what the English form says', () => {
+    // Verified from the official PDF header: "TADR / FORM NO / TADR-IT 1".
+    // This one was RIGHT and must not be "corrected" alongside the others.
+    expect(en).toContain('TADR-IT 1');
+  });
+
+  it('uses ATRD – IT 1 in Portuguese, which is what that edition says', () => {
+    // The official Portuguese edition reads "FORMULÁRIO DO ATRD / Nº ATRD – IT 1".
+    // A Portuguese-speaking accountant searching the ATTL portal for
+    // "TADR-IT 1" finds nothing — the letters are transposed between editions.
+    expect(pt).toContain('ATRD – IT 1');
+    expect(pt).not.toContain('TADR');
+  });
+
+  it('names the authority ATTL, not the form prefix', () => {
+    // "TADR" is the form's own prefix, not the tax authority. The same PT
+    // block already said "formulário ATTL", so it disagreed with itself one
+    // line apart.
+    expect(pt).not.toContain('pela TADR');
+    expect(tet).not.toContain('TADR');
+  });
+});

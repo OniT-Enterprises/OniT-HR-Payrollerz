@@ -8047,7 +8047,7 @@ const messages = {
       "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
     openInssFiling: "Abrir Declaração INSS",
     formC: {
-      title: "Imposto anual sobre o rendimento empresarial (TADR-IT 1)",
+      title: "Imposto anual sobre o rendimento empresarial (ATRD – IT 1)",
       savedTitle: "Preparação guardada",
       savedDescription:
         "A lista de preparação do imposto anual foi atualizada.",
@@ -8058,7 +8058,7 @@ const messages = {
       dialogDescription:
         "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
       externalWarning:
-        "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (TADR-IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (ATRD – IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
       checklist: {
         profitAndLoss: "Demonstração de resultados revista",
         balanceSheet: "Balanço revisto",
@@ -8070,7 +8070,7 @@ const messages = {
       workpaper: {
         pageTitle: "Preparação do imposto anual sobre o rendimento",
         pageSubtitle:
-          "Papel de trabalho alinhado ao formulário oficial TADR-IT 1 do imposto anual",
+          "Papel de trabalho alinhado ao formulário oficial ATRD – IT 1 do imposto anual",
         openWorkpaper: "Abrir papel de trabalho",
         taxYear: "Ano fiscal",
         entityType: "Tipo de empresa (Q.1 do formulário)",
@@ -8133,10 +8133,10 @@ const messages = {
         adjustmentNote: "Motivo (fica no papel de trabalho)",
         creditsTitle: "Prejuízos transitados, prestações e créditos",
         creditsDesc:
-          "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos TADR",
+          "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos ATRD",
         lossCarriedForward: "Prejuízo transitado (linha 145)",
         lossCarriedForwardHint:
-          "Só o valor verificado pela TADR é válido no formulário.",
+          "Só o valor verificado pela ATTL é válido no formulário.",
         installmentsPaid:
           "Prestações do imposto sobre o rendimento pagas (linha 175)",
         foreignTaxCredits: "Créditos de imposto estrangeiro (linha 170)",

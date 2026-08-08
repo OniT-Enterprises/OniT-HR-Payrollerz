@@ -7896,7 +7896,7 @@ const messages = {
       "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
     openInssFiling: "Loke Submisaun INSS",
     formC: {
-      title: "Impostu rendimentu negósiu anual (TADR-IT 1)",
+      title: "Impostu rendimentu negósiu anual (ATRD – IT 1)",
       savedTitle: "Preparasaun rai ona",
       savedDescription:
         "Lista preparasaun impostu rendimentu anual atualiza ona.",
@@ -7907,7 +7907,7 @@ const messages = {
       dialogDescription:
         "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
       externalWarning:
-        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (TADR-IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (ATRD – IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
       checklist: {
         profitAndLoss: "Lucro no prejuízu reviza ona",
         balanceSheet: "Balansu reviza ona",
@@ -7920,7 +7920,7 @@ const messages = {
       workpaper: {
         pageTitle: "Preparasaun impostu rendimentu anual",
         pageSubtitle:
-          "Papel servisu tuir formuláriu ofisiál TADR-IT 1 impostu rendimentu anual",
+          "Papel servisu tuir formuláriu ofisiál ATRD – IT 1 impostu rendimentu anual",
         openWorkpaper: "Loke papel servisu",
         taxYear: "Tinan fiskál",
         entityType: "Tipu empreza (Q.1 iha formuláriu)",
@@ -7983,10 +7983,10 @@ const messages = {
         adjustmentNote: "Razaun (rai iha papel servisu)",
         creditsTitle: "Prejuízu transita, prestasaun no créditu",
         creditsDesc:
-          "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu TADR",
+          "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu ATRD",
         lossCarriedForward: "Prejuízu transita (liña 145)",
         lossCarriedForwardHint:
-          "Valor ne'ebé TADR verifika ona de'it mak válidu iha formuláriu.",
+          "Valor ne'ebé ATTL verifika ona de'it mak válidu iha formuláriu.",
         installmentsPaid:
           "Prestasaun impostu rendimentu ne'ebé selu ona (liña 175)",
         foreignTaxCredits: "Créditu impostu rai-li'ur (liña 170)",
