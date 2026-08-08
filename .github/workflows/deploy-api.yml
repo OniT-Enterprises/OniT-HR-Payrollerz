@@ -1,8 +1,9 @@
-# Repeatable, human-triggered deploy for the Xefe REST API (Hetzner, PM2).
+# Deploy for the Xefe REST API (Hetzner, PM2). Runs automatically on a merge that
+# touches server/xefe-api/, and can still be dispatched by hand.
 # Replaces the ad-hoc laptop rsync. The excludes are load-bearing:
 # /opt/xefe-api holds the production .env and serviceAccountKey.json, which
 # exist ONLY on the server — a bare --delete rsync would destroy them.
-name: Deploy Xefe API (manual)
+name: Deploy Xefe API
 
 on:
   # The API box used to deploy ONLY by hand, and it drifted: server-side fixes sat

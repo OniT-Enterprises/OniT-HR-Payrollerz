@@ -210,13 +210,20 @@ The Xefe AI assistant lets HR managers query company data via WhatsApp and a web
 cd server/xefe-api && npm install && npm run dev
 
 # Deploy Xefe API to Hetzner (PM2)
-# The excludes are load-bearing: /opt/xefe-api holds the prod .env and
-# serviceAccountKey.json, which exist ONLY on the server — a bare
-# `--delete` rsync would destroy them (and nuke node_modules).
+# AUTOMATIC since 2026-08-08: merging anything under server/xefe-api/ to main
+# runs .github/workflows/deploy-api.yml, which rsyncs and reloads through
+# `pm2 startOrReload` — index.js drains on SIGTERM (kill_timeout 200s) so a
+# deploy no longer cuts off an extraction that can legitimately run 180s.
+# Before that the box sat two weeks behind main with a security fix merged but
+# NOT running, because this was dispatch-only.
+#
+# Manual fallback only (CI down). The excludes are load-bearing: /opt/xefe-api
+# holds the prod .env and serviceAccountKey.json, which exist ONLY on the
+# server — a bare `--delete` rsync would destroy them (and nuke node_modules).
 rsync -avz --delete --exclude .env --exclude serviceAccountKey.json \
   --exclude node_modules --exclude .DS_Store \
   server/xefe-api/ hetzner:/opt/xefe-api/
-ssh hetzner 'cd /opt/xefe-api && npm ci --omit=dev && pm2 restart xefe-api'
+ssh hetzner 'cd /opt/xefe-api && npm ci --omit=dev && pm2 startOrReload ecosystem.config.js --update-env'
 
 # Deploy OpenClaw bot
 cd server/openclaw-xefe && ./deploy.sh

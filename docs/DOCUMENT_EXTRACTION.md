@@ -77,6 +77,37 @@ so mapping any of them to `Bill.taxRate` would misstate the tax. It used to be
 extracted and read by nothing, which looks like a field somebody forgot to wire.
 Decide the per-regime meaning before asking for it again.
 
+## After extraction: what the bill forms still refuse
+
+Two guards sit past the extractor, because the upload path is exactly where the
+same document arrives twice or under a new spelling.
+
+**A duplicate invoice is flagged, never blocked** (`money/duplicate-bill.ts`).
+Same vendor plus the same normalised number wins — `INV-0473`, `inv 0473` and
+`INV0473` are one number. Amount-within-five-days is the weaker fallback and is
+only considered when NEITHER side carries a number, because two real invoices of
+equal value on one day with distinct numbers exist in the corpus
+(`GLA_Invoices_5389_e_5390`). Cancelled bills are excluded — re-entering one is
+how a correction is made — and a bill is never a duplicate of itself while being
+edited. It warns rather than blocks: a supplier really can issue two invoices in
+a day, so the person decides with both records in front of them.
+
+**A supplier does not become three vendors** (`money/vendor-match.ts`). The
+corpus carries one company as `Primo's Boot`, `Primos Boot` and `Primos Boot
+Unipessoal Lda`. The extracted tax number decides when the document has one, since
+a NIF identifies the legal entity however the name was typed. Otherwise close
+names are OFFERED, never auto-selected: significant words are compared with legal
+forms (`lda`, `unipessoal`, `ep`, `ltd`…) dropped, every word of the shorter name
+must appear in the longer, and at least one must be four characters or more — so
+`TI` is never offered for `Timor Telecom`.
+
+**A payment slip can settle the bill it paid** (`money/payment-match.ts`), and the
+slip file is attached to that bill as the evidence the business keeps. Only an
+EXACT cent match against an open bill is offered, a stored `balanceDue` decides
+alone, and when several bills match equally all are shown rather than guessed
+between — offering the wrong bill marks a supplier paid who has not been paid and
+hides a real payable.
+
 ## Attendance spreadsheets
 
 `client/lib/attendance/spreadsheet-text.ts` converts a workbook to the text the
@@ -103,8 +134,37 @@ across columns, days down rows — expands into one record per employee per day:
 2-row slice of a 30-employee sheet took 88s, a 4-row slice exceeded the 180s
 ceiling. `planExtraction()` sizes chunks from that measurement and caps a single
 import at 12 calls, **reporting the remainder in the skipped list** rather than
-looking complete. Legacy `.xls` (fingerprint-device exports) is unsupported —
-exceljs cannot read BIFF.
+looking complete.
+
+**Legacy `.xls` is detected and refused with instructions, not parsed.** Ten of
+twenty-four real attendance exports are that format, straight off fingerprint
+devices; exceljs reads only `.xlsx`, and the old fallback turned the binary into
+garbage that wasted an extraction call and imported nothing. `looksLikeLegacyXls`
+spots the OLE2 signature and the import says to save as `.xlsx` or CSV.
+
+SheetJS is the only maintained JS reader for the format and was **deliberately
+not added**: npm serves `xlsx@0.18.5`, which predates the fix for the
+prototype-pollution advisory CVE-2023-30533, and the fixed builds are published
+on the vendor's own CDN rather than the registry. Pointing a known-vulnerable
+parser at files arriving from third-party devices is a poor trade in a payroll
+app when the user can convert the file in one step. If full `.xls` support is
+wanted later, the CDN route is a deliberate decision with that risk in view.
+
+## How this is tested
+
+Three layers, deliberately separate:
+
+- **Unit tests** pin each rule (`extracted-currency`, `extracted-date`,
+  `pdf-protected`, `duplicate-bill`, `payment-match`, `spreadsheet-text`), and
+  `server/xefe-api/test/extract-sanitize.test.mjs` covers the hostile-output
+  boundary — the model's reply is untrusted input, since the document is.
+- **e2e** (`tests/e2e/bill-upload-guards.spec.ts`) drives the real UI and
+  **intercepts the extraction call**. CI has no `CLAUDE_CODE_OAUTH_TOKEN`, and a
+  test that depends on a model's answer proves nothing about our code while
+  failing for reasons that are not defects.
+- **The extractor itself** is measured against real documents by
+  `scripts/extraction-audit`, never in CI. Re-run the 30-document holdout after
+  any prompt change.
 
 ## Rate limits
 
