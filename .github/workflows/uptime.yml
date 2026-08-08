@@ -7,6 +7,9 @@ name: Uptime check
 on:
   schedule:
     - cron: "7,37 * * * *"
+    # Once a day, spend one model call to prove extraction can still
+    # authenticate — see "Extraction still authenticates" below.
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -26,6 +29,35 @@ jobs:
           body=$(curl -sL --max-time 30 --retry 2 https://xefe.tl/api/health)
           echo "$body"
           echo "$body" | grep -q '"success":true'
+
+      - name: Extraction failing for users
+        # index.js logs "[extract] <id> failed:" per failed upload — the 502 a user
+        # sees. Deliberately NOT matching "[extract] account N/M failed", which is a
+        # token failover that may still have succeeded. Any request failure
+        # in the window means bills, receipts and timesheets are not being read —
+        # the most likely cause is an expired CLAUDE_CODE_OAUTH_TOKEN.
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/uptime_key
+          chmod 600 ~/.ssh/uptime_key
+          fails=$(ssh -i ~/.ssh/uptime_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
+            'pm2 logs xefe-api --nostream --lines 2000 2>/dev/null | grep -cE "\[extract(-table)?\] [^ ]+ failed:" || true')
+          echo "extraction failures in the recent log window: $fails"
+          test "$fails" -lt 3
+
+      - name: Extraction still authenticates
+        # Runs the smallest real extraction (a two-line table) so an expired
+        # subscription token is caught BEFORE a customer hits it. Daily, because
+        # each run spends a model call.
+        if: github.event.schedule == '17 6 * * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/uptime_key
+          chmod 600 ~/.ssh/uptime_key
+          ssh -i ~/.ssh/uptime_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
+            'cd /opt/xefe-api && node scripts/check-extraction-auth.cjs'
 
       - name: WhatsApp bot channel
         # The pairing died on Jul 2 2026 and needs a phone-side QR re-scan;
