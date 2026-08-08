@@ -152,6 +152,89 @@ for a small team, useless for the 300-employee tenants payroll was hardened for.
 
 ---
 
+## 3b. From the social-security / tax sweep (2026-08-08)
+
+An agent swept DL 20/2017, DL 30/2021 and Lei 8/2008 using the same method.
+**Most of the engine verified clean** — all ten Art. 86 year→factor pairs to the
+digit, the 4%/6% split, Schedule V rates and excess-only maths, the $20 non-cash
+threshold, all eight Schedule VIII withholding rows, and every filing deadline.
+What follows is what did not.
+
+### 3b.1 Payroll has no petroleum-regime guard  ⚠️ money
+
+**Fixed today: only the wrong comment.** `constants-tl.ts` claimed a "20% flat"
+non-resident rate traced to UNTAET Reg. 2000/32 and was superseded. It is not:
+**Schedule IX(b) of Lei 8/2008 is live law**, reached via Sec. 72.2 for employees
+of a petroleum Contractor (Sec. 68.1):
+
+| Sched. IX | Rate |
+|---|---|
+| (a) resident **with** TIN | 10% to $550/mo, then $55 + 30% above |
+| (b) non-resident | **20%** flat |
+| (c) any other case | **30%** flat (e.g. resident who gave no TIN) |
+| ¶3 | $10/month personal credit for residents |
+
+`client/lib/tax/withholding-tl.ts` has always had this right and *refuses to
+compute* (`UnsupportedTLPetroleumTaxRegimeError`). **The payroll engine has no
+equivalent guard** — `calculateTLPayroll` takes no `taxRegime`, and `TLTaxInfo`
+carries only `isResident` / `hasTaxExemption` / `inssExempt`.
+
+So a Contractor's employee is withheld under Schedule V. Non-resident on
+$3,000/mo: Xefe withholds $300, Schedule IX requires **$600**. Resident with no
+TIN on $3,000: Xefe $250, Schedule IX **$900**. Direction is **under**-withholding
+— employer liability under Sec. 25.3.
+
+**To build:** a tenant/employee petroleum flag that makes payroll refuse the run
+the way supplier withholding already does. Refusing is right; guessing is not.
+
+This also answers a standing memory question ("how/when is 30% applied to oil &
+gas workers?"): 30% is the marginal rate above $550 for a resident *with* a TIN,
+and a flat rate for anyone in neither named case.
+
+### 3b.2 Art. 86 has five conditions; Xefe checks one
+
+Art. 86(1) requires ≤10 workers, **≥60% nationals**, and a *situação contributiva
+regularizada*. Art. 86(3) **ends** the reduction if headcount is exceeded, a
+monthly payment is missed, or a monthly DR is not filed — resuming only from the
+month after regularisation, and only for the remainder of the legal period.
+
+`usePayrollCalculator.ts` warns on headcount alone; the rest is one self-attested
+switch. **Xefe already holds both missing facts** — nationality is on the employee
+record, and `taxFilings` knows whether each month's DR was filed and paid. A
+lapsed tenant keeps claiming 5.4% and under-remits 0.6% of the base per month,
+with Art. 39 interest at 1%/month on top.
+
+Note: Art. 86(1) says "10 ou menos trabalhadores" with **no** definition — no FTE
+rule, no treatment of rotational foreign workers. So **B9 stays open and the
+statute does not settle it**, which we can now say positively.
+
+### 3b.3 Smaller, recorded not fixed
+
+- **`TL_INSS.minimumSalary: 115`** is a naming trap. Neither DL 20/2017 nor
+  DL 30/2021 sets a minimum contribution base for employed workers — the only
+  floor is for *voluntary* enrolment over 50 (DL 30/2021 Art. 20(2)). It is
+  consumed as the minimum-**wage** fallback. Harmless today, misleading later.
+- **`TL_INSS.excludedItems` is dead** — never read anywhere — and two entries have
+  no Art. 9 basis (`housing_allowance`, `reimbursement`; the latter is expressly
+  *wages* for WIT under Lei 8/2008 Art. 1(g)).
+- **Art. 8(2)(c) names two things**, *turnos* and *noturno*. Xefe models only a
+  night premium; a contractual shift-rotation supplement lands in the base only
+  by accident, via `regular_allowance`.
+- **The per-diem / food-allowance toggles** let a tenant put an Art. 9-excluded
+  item into the base. Direction is over-contribution (costs the employer, not the
+  worker) and the substance-over-form rationale is defensible — but Art. 9(d) is
+  unqualified. Flagged, not called a defect.
+
+### 3b.4 Still unverifiable
+
+**Lei 8/2008 Secs. 36.1–36.11** (depreciation pooling) are missing from *both*
+local sources — `tda2008.txt` jumps from Sec. 35 to 36.12. The July §7 caveat
+stands. 36.12–36.17 and Schedule VII survive, so the 100% rate is safe; the pool
+definitions and add/dispose arithmetic are not verifiable. Needs a clean ATTL or
+Jornal da República copy of Chapter VII Part II.
+
+---
+
 ## 4. Tooling and docs
 
 ### 4.1 Tetun native pass  ⚠️ blocks nothing, degrades a lot

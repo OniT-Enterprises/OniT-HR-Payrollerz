@@ -13,16 +13,33 @@
 
 /**
  * Timor-Leste Wage Income Tax (WIT / Impostu Retidu)
- * Legal basis: Decree Law No. 8/2008 (Taxes and Duties Act), Part VI, Schedule V
- * Confirmed by ATTL (attl.gov.tl/wage-income-tax/)
+ * Legal basis: Law 8/2008 (Taxes and Duties Act), CHAPTER VI (Secs. 20-25) and
+ * Schedule V. Confirmed by ATTL (attl.gov.tl/wage-income-tax/).
+ *
+ * (Not "Part VI" — that heading exists but sits inside Chapter VII and covers
+ * withholding on payments for services, Secs. 53-61 / Schedule VIII. Different
+ * tax, different schedule.)
  *
  * - Residents: 10% on income exceeding $500/month ($6,000/year)
  * - Non-residents: 10% on ALL income (no threshold, from first dollar)
  * - Wages generally include allowances and reimbursements unless specifically exempt
  *
- * Note: Some older references cite "20% flat" for non-residents — this traces back to
- * UNTAET Regulation 2000/32 (general income tax, pre-independence) which was superseded
- * by Decree Law 8/2008. The current correct rate is 10%.
+ * These are the DOMESTIC rates. They are not the only wage rates in the Act:
+ * Sec. 72.2 sends employees of a petroleum Contractor (Sec. 68.1 — a party to a
+ * Petroleum Agreement) to SCHEDULE IX instead, which is live law, not history:
+ *
+ *   (a) resident WITH a TIN:   10% to $550/mo, then $55 + 30% above $550
+ *   (b) non-resident:          20% flat
+ *   (c) any other case:        30% flat   (e.g. a resident who gave no TIN)
+ *   plus a $10/month personal tax credit for residents (Sched. IX ¶3)
+ *
+ * This comment previously said a "20% flat" non-resident rate traced to UNTAET
+ * Regulation 2000/32 and was superseded. That was WRONG: 20% is Schedule IX(b)
+ * of this Act. `client/lib/tax/withholding-tl.ts` has always cited it correctly
+ * and refuses to compute petroleum withholding at all
+ * (UnsupportedTLPetroleumTaxRegimeError). The payroll engine has NO equivalent
+ * guard — it has no taxRegime input — so a Contractor's employee would be
+ * withheld under Schedule V and UNDER-withheld. See docs/TIME_LEAVE_BACKLOG.md.
  */
 export const TL_INCOME_TAX = {
   // Tax rate for residents and non-residents

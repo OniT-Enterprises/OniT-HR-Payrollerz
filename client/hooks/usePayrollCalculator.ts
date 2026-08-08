@@ -1831,6 +1831,23 @@ export function usePayrollCalculator({
     handleBonusCategoryChange,
     handleResetRow,
     toggleRowExpansion,
+    /**
+     * The employer INSS rate ACTUALLY applied this period, as a percentage.
+     * The review screen used to caption the amount "INSS Employer (6%)" from a
+     * hardcoded string while paying 5.4% under the Art. 86 small-employer
+     * reduction — the number was right and the label contradicted it, on the
+     * one screen where an owner reconciles Xefe against the INSS portal.
+     */
+    inssEmployerRatePercent: Number(
+      (
+        (payrollConfig?.smallEmployerInssDiscount
+          ? tlSmallEmployerEmployerRate(
+              Number.parseInt((periodEnd || "").slice(0, 4), 10),
+              (payrollConfig?.socialSecurity?.employerRate ?? 6) / 100,
+            )
+          : (payrollConfig?.socialSecurity?.employerRate ?? 6) / 100) * 100
+      ).toFixed(1),
+    ),
     handleSyncFromAttendance,
     pendingAttendanceSync,
     confirmAttendanceSync: () => {
