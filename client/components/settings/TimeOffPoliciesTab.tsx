@@ -627,6 +627,8 @@ export function TimeOffPoliciesTab({
   // Tenants stored before this field existed have no value; the statutory
   // default is "record only the exceptions".
   const attendanceMode = timeOffPolicies.attendanceMode ?? "exceptions";
+  // Tenants stored before this field existed keep Mon–Fri.
+  const workingDays = timeOffPolicies.workingDays ?? [1, 2, 3, 4, 5];
 
   const annual = timeOffPolicies.annualLeave;
   const annualCarry = annual.maxCarryOverDays || 0;
@@ -879,6 +881,81 @@ export function TimeOffPoliciesTab({
             <LawNote title={t("settings.timeOff.whatTheLawSays")}>
               <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.rows.attendanceMode.law")}
+              </p>
+            </LawNote>
+          </PolicyRow>
+
+          {/* Which days the company works. Badged, because Xefe's Mon–Fri
+              default is NOT the statutory norm and we want the owner to look. */}
+          <PolicyRow
+            id="working-days"
+            icon={Calendar}
+            iconClass="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
+            title={t("settings.timeOff.rows.workingDays.title")}
+            summary={
+              workingDays.length === 0
+                ? t("settings.timeOff.rows.workingDays.summaryNone")
+                : t("settings.timeOff.rows.workingDays.summary", {
+                    days: workingDays
+                      .slice()
+                      .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+                      .map((day) => t(`common.weekdaysShort.${day}`))
+                      .join(", "),
+                  })
+            }
+            badges={
+              <>
+                {pendingBadge}
+                {notSavedBadge(sliceIsDirty((p) => p.workingDays))}
+              </>
+            }
+            open={openRow === "working-days"}
+            onToggle={() => toggleRow("working-days")}
+          >
+            <p className="text-sm text-muted-foreground">
+              {t("settings.timeOff.rows.workingDays.pendingExplainer")}
+            </p>
+
+            <div className="space-y-2">
+              <Label>{t("settings.timeOff.rows.workingDays.label")}</Label>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5, 6, 0].map((day) => {
+                  const on = workingDays.includes(day);
+                  return (
+                    <Button
+                      key={day}
+                      type="button"
+                      variant={on ? "default" : "outline"}
+                      size="sm"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setTimeOffPolicies({
+                          ...timeOffPolicies,
+                          workingDays: on
+                            ? workingDays.filter((d) => d !== day)
+                            : [...workingDays, day],
+                        })
+                      }
+                    >
+                      {t(`common.weekdaysShort.${day}`)}
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.timeOff.rows.workingDays.help")}
+              </p>
+            </div>
+
+            {workingDays.length === 0 && (
+              <AmberNote>
+                <p>{t("settings.timeOff.rows.workingDays.noneWarning")}</p>
+              </AmberNote>
+            )}
+
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.timeOff.rows.workingDays.law")}
               </p>
             </LawNote>
           </PolicyRow>

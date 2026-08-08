@@ -76,6 +76,7 @@ import { type Employee } from "@/services/employeeService";
 import {
   leaveService,
   calculateWorkingDays,
+  DEFAULT_WORKING_WEEKDAYS,
   type LeaveType,
 } from "@/services/leaveService";
 import { useLeaveBalance } from "@/hooks/useLeaveRequests";
@@ -536,6 +537,10 @@ export default function Attendance() {
   // `getTodayTL()` — Timor-Leste's today — so an owner working Friday evening
   // in another timezone lands on Saturday by default and would have hit that
   // raw server error. Say it plainly here instead.
+  // Tenants stored before this field existed keep the old Mon–Fri behaviour.
+  const workingDays =
+    settings?.timeOffPolicies?.workingDays ?? DEFAULT_WORKING_WEEKDAYS;
+
   // An empty end date means a single day, so the spell is always well-formed.
   const absenceEndDate = absenceForm.endDate || absenceForm.date;
 
@@ -555,11 +560,12 @@ export default function Attendance() {
       absenceForm.date,
       absenceEndDate,
       holidays,
+      workingDays,
     );
     // Art. 33(4) and the rest are counted in working days; a half-day is only
     // meaningful on a single date, which is what the server enforces too.
     return absenceForm.halfDay && days === 1 ? 0.5 : days;
-  }, [absenceForm.date, absenceEndDate, absenceForm.halfDay]);
+  }, [absenceForm.date, absenceEndDate, absenceForm.halfDay, workingDays]);
 
   const absenceIsNonWorkingDay = useMemo(() => {
     if (!absenceForm.date) return false;

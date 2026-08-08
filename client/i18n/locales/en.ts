@@ -58,6 +58,15 @@ const messages = {
     },
   },
   common: {
+    weekdaysShort: {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat",
+    },
     reset: "Reset",
     needsReviewTitle: "Needs review before filing",
     needsReviewDesc:
@@ -1815,6 +1824,18 @@ const messages = {
         "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
       setPaidInFull: "Set to paid in full",
       rows: {
+        workingDays: {
+          title: "Days your company works",
+          summary: "You work {{days}}.",
+          summaryNone: "No working days chosen.",
+          label: "Tap the days you open",
+          help: "Leave is counted over these days only. A sick day on a day you do not open costs nobody anything.",
+          pendingExplainer:
+            "Please check this one. Xefe has been assuming Monday to Friday for everybody, and for most Timor-Leste businesses that is wrong — it is why a worker off sick Monday to Saturday was counted as 5 days instead of 6.",
+          noneWarning:
+            "With no working days, no leave can ever be recorded. Choose at least one.",
+          law: "The Labour Law sets the week at 44 hours (Art. 25) — which is more than five 8-hour days — and gives every worker at least 24 consecutive hours of paid rest (Art. 30(1)). That rest day is Sunday unless the work cannot be interrupted, such as a hotel or a clinic (Art. 30(2)). So most companies here work six days.",
+        },
         attendanceMode: {
           title: "How you record attendance",
           summaryExceptions: "You record absences and overtime only.",

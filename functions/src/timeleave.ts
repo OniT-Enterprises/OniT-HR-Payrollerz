@@ -184,15 +184,45 @@ async function getLeaveHolidayDates(
   return dates;
 }
 
+/**
+ * Which weekdays this tenant works. 0 = Sunday … 6 = Saturday.
+ *
+ * The old behaviour — skip Saturday AND Sunday for everyone — is preserved as
+ * the default so no tenant's leave durations move without someone choosing it.
+ * It is NOT the statutory norm: Art. 25 fixes the week at 44 hours, which is
+ * not 5 x 8, and Art. 30(2) makes Sunday only the DEFAULT rest day, departable
+ * where the service cannot be interrupted. Most Timor-Leste businesses work six
+ * days. See docs/NICO_OPEN_QUESTIONS.md A6.
+ */
+const DEFAULT_WORKING_WEEKDAYS: ReadonlySet<number> = new Set([1, 2, 3, 4, 5]);
+
+async function getWorkingWeekdays(tenantId: string): Promise<ReadonlySet<number>> {
+  const snapshot = await db.doc(`tenants/${tenantId}/settings/config`).get();
+  const policies = snapshot.data()?.timeOffPolicies as Record<string, unknown> | undefined;
+  const configured = policies?.workingDays;
+  if (Array.isArray(configured)) {
+    const days = new Set(
+      configured.filter(
+        (day): day is number => typeof day === "number" && day >= 0 && day <= 6,
+      ),
+    );
+    // An empty or all-invalid array would make every leave request zero-length,
+    // so fall back rather than trust it.
+    if (days.size > 0) return days;
+  }
+  return DEFAULT_WORKING_WEEKDAYS;
+}
+
 function calculateWorkingDays(
   startDate: string,
   endDate: string,
   holidays: ReadonlySet<string>,
+  workingWeekdays: ReadonlySet<number> = DEFAULT_WORKING_WEEKDAYS,
 ): number {
   let count = 0;
   for (let date = startDate; date <= endDate; date = addDaysISO(date, 1)) {
     const weekday = parseDateISO(date).getUTCDay();
-    if (weekday !== 0 && weekday !== 6 && !holidays.has(date)) count += 1;
+    if (workingWeekdays.has(weekday) && !holidays.has(date)) count += 1;
   }
   return count;
 }
@@ -211,14 +241,19 @@ async function calculateCanonicalLeaveDuration(
     throw new HttpsError("invalid-argument", "Leave must be between 1 and 366 calendar days");
   }
 
-  const holidays = await getLeaveHolidayDates(tenantId, data.startDate, data.endDate);
+  const [holidays, workingWeekdays] = await Promise.all([
+    getLeaveHolidayDates(tenantId, data.startDate, data.endDate),
+    getWorkingWeekdays(tenantId),
+  ]);
   if (data.halfDay === true) {
     if (data.startDate !== data.endDate) {
       throw new HttpsError("invalid-argument", "Half-day leave must use one date");
     }
-    return calculateWorkingDays(data.startDate, data.endDate, holidays) === 1 ? 0.5 : 0;
+    return calculateWorkingDays(data.startDate, data.endDate, holidays, workingWeekdays) === 1
+      ? 0.5
+      : 0;
   }
-  return calculateWorkingDays(data.startDate, data.endDate, holidays);
+  return calculateWorkingDays(data.startDate, data.endDate, holidays, workingWeekdays);
 }
 
 function getTodayTL(): string {
