@@ -1162,7 +1162,8 @@ const messages = {
       labourSub: "Labour law",
       labour: {
         hours: "44-hour week, 8-hour day",
-        ot: "Overtime ×1.5 · rest day and public holiday ×2.0 · night work +25%",
+        ot: "Overtime ×1.5 · rest day and public holiday ×2.0",
+        night: "Night work 21:00–06:00 at +25%",
         otCap:
           "Overtime capped at 16 h/week and 4 h/day, validated on every run",
         sick: "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",

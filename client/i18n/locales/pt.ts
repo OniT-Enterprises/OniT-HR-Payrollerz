@@ -1175,7 +1175,8 @@ const messages = {
       labourSub: "Lei laboral",
       labour: {
         hours: "Semana de 44 horas, dia de 8 horas",
-        ot: "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+        ot: "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
+        night: "Trabalho noturno das 21h00 às 06h00 com +25%",
         otCap:
           "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
         sick: "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",

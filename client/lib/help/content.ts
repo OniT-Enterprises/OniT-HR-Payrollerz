@@ -395,7 +395,7 @@ const LAW_POSITIONS: HelpArticle = {
           today:
             "Both are optional at hire. The social-security number blocks the monthly declaration; the tax number blocks nothing and is collected behind a disclosure.",
           open:
-            "Whether there is a deadline to enrol a new worker with INSS — Xefe's wording says the number is \"needed before your first filing\", and if enrolment is actually due within days of hiring, that wording says the opposite of the truth.",
+            "Whether an individual worker tax number is ever mandatory for ordinary non-petroleum employment. (The INSS enrolment deadline is now settled: DL 20/2017 Art. 3(2) requires enrolment \"até à data de entrega da primeira declaração de remunerações que inclua o beneficiário\" — by the date you file the first declaration covering that worker. Xefe's wording was right.)",
         },
       ],
     },

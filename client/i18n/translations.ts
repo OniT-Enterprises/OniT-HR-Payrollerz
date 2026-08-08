@@ -1067,7 +1067,8 @@ export const translations = {
         "labourSub": "Labour law",
         "labour": {
           "hours": "44-hour week, 8-hour day",
-          "ot": "Overtime ×1.5 · rest day and public holiday ×2.0 · night work +25%",
+          "ot": "Overtime ×1.5 · rest day and public holiday ×2.0",
+          "night": "Night work 21:00–06:00 at +25%",
           "otCap": "Overtime capped at 16 h/week and 4 h/day, validated on every run",
           "sick": "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
           "cap": "30% monthly deduction ceiling, reconciled to the cent",
@@ -9015,7 +9016,8 @@ export const translations = {
         "labourSub": "Lei laboral",
         "labour": {
           "hours": "Semana oras 44, loron oras 8",
-          "ot": "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+          "ot": "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
+          "night": "Servisu kalan oras 21:00–06:00 ho +25%",
           "otCap": "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
           "sick": "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
           "cap": "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
@@ -16963,7 +16965,8 @@ export const translations = {
         "labourSub": "Lei laboral",
         "labour": {
           "hours": "Semana de 44 horas, dia de 8 horas",
-          "ot": "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+          "ot": "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
+          "night": "Trabalho noturno das 21h00 às 06h00 com +25%",
           "otCap": "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
           "sick": "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
           "cap": "Teto de deduções de 30% por mês, reconciliado ao cêntimo",

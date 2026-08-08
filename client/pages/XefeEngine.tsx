@@ -98,8 +98,14 @@ export default function XefeEngine() {
       items: [
         { key: "enginePage.law.labour.hours", art: "Art. 25" },
         { key: "enginePage.law.labour.ot", art: "Art. 27" },
-        { key: "enginePage.law.labour.otCap", art: "Art. 27" },
-        { key: "enginePage.law.labour.sick", art: "Art. 42" },
+        // Night work is its own article — Art. 28 "Trabalho noturno", 21:00 to
+        // 06:00 at +25%. It used to ride in the Art. 27 row, which has six
+        // paragraphs and no night provision.
+        { key: "enginePage.law.labour.night", art: "Art. 28" },
+        { key: "enginePage.law.labour.otCap", art: "Art. 27(4)" },
+        // Art. 42 is "Descontos na remuneração" — wage deductions, correctly
+        // cited one row BELOW for the 30% ceiling. Sick pay is Art. 33(4).
+        { key: "enginePage.law.labour.sick", art: "Art. 33(4)" },
         { key: "enginePage.law.labour.cap", art: "Art. 42(3)" },
         { key: "enginePage.law.labour.thirteenth", art: "Art. 44" },
         { key: "enginePage.law.labour.severance", art: "Art. 56" },

@@ -12,7 +12,7 @@ export const article: LocalizedDocArticle = {
   en: {
     titleTop: "Attendance, leave and shifts,",
     titleAccent: "one hours-entry screen",
-    lede: "Record hours once and Xefe carries them straight into payroll — overtime, night work, and Sunday or public-holiday premiums calculated the way the Labour Law requires. No spreadsheets, no re-entry.",
+    lede: "Record hours once and Xefe carries them straight into payroll — overtime, night work, and rest-day or public-holiday premiums calculated the way the Labour Law requires. No spreadsheets, no re-entry.",
     blocks: [
       {
         type: "heading",
@@ -44,7 +44,7 @@ export const article: LocalizedDocArticle = {
         type: "list",
         items: [
           "A day with no record is treated as not yet recorded, not as an absence — only an explicit absence counts as one.",
-          "Overtime, night-shift hours, and Sunday or public-holiday premiums are calculated automatically from the recorded times.",
+          "Overtime, night-shift hours, and rest-day or public-holiday premiums are calculated automatically from the recorded times. The double rate follows your company's actual weekly rest day — Sunday by default, or the day you close instead if the business cannot stop on a Sunday (Arts. 27(2), 30(2)).",
           "Every adjustment to a record is logged, so there's always a clear trail of who changed what.",
           "Managers see and adjust attendance for their own team; owners and HR admins see the whole company.",
         ],
@@ -56,7 +56,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "Employees request leave, a manager or HR admin decides it, and approved leave flows straight into payroll and the attendance record for those days — nothing needs to be re-entered. Leave is counted in working days: weekends and public holidays don't count against a balance, and half-days are supported.\n\nXefe ships with the leave types set out in Timor-Leste's Labour Law (Lei 4/2012) already configured, and a company can add its own custom types on top for anything the law doesn't cover.",
+        body: "Employees request leave, a manager or HR admin decides it, and approved leave flows straight into payroll and the attendance record for those days — nothing needs to be re-entered. Leave is counted in working days, and which days those are follows the working week you set in Settings. Timor-Leste's normal working week may run up to 44 hours (Art. 25(1)), which does not fit into five 8-hour days, so a six-day week resting on Sunday is common here — and on that week a Saturday of leave IS deducted. Public holidays never count against a balance, and half-days are supported.\n\nXefe ships with the leave types set out in Timor-Leste's Labour Law (Lei 4/2012) already configured, and a company can add its own custom types on top for anything the law doesn't cover.",
       },
       {
         type: "table",
@@ -104,7 +104,7 @@ export const article: LocalizedDocArticle = {
           "Every figure in the table is a legal MINIMUM, not a ceiling: Art. 1(2) of the Labour Law lets a contract depart from the Code only \"para estabelecer condições mais favoráveis ao trabalhador\" — more favourably to the worker. Whatever your contract promises above these, it owes. The one exception is sick leave, where Art. 33(4) caps the PAID days at 12.",
           "Maternity, paternity, and post-loss leave are paid directly by Timor-Leste's social security institute (INSS) to workers who meet the contribution requirement — Xefe helps prepare the declaration a worker needs for that claim.",
           "Family event leave is one pooled allowance covering marriage, a death in the family, and community or religious events — not three separate entitlements.",
-          "A returning mother's paid breastfeeding time and a pregnant worker's paid time for medical exams are handled as ordinary worked time in attendance, never docked.",
+          "Breastfeeding and prenatal check-ups are paid time, not leave. Art. 62 gives a returning mother two paid one-hour breaks a day until the child turns six months old, and a pregnant worker paid time off for medical exams as often as needed — in both cases 'sem perda de remuneração'. Xefe does not yet track these hour-level dispensations automatically: record them in attendance as time worked so they are not docked.",
           "A company can add its own custom leave types — for example, a local practice not covered by statute — alongside the built-in ones.",
         ],
       },
@@ -135,7 +135,7 @@ export const article: LocalizedDocArticle = {
   pt: {
     titleTop: "Presença, licenças e turnos,",
     titleAccent: "um único ecrã de registo",
-    lede: "Registe as horas uma vez e o Xefe leva-as diretamente à folha de pagamento — horas extraordinárias, trabalho noturno e adicionais de domingo ou feriado calculados como a Lei do Trabalho exige. Sem folhas de cálculo, sem reintrodução de dados.",
+    lede: "Registe as horas uma vez e o Xefe leva-as diretamente à folha de pagamento — horas extraordinárias, trabalho noturno e adicionais de dia de descanso semanal ou feriado calculados como a Lei do Trabalho exige. Sem folhas de cálculo, sem reintrodução de dados.",
     blocks: [
       {
         type: "heading",
@@ -167,7 +167,7 @@ export const article: LocalizedDocArticle = {
         type: "list",
         items: [
           "Um dia sem registo é tratado como ainda não registado, não como falta — só uma falta explícita conta como tal.",
-          "Horas extraordinárias, horas noturnas e adicionais de domingo ou feriado são calculados automaticamente a partir dos horários registados.",
+          "Horas extraordinárias, horas noturnas e adicionais de dia de descanso semanal ou feriado são calculados automaticamente a partir dos horários registados. A remuneração a dobrar segue o dia de descanso semanal efetivo da sua empresa — o domingo, por regra, ou o dia em que a empresa descansa quando o serviço não pode ser interrompido (arts. 27.º(2) e 30.º(2)).",
           "Cada ajuste a um registo fica registado, para que haja sempre um histórico claro de quem alterou o quê.",
           "Os gestores veem e ajustam a presença da sua própria equipa; os proprietários e administradores de RH veem toda a empresa.",
         ],
@@ -179,7 +179,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "O funcionário pede a licença, um gestor ou administrador de RH decide, e a licença aprovada passa diretamente para a folha de pagamento e para o registo de presença desses dias — nada precisa de ser reintroduzido. A licença é contada em dias úteis: fins de semana e feriados não contam para o saldo, e são aceites meios-dias.\n\nO Xefe já vem configurado com os tipos de licença previstos na Lei do Trabalho de Timor-Leste (Lei 4/2012), e uma empresa pode ainda acrescentar os seus próprios tipos personalizados para o que a lei não cobre.",
+        body: "O funcionário pede a licença, um gestor ou administrador de RH decide, e a licença aprovada passa diretamente para a folha de pagamento e para o registo de presença desses dias — nada precisa de ser reintroduzido. A licença é contada em dias úteis, e quais são esses dias segue a semana de trabalho que definir nas Definições. Em Timor-Leste o período normal de trabalho pode ir até 44 horas por semana (art. 25.º(1)), o que não cabe em cinco dias de 8 horas, pelo que uma semana de seis dias com descanso ao domingo é comum — e nessa semana um sábado de licença É descontado. Os feriados nunca contam para o saldo, e são aceites meios-dias.\n\nO Xefe já vem configurado com os tipos de licença previstos na Lei do Trabalho de Timor-Leste (Lei 4/2012), e uma empresa pode ainda acrescentar os seus próprios tipos personalizados para o que a lei não cobre.",
       },
       {
         type: "table",
@@ -242,7 +242,7 @@ export const article: LocalizedDocArticle = {
           "Todos os valores da tabela são MÍNIMOS legais, não tetos: o art. 1.º(2) da Lei do Trabalho só permite afastar o Código \"para estabelecer condições mais favoráveis ao trabalhador\". O que o seu contrato prometer acima disto, é devido. A exceção é a licença por doença, em que o art. 33.º(4) limita a 12 os dias PAGOS.",
           "A licença de maternidade, de paternidade e por interrupção da gravidez são pagas diretamente pelo Instituto Nacional de Segurança Social (INSS) aos trabalhadores que cumprem o requisito de contribuições — o Xefe ajuda a preparar a declaração necessária para esse pedido.",
           "A licença por motivo familiar é uma única alocação que cobre casamento, falecimento de familiar e eventos comunitários ou religiosos — não são três direitos separados.",
-          "As pausas pagas para amamentação de uma trabalhadora que regressa e o tempo pago de uma trabalhadora grávida para exames médicos são tratados como tempo de trabalho normal na presença, nunca descontados.",
+          "As pausas para amamentação e as consultas pré-natais são tempo pago, não licença. O art. 62.º dá à trabalhadora que regressa duas pausas pagas de uma hora por dia até o filho completar seis meses, e à trabalhadora grávida tempo pago para exames médicos as vezes que forem necessárias — em ambos os casos 'sem perda de remuneração'. O Xefe ainda não regista automaticamente estas dispensas ao nível da hora: registe-as na assiduidade como tempo trabalhado para que não sejam descontadas.",
           "Uma empresa pode acrescentar os seus próprios tipos de licença personalizados — por exemplo, uma prática local não prevista na lei — para além dos tipos já incluídos.",
         ],
       },
@@ -273,7 +273,7 @@ export const article: LocalizedDocArticle = {
   tet: {
     titleTop: "Prezensa, lisensa no turnu,",
     titleAccent: "ekrã rejistu ida de'it",
-    lede: "Rejista oras dala ida de'it no Xefe lori diretamente ba folha pagamentu — oras estra, servisu kalan, no adisional Domingu ka feriadu kalkula tuir Lei Trabálhu presiza. Laiha spreadsheet, laiha hatama fila fali.",
+    lede: "Rejista oras dala ida de'it no Xefe lori diretamente ba folha pagamentu — oras estra, servisu kalan, no adisional loron deskansa semanál ka feriadu kalkula tuir Lei Trabálhu presiza. Laiha spreadsheet, laiha hatama fila fali.",
     blocks: [
       {
         type: "heading",
@@ -305,7 +305,7 @@ export const article: LocalizedDocArticle = {
         type: "list",
         items: [
           "Loron ne'ebé laiha registu konsidera nu'udar seidauk rejista, la'ós faltas — de'it faltas explísitu mak konta nu'udar faltas.",
-          "Oras estra, oras servisu kalan, no adisional Domingu ka feriadu kalkula automátiku husi oras rejistadu sira.",
+          "Oras estra, oras servisu kalan, no adisional loron deskansa semanál ka feriadu kalkula automátiku husi oras rejistadu sira. Taxa dobru tuir kompañia nia loron deskansa semanál loloos — Domingu nu'udar regra, ka loron seluk bainhira negósiu la bele taka iha Domingu (Art. 27(2), 30(2)).",
           "Kada mudansa ba registu rejista, atu iha rasta klaru kona-ba se mak muda saida.",
           "Manajer haree no muda prezensa ba nia própriu ekipa; na'in no admin RH haree kompañia tomak.",
         ],
@@ -317,7 +317,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "Empregadu husu lisensa, manajer ka admin RH decide, no lisensa aprovadu tama diretamente ba folha pagamentu no registu prezensa ba loron sira-ne'e — laiha buat atu hatama fila fali. Lisensa sura nu'udar loron servisu: fim de semana no feriadu la konta ba balansu, no meiu-loron mós asetadu.\n\nXefe mai ona ho tipu lisensa tuir Lei Trabálhu Timor-Leste (Lei 4/2012) konfiguradu ona, no kompañia bele aumenta mós nia tipu personalizadu rasik ba buat ne'ebé lei la kobre.",
+        body: "Empregadu husu lisensa, manajer ka admin RH decide, no lisensa aprovadu tama diretamente ba folha pagamentu no registu prezensa ba loron sira-ne'e — laiha buat atu hatama fila fali. Lisensa sura nu'udar loron servisu, no loron sira-ne'ebé tuir semana servisu ne'ebé ita tau iha Konfigurasaun. Iha Timor-Leste, períodu servisu normál bele to'o oras 44 kada semana (Art. 25(1)), ne'ebé la tama iha loron lima ho oras 8, entaun semana loron neen ho deskansa iha Domingu baibain iha ne'e — no iha semana ne'e, sábadu ida lisensa nian SEI deskonta. Feriadu nunka konta ba balansu, no meiu-loron mós asetadu.\n\nXefe mai ona ho tipu lisensa tuir Lei Trabálhu Timor-Leste (Lei 4/2012) konfiguradu ona, no kompañia bele aumenta mós nia tipu personalizadu rasik ba buat ne'ebé lei la kobre.",
       },
       {
         type: "table",
@@ -365,7 +365,7 @@ export const article: LocalizedDocArticle = {
           "Valór hotu iha tabela ne'e MÍNIMU legál, la'ós teto: Art. 1(2) Lei Trabálhu nian só permite hases husi Kódigu bainhira fó kondisaun di'ak liu ba traballadór. Saida mak ita-nia kontratu promete liu ne'e, tenke selu. Esesaun mak lisensa doensa, ne'ebé Art. 33(4) limita loron SELU ba 12.",
           "Lisensa maternidade, paternidade, no interrupsaun gravidés INSS selu diretamente ba traballadór ne'ebé kumpri kontribuisaun presiza — Xefe ajuda prepara deklarasaun ne'ebé traballadór presiza ba pedidu subsídiu ne'e.",
           "Lisensa espesiál mak alokasaun ida de'it ne'ebé kobre kazamentu, mate família nian, no eventu komunidade ka relijiozu — la'ós direitu tolu separadu.",
-          "Pausa selu ba amamentasaun traballadora ne'ebé fila husi lisensa maternidade, no tempu selu traballadora isin-rua nian ba konsulta médiku, trata nu'udar tempu servisu normál iha prezensa, la bele deskonta.",
+          "Pausa amamentasaun no konsulta antes-partu mak tempu ho pagamentu, la'ós lisensa. Art. 62 fó ba traballadora ne'ebé fila mai pausa rua ho pagamentu, oras ida kada ida, kada loron to'o oan halo fulan neen, no ba traballadora isin-rua tempu ho pagamentu ba ezame médiku dala hira mak presiza — iha kazu rua ne'e 'sem perda de remuneração'. Xefe seidauk rejista automátikamente dispensa sira-ne'e iha nivel oras: rejista sira iha prezensa nu'udar tempu servisu atu labele deskonta.",
           "Kompañia bele aumenta nia tipu lisensa personalizadu rasik — porezemplu, prátika lokál ne'ebé lei la kobre — hamutuk ho tipu sira-ne'ebé mai ona.",
         ],
       },

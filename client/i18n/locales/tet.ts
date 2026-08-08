@@ -1163,7 +1163,8 @@ const messages = {
       labourSub: "Lei laboral",
       labour: {
         hours: "Semana oras 44, loron oras 8",
-        ot: "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+        ot: "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
+        night: "Servisu kalan oras 21:00–06:00 ho +25%",
         otCap:
           "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
         sick: "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",

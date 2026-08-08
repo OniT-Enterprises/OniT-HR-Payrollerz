@@ -93,3 +93,109 @@ describe('public tax docs', () => {
     expect(taxAndFilings).toContain('Art. 39');
   });
 });
+
+/**
+ * The six defects a five-lens fact-check of xefe.tl found on 2026-08-08.
+ *
+ * The money was never the problem — an agent re-ran the specimen payslip
+ * through the real engine and all thirteen figures footed to the cent, with a
+ * balanced journal. What was wrong was the AUTHORITY attached to the
+ * arithmetic and the BEHAVIOUR attributed to the product.
+ *
+ * Three of the six were the same failure: a fix landed in the app and never
+ * reached the public copy. That is the pattern worth guarding, not the
+ * individual sentences.
+ */
+const engine = readFileSync(join(process.cwd(), 'client/pages/XefeEngine.tsx'), 'utf8');
+const gettingStarted = docs('getting-started');
+
+describe('/engine — article badges point at the right articles', () => {
+  it('cites Art. 33(4) for sick pay, not Art. 42', () => {
+    // Art. 42 is "Descontos na remuneração" — wage deductions — and the row
+    // directly BELOW this one correctly cites Art. 42(3) for the 30% ceiling.
+    // The page was using one article for two unrelated rules, one row apart,
+    // on the one page whose whole pitch is that the statute sits next to the
+    // arithmetic it governs.
+    expect(engine).toContain('art: "Art. 33(4)"');
+    expect(engine).not.toContain('art: "Art. 42"');
+    expect(engine).toContain('art: "Art. 42(3)"'); // the correct neighbour survives
+  });
+
+  it('gives night work its own Art. 28 row', () => {
+    // Art. 28 "Trabalho noturno" — 21:00 to 06:00 at +25%. Art. 27 has six
+    // paragraphs and no night provision, so bundling them meant a reader who
+    // opened Art. 27 could not tell which of the three rates was the bad one,
+    // and discounted the two correct ones with it.
+    expect(engine).toContain('art: "Art. 28"');
+    expect(engine).toContain('enginePage.law.labour.night');
+  });
+
+  it('pins the overtime cap to the paragraph that contains it', () => {
+    expect(engine).toContain('art: "Art. 27(4)"');
+  });
+});
+
+describe('public docs — the rest day is not Sunday', () => {
+  it('never attaches the double premium to Sunday alone', () => {
+    // Art. 27(2) attaches it to "dia de descanso semanal"; "domingo" appears
+    // nowhere in Art. 27. The engine was corrected the same day (see
+    // resolveRestWeekday) — this copy was publishing a WORSE product than the
+    // one we shipped, to the hospitality and retail businesses that are the
+    // core market.
+    expect(timeAndLeave).not.toContain('Sunday or public-holiday premiums');
+    expect(timeAndLeave).not.toContain('adicionais de domingo ou feriado');
+    expect(timeAndLeave).not.toContain('adisional Domingu ka feriadu');
+  });
+
+  it('says the double rate follows the company rest day', () => {
+    expect(timeAndLeave).toContain('rest-day or public-holiday premiums');
+    expect(timeAndLeave).toContain('dia de descanso semanal ou feriado');
+    expect(timeAndLeave).toContain('loron deskansa semanál ka feriadu');
+  });
+});
+
+describe('public docs — leave counts against the configured week', () => {
+  it('no longer claims weekends never consume a balance', () => {
+    // Art. 30(1) grants ONE rest period, and a lawful week of up to 44 hours
+    // (Art. 25(1)) cannot fit into five 8-hour days — a fact this same site
+    // publishes on two other pages. On a six-day week a Saturday of leave IS
+    // deducted, and the old wording inflated every balance, which is then
+    // CASHED OUT at termination under Art. 32.
+    expect(timeAndLeave).not.toContain("weekends and public holidays don't count");
+    expect(timeAndLeave).not.toContain('fins de semana e feriados não contam');
+    expect(timeAndLeave).toContain('follows the working week you set in Settings');
+  });
+
+  it('states the 44 hours as the cap it is', () => {
+    // Art. 25(1): "não pode ultrapassar 8 horas por dia, nem 44 horas por
+    // semana". The guard caught this in my own replacement text.
+    expect(timeAndLeave).toContain('may run up to 44 hours');
+  });
+});
+
+describe('public docs — capability claims match the product', () => {
+  it('does not claim Art. 62 paid time is handled automatically', () => {
+    // TL_LAW_GAP_MATRIX F9: hour-level paid dispensations do not exist, and a
+    // nursing mother on 6h days is DOCKED 2h/day. The page claimed the exact
+    // opposite — "handled as ordinary worked time, never docked".
+    expect(timeAndLeave).not.toContain('are handled as ordinary worked time');
+    expect(timeAndLeave).toContain('does not yet track these hour-level dispensations');
+  });
+
+  it('does not invent an identity-document hiring requirement', () => {
+    // "bilhete"/"identidade" appear ZERO times in all 2,835 lines of Lei
+    // 4/2012. The product deliberately does not require these (all three
+    // document numbers default to empty and never block), so the page was
+    // arguing against our own headline advantage.
+    expect(gettingStarted).not.toContain('Timorese staff need a');
+    expect(gettingStarted).toContain('None of it blocks you');
+  });
+
+  it('cites the INSS enrolment deadline that settles the question', () => {
+    // DL 20/2017 Art. 3(2): enrolment is due "até à data de entrega da
+    // primeira declaração de remunerações que inclua o beneficiário".
+    // This CLOSES an item the in-app reference had listed as open.
+    expect(gettingStarted).toContain('DL 20/2017, Art. 3(2)');
+    expect(gettingStarted).toContain('DL 20/2017, art. 3.º(2)');
+  });
+});
