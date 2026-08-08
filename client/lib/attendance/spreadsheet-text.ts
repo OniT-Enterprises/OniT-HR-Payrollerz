@@ -333,3 +333,39 @@ export function dedupeAttendanceRows<T extends { employee: string; date: string;
   }
   return out;
 }
+
+/**
+ * The OLE2 / Compound File signature that starts every legacy `.xls` workbook.
+ * Modern `.xlsx` is a ZIP and starts with `PK`.
+ */
+const LEGACY_XLS_MAGIC = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+
+/**
+ * Is this an old-format Excel file that exceljs cannot read?
+ *
+ * Ten of twenty-four real attendance exports in the corpus are legacy `.xls`,
+ * straight off fingerprint devices. exceljs reads only `.xlsx`, and the
+ * importer's fallback path (`file.text()`) turns the binary into garbage that
+ * wastes an extraction call and imports nothing, with no clue why.
+ *
+ * Deliberately detected rather than parsed. The only maintained JS reader for
+ * this format is SheetJS, whose npm release (0.18.5) predates the fix for
+ * CVE-2023-30533 — the fixed builds are published on the vendor's own CDN, not
+ * the registry. Pointing a known-vulnerable parser at files that arrive from
+ * third-party devices is a poor trade in a payroll app when the user can save
+ * the same file as `.xlsx` in one step in software they already have.
+ */
+export function looksLikeLegacyXls(bytes: Uint8Array): boolean {
+  if (bytes.length < LEGACY_XLS_MAGIC.length) return false;
+  return LEGACY_XLS_MAGIC.every((byte, index) => bytes[index] === byte);
+}
+
+/** Read a file's first bytes and report whether it is a legacy `.xls`. */
+export async function isLegacyXlsFile(file: File): Promise<boolean> {
+  try {
+    const head = await file.slice(0, LEGACY_XLS_MAGIC.length).arrayBuffer();
+    return looksLikeLegacyXls(new Uint8Array(head));
+  } catch {
+    return false;
+  }
+}

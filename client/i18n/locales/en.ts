@@ -3669,6 +3669,8 @@ const messages = {
         saveFailed: "Failed to mark attendance. Please try again.",
         exportTitle: "Export Complete",
         exportDesc: "CSV file has been downloaded.",
+        importLegacyXls:
+          "This is an old .xls file. Open it in Excel or Google Sheets and save it as .xlsx or CSV, then import that.",
         importSelect: "Please select a file to import.",
         importErrorTitle: "Import Error",
         importEmpty: "No valid records found in the file.",

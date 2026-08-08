@@ -3724,6 +3724,8 @@ const messages = {
         saveFailed: "Falha ao marcar assiduidade. Por favor tente novamente.",
         exportTitle: "Exportação Concluída",
         exportDesc: "Ficheiro CSV descarregado.",
+        importLegacyXls:
+          "Este é um ficheiro .xls antigo. Abra-o no Excel ou no Google Sheets, guarde como .xlsx ou CSV e importe esse.",
         importSelect: "Por favor selecione um ficheiro para importar.",
         importErrorTitle: "Erro de Importação",
         importEmpty: "Nenhum registo válido encontrado no ficheiro.",

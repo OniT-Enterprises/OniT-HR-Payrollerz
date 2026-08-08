@@ -3645,6 +3645,8 @@ const messages = {
         saveFailed: "Falha marka prezensa. Koko fali.",
         exportTitle: "Exporta remata",
         exportDesc: "Ficheiru CSV download ona.",
+        importLegacyXls:
+          "Ne’e fixeiru .xls tuan. Loke iha Excel ka Google Sheets, grava nu'udar .xlsx ka CSV, no hatama ida ne'e.",
         importSelect: "Favor hili ficheiru atu importa.",
         importErrorTitle: "Erru importa",
         importEmpty: "Laiha rejistu validu.",
