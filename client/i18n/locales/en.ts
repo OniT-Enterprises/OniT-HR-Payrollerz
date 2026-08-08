@@ -2017,7 +2017,7 @@ const messages = {
         "After returning from maternity leave, the worker is entitled to two 1-hour paid breastfeeding breaks per day until the child is 6 months old, and a pregnant worker's medical exam absences are also paid (Labour Law Art. 62) — record these in attendance as worked time, do not dock them. There is nothing to configure here.",
       miscarriageLeave: "Miscarriage Leave (Art. 59.4)",
       miscarriageLeaveHint:
-        "4 weeks after a pregnancy interruption (Labour Law Art. 59.4), as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate.",
+        "At least 4 weeks after a pregnancy interruption (Labour Law Art. 59.4), counted as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate.",
       studyLeave: "Study Leave (Art. 76.3)",
       studyLeaveHint:
         "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment.",
@@ -2056,11 +2056,12 @@ const messages = {
       maternityDaysHint: "Days (12 weeks = 84 days)",
       annualLeaveHint:
         "Legal minimum: 12 working days per year (Labour Law Art. 32). Carry-over limits are your company's policy.",
-      maternityHint: "Legal duration: 12 weeks (Labour Law Art. 59).",
+      maternityHint:
+        "Legal duration: at least 12 weeks — Art. 59(1) says \"período mínimo de 12 semanas\", of which 10 must be taken after the birth. A contract may give more.",
       paternityHint: "Legal minimum: 5 working days (Labour Law Art. 60).",
       sickPayBandsTitle: "Sick pay is fixed by law",
       sickPayBandsText:
-        "Payroll pays certified sick leave per the Labour Code (Art. 33.4): 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
+        "Payroll pays certified sick leave per the Labour Code (Art. 33.4): up to 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
       invalidValues:
         "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
       save: "Save leave settings",
@@ -2143,13 +2144,13 @@ const messages = {
           "All deductions together are capped at 30% of the month's wages (Labour Law Art. 42.3). Xefe never reduces wage tax, INSS or a court-ordered deduction — those use up the cap first, and only the discretionary ones are trimmed.",
         workingHoursLabel: "Standard working time",
         workingHoursValue:
-          "8 hours/day, 44 hours/week; overtime capped at 4 hours/day and 16 hours/week (Labour Law Arts. 25–26)",
+          "Normal hours may not exceed 8 a day or 44 a week (Art. 25(1)); overtime is capped at 4 hours a day and 16 a week (Art. 27(4)). Art. 27(5) lifts the overtime cap for force majeure, or for work indispensable to preventing serious harm to the business.",
         nightWindowLabel: "Night work window",
         nightWindowValue:
           "21:00–06:00 — hours in this window earn the night premium",
         sickBandsLabel: "Sick leave pay",
         sickBandsValue:
-          "12 certified days per year: first 6 days at 100% pay, next 6 at 50% (Labour Law Art. 33.4)",
+          "Up to 12 certified days per year: the first 6 at 100% pay, the next 6 at 50% (Labour Law Art. 33.4). An employer may be more generous.",
         severanceLabel: "Service compensation on termination",
         severanceValue:
           "One month's salary per completed 5-year period of service (Labour Law Art. 56). The article says this is owed \u201cregardless of the reason\u201d the job ended; we are confirming with our accounting reviewers whether dismissal for cause is an exception.",
@@ -2596,7 +2597,7 @@ const messages = {
         "Aged 15-16 at hire: light work only — max 5h/day, 25h/week, no night or overtime work (Labour Law Art. 69).",
       probationEndDate: "Probation ends",
       probationEndDateHelp:
-        "Art. 14: 8/15 days for fixed-term, 30-90 days for permanent contracts.",
+        "Art. 14 caps probation at 8 or 15 days for fixed-term contracts, and at 30 days for permanent ones — up to 90 for roles of high technical complexity or responsibility, or positions of trust.",
       firstName: "First Name *",
       lastName: "Last Name *",
       email: "Email *",
@@ -3615,7 +3616,7 @@ const messages = {
           unjustified: "Did not come to work",
         },
         help: {
-          sick: "Paid by the Labour Law: the first 6 days a year at full pay, the next 6 at half pay (Art. 33.4).",
+          sick: "Paid by the Labour Law, up to 12 days a year: the first 6 at full pay, the next 6 at half pay (Art. 33.4).",
           special: "Paid in full — the law requires it (Labour Law Art. 33.3).",
           unpaid: "Not paid. Counts against the 30 unpaid days a year Xefe allows.",
           unjustified: "Not paid, and recorded against the worker.",
@@ -3725,7 +3726,7 @@ const messages = {
       },
       toast: {
         breakEntitlement:
-          "Art. 25(2): a worker is entitled to a 1-hour break after 5 hours of continuous work.",
+          "Art. 25(2): after 5 hours of continuous work a worker is entitled to a rest break of at least 1 hour.",
         errorTitle: "Error",
         loadFailed: "Failed to load attendance data.",
         validationTitle: "Validation Error",

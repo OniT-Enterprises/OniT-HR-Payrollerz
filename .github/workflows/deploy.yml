@@ -46,6 +46,14 @@ jobs:
       - name: Translation coverage
         run: pnpm i18n:check
 
+      # Guards the two error classes a 2026-08-08 statutory sweep found most
+      # often: a statutory MINIMUM stated as the amount owed (11 instances
+      # across unrelated files), and a dead article pin. The statute text
+      # itself lives outside the repo, so the article-pin half self-skips
+      # here and the floor/ceiling half still runs.
+      - name: Statutory copy
+        run: pnpm check:statutory
+
       - name: Setup Java (Firestore emulator)
         uses: actions/setup-java@v4
         with:
