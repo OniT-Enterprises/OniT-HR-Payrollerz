@@ -410,3 +410,52 @@ and shows the reviewer which rule applied.
   re-engagement, so the automatic fixed-term→permanent conversion is flagged to the
   reviewer rather than applied. If the motive rarely differs in practice, we would
   rather just apply it.
+
+### B16. May a notice shortfall be set off against the final wage?
+When a worker resigns without serving the full notice, **Art. 49(9)** makes them
+owe the employer "uma indemnização … de valor igual à remuneração correspondente
+aos dias não cumpridos". Xefe states that debt next to the final payslip, which
+invites the obvious next step — hold it back.
+
+Two provisions pull opposite ways and we cannot settle it from the text:
+
+- **Art. 43(1)** — "Salvo nos casos expressamente previstos na lei, o empregador
+  **não pode**, através da remuneração, compensar créditos que tenha sobre o
+  trabalhador."
+- **Art. 42(2)** — authorises deductions for social security "**bem como noutros
+  casos determinados por lei** ou por decisão judicial". Art. 49(9) *is* a case
+  determined by law.
+
+So: is Art. 49(9) one of the "casos expressamente previstos" that Art. 43(1)
+exempts? And if a worker's written authorisation under Art. 42(1) unlocks it,
+does the **Art. 42(3) 30% cap** apply to a one-off final settlement, which is not
+obviously the "remuneração recebida pelo trabalhador" in a month that the cap is
+worded against?
+
+- **Impact:** on a $180/month worker a 30-day shortfall is the whole final month.
+  If the cap applies, at most ~$54 could ever be taken.
+- **Xefe today:** states the debt, deducts nothing, and does not tell the employer
+  either way — because we would be asserting a rule the statute does not settle.
+
+### B17. Which Art. 55 routes should Xefe actually surface?
+Art. 55's banded scale is imported by four articles that mention **no court**:
+Art. 15(9) (cessation agreed after a suspension), Art. 17(3) (worker rescinds
+after a harmful transfer), Art. 45(3) (dismissal on a prohibited ground, which is
+*nulo*), and Art. 49(5) (resignation for just cause, **doubled**). Our copy said
+this money was court-only; that is now corrected.
+
+Before wiring any of them we would like two things settled:
+
+1. **How much do the first three actually import?** Only Art. 49(5) uses the
+   quantum formula "é calculada nos termos do disposto no artigo 55.º". The other
+   three say "a indemnização prevista no artigo 55.º", and Art. 55(3)'s chapeau is
+   itself conditional on reinstatement being declined or refused. Do they import
+   the n.º 3 bands outright?
+2. **Art. 49(5) in practice.** Art. 49(6) lets the employer challenge within 60
+   days and Art. 49(7) can invert the claim onto the worker. Is the doubled figure
+   something an employer should be provisioning for, or exposure to disclose?
+
+We have deliberately NOT widened the offboarding card to resignations or mutual
+agreements. An ordinary resignation is owed nothing (Art. 49(8)), and the ordinary
+agreed cessation is **Art. 48** — "a compensação a receber pelo trabalhador" is
+whatever the parties agree, "se couber" — not the Art. 55 scale.

@@ -134,3 +134,73 @@ describe('art55Indemnity: money math + Art. 49(5) doubling', () => {
     expect(art55Indemnity(600, '2025-01-15', '2025-02-15', true)).toBe(0);
   });
 });
+
+/**
+ * The Art. 55 scale is not court-only.
+ *
+ * The module used to assert, and the customer-facing copy used to repeat,
+ * that this money "exists only when a court declares the dismissal unlawful".
+ * That is contradicted four times over in Lei 4/2012, each verified verbatim
+ * against the Ministry of Justice text:
+ *
+ *   Art. 15(9)  "tendo o trabalhador direito ao pagamento da indemnização
+ *                prevista no artigo 55.º"  — cessation agreed after a
+ *                suspension. A handshake, not a dismissal.
+ *   Art. 17(3)  "com direito a indemnização, nos termos previstos no artigo
+ *                55.º"  — the WORKER rescinds after a harmful transfer.
+ *   Art. 45(3)  "conferindo ao trabalhador o direito a ser indemnizado nos
+ *                termos do disposto no artigo 55.º"  — dismissal on a
+ *                prohibited ground, which is NULO, a different category from
+ *                the "ilícito" of Arts. 51/54.
+ *   Art. 49(5)  "tendo o trabalhador direito ao DOBRO dos valores indicados
+ *                naquele artigo"  — resignation for just cause.
+ *
+ * A worker told the money is unreachable without a court never asks for what
+ * Art. 15(9) gives them by agreement. These assert on source, because the
+ * claim lives in prose rather than in a computable value.
+ */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8');
+
+describe('Art. 55 — the court-only claim is gone from code and copy', () => {
+  const module = read('client/lib/payroll/leaver-final-pay.ts');
+
+  it('no longer says the indemnity exists only on a court ruling', () => {
+    expect(module).not.toContain('it exists only when a court declares');
+  });
+
+  it('names all four non-court routes where the same scale is imported', () => {
+    for (const article of ['Art. 15(9)', 'Art. 17(3)', 'Art. 45(3)', 'Art. 49(5)']) {
+      expect(module, article).toContain(article);
+    }
+  });
+
+  it('records that the Art. 49(5) doubling is contingent, not settled', () => {
+    // Art. 49(6) lets the employer challenge within 60 days and Art. 49(7)
+    // can invert the claim onto the worker. Presenting the doubled figure as
+    // a settled liability would overstate it.
+    expect(module).toContain('Art. 49(6)');
+  });
+
+  it('explains why the doubled path is deliberately unreached', () => {
+    // Reaching it means rendering the card for a RESIGNATION, and an ordinary
+    // resignation is owed nothing — Art. 49(8) carries no indemnity and
+    // Art. 49(9) runs the money the other way. Wiring it without gating
+    // visibility on the just-cause attestation would invite an employer to
+    // pay money that is not owed.
+    expect(module).toContain('DELIBERATELY UNREACHED');
+    expect(module).toContain('Art. 49(8)');
+  });
+
+  it('does not repeat the court-only claim in customer-facing copy', () => {
+    for (const locale of ['en', 'pt', 'tet']) {
+      const text = read(`client/i18n/locales/${locale}.ts`);
+      expect(text, locale).not.toContain('court-awarded if dismissal is ruled unlawful');
+    }
+    expect(read('client/pages/hiring/Offboarding.tsx')).not.toContain(
+      'Not payable through payroll — a court fixes it.',
+    );
+  });
+});

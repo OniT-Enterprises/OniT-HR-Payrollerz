@@ -3158,7 +3158,7 @@ const messages = {
           "Referência art. 55.º (fixada pelo tribunal se o despedimento for julgado ilícito)",
         month: "mês",
         months: "meses",
-        note: "Não é pago pela folha de salários — é fixado pelo tribunal. O processo disciplinar escrito do art. 50.º(4) evita esta exposição.",
+        note: "Nunca é pago pela folha. Na via do despedimento ilícito é o tribunal que o fixa (arts. 51.º/54.º), e o processo disciplinar escrito do art. 50.º(4) evita essa exposição. Mas a mesma escala do art. 55.º é devida SEM qualquer decisão judicial noutras quatro situações: cessação acordada após uma suspensão (art. 15.º(9)), rescisão pelo trabalhador após transferência que lhe cause prejuízo (art. 17.º(3)), despedimento por motivo proibido, que é nulo (art. 45.º(3)), e rescisão com justa causa pelo trabalhador, caso em que é o DOBRO (art. 49.º(5)). Confirme os montantes com o seu contabilista.",
       },
       exitInterviews: {
         title: "Entrevistas de saída",
@@ -3176,7 +3176,7 @@ const messages = {
         given: "cumprido",
         notRecorded: "Data do aviso prévio não registada",
         requiredForReason:
-          "o aviso prévio exigido para este motivo de saída é de",
+          "o aviso prévio mínimo para este motivo de saída é de",
         shortfallWorker:
           "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
         shortfallEmployer:

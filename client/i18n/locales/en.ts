@@ -3110,10 +3110,10 @@ const messages = {
     offboarding: {
       art55: {
         title:
-          "Art. 55 reference (court-awarded if dismissal is ruled unlawful)",
+          "Art. 55 reference — a court fixes it on the unlawful-dismissal route, but four articles import the same scale without one",
         month: "month",
         months: "months",
-        note: "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure.",
+        note: "Never paid through payroll. On the unlawful-dismissal route a court fixes it (Arts. 51/54), and the Art. 50(4) written disciplinary process avoids that exposure. But the same Art. 55 scale is owed with NO court ruling in four other situations: a cessation agreed after a suspension (Art. 15(9)), a resignation after a transfer that harms the worker (Art. 17(3)), a dismissal on a prohibited ground, which is void (Art. 45(3)), and a resignation for just cause, where it is DOUBLED (Art. 49(5)). Confirm amounts with your accountant.",
       },
       exitInterviews: {
         title: "Exit interviews",
@@ -3125,11 +3125,11 @@ const messages = {
         recommendShort: "Would recommend",
       },
       notice: {
-        required: "Required notice",
+        required: "Minimum notice",
         days: "days",
         given: "given",
         notRecorded: "Notice date not recorded",
-        requiredForReason: "required notice for this departure reason is",
+        requiredForReason: "the minimum notice for this departure reason is",
         shortfallWorker:
           "Notice is short: the worker owes the employer the missing",
         shortfallEmployer:

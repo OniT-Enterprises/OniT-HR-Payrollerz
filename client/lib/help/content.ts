@@ -231,7 +231,7 @@ const LAW_POSITIONS: HelpArticle = {
           today:
             "The company working week in Settings now drives BOTH leave duration and the double rest-day rate. Set your week and the premium follows your actual rest day. Two limits worth knowing: if your company works every day, Xefe will not guess which day is the rest day and leaves those hours at ordinary rate for you to enter by hand; and a five-day week still treats **Sunday** as the rest day and Saturday as an ordinary day off, because Art. 30(1) grants one rest period, not two.",
           open:
-            "Art. 30(2) applies its test to \"o trabalhador\", so two people in one business can lawfully rest on different days. Xefe\'s working week is company-wide, so a per-employee rest day still needs entering on the payroll row by hand.",
+            "Art. 30(2) applies its test to \"o trabalhador\", so two people in one business can lawfully rest on different days. Xefe's working week is company-wide, so a per-employee rest day still needs entering on the payroll row by hand.",
         },
         {
           id: "leave-year",

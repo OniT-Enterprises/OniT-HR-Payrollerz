@@ -2813,10 +2813,10 @@ export const translations = {
       },
       "offboarding": {
         "art55": {
-          "title": "Art. 55 reference (court-awarded if dismissal is ruled unlawful)",
+          "title": "Art. 55 reference — a court fixes it on the unlawful-dismissal route, but four articles import the same scale without one",
           "month": "month",
           "months": "months",
-          "note": "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure."
+          "note": "Never paid through payroll. On the unlawful-dismissal route a court fixes it (Arts. 51/54), and the Art. 50(4) written disciplinary process avoids that exposure. But the same Art. 55 scale is owed with NO court ruling in four other situations: a cessation agreed after a suspension (Art. 15(9)), a resignation after a transfer that harms the worker (Art. 17(3)), a dismissal on a prohibited ground, which is void (Art. 45(3)), and a resignation for just cause, where it is DOUBLED (Art. 49(5)). Confirm amounts with your accountant."
         },
         "exitInterviews": {
           "title": "Exit interviews",
@@ -2827,11 +2827,11 @@ export const translations = {
           "recommendShort": "Would recommend"
         },
         "notice": {
-          "required": "Required notice",
+          "required": "Minimum notice",
           "days": "days",
           "given": "given",
           "notRecorded": "Notice date not recorded",
-          "requiredForReason": "required notice for this departure reason is",
+          "requiredForReason": "the minimum notice for this departure reason is",
           "shortfallWorker": "Notice is short: the worker owes the employer the missing",
           "shortfallEmployer": "Notice is short: the employer owes the worker the missing",
           "daysPay": "days' pay",
@@ -10674,7 +10674,7 @@ export const translations = {
           "title": "Referénsia Art. 55 (tribunál mak fó se despedimentu sai ilegál)",
           "month": "fulan",
           "months": "fulan",
-          "note": "La selu liu husi folla pagamentu — tribunál mak determina. Prosesu disiplinár hakerek tuir Art. 50(4) evita risku ida-ne'e."
+          "note": "Nunka selu liuhosi folla pagamentu. Iha dalan despedimentu ilísitu, tribunál mak determina (Art. 51/54), no prosesu disiplinár hakerek tuir Art. 50(4) evita risku ne'e. Maibé eskala Art. 55 nian hanesan mós tenke selu SEM desizaun tribunál nian iha situasaun haat seluk: sesasaun ne'ebé akorda depois suspensaun (Art. 15(9)), rezignasaun depois transferénsia ne'ebé prejudika traballadór (Art. 17(3)), despedimentu tanba motivu proibidu, ne'ebé nulu (Art. 45(3)), no rezignasaun ho justa causa, ne'ebé selu DALA RUA (Art. 49(5)). Konfirma valór ho ita-nia kontabilista."
         },
         "exitInterviews": {
           "title": "Entrevista saida",
@@ -10685,11 +10685,11 @@ export const translations = {
           "recommendShort": "Sei rekomenda"
         },
         "notice": {
-          "required": "Avizu préviu ezijidu",
+          "required": "Avizu préviu mínimu",
           "days": "loron",
           "given": "kumpre",
           "notRecorded": "Data avizu préviu la rejista",
-          "requiredForReason": "avizu préviu ezijidu ba motivu sai ida-ne'e mak",
+          "requiredForReason": "avizu préviu mínimu ba motivu sai ida-ne'e mak",
           "shortfallWorker": "Avizu préviu la to'o: traballadór selu ba empregadór",
           "shortfallEmployer": "Avizu préviu la to'o: empregadór selu ba traballadór",
           "daysPay": "loron pagamentu ne'ebé falta",
@@ -18712,7 +18712,7 @@ export const translations = {
           "title": "Referência art. 55.º (fixada pelo tribunal se o despedimento for julgado ilícito)",
           "month": "mês",
           "months": "meses",
-          "note": "Não é pago pela folha de salários — é fixado pelo tribunal. O processo disciplinar escrito do art. 50.º(4) evita esta exposição."
+          "note": "Nunca é pago pela folha. Na via do despedimento ilícito é o tribunal que o fixa (arts. 51.º/54.º), e o processo disciplinar escrito do art. 50.º(4) evita essa exposição. Mas a mesma escala do art. 55.º é devida SEM qualquer decisão judicial noutras quatro situações: cessação acordada após uma suspensão (art. 15.º(9)), rescisão pelo trabalhador após transferência que lhe cause prejuízo (art. 17.º(3)), despedimento por motivo proibido, que é nulo (art. 45.º(3)), e rescisão com justa causa pelo trabalhador, caso em que é o DOBRO (art. 49.º(5)). Confirme os montantes com o seu contabilista."
         },
         "exitInterviews": {
           "title": "Entrevistas de saída",
@@ -18727,7 +18727,7 @@ export const translations = {
           "days": "dias",
           "given": "cumprido",
           "notRecorded": "Data do aviso prévio não registada",
-          "requiredForReason": "o aviso prévio exigido para este motivo de saída é de",
+          "requiredForReason": "o aviso prévio mínimo para este motivo de saída é de",
           "shortfallWorker": "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
           "shortfallEmployer": "Aviso prévio insuficiente: o empregador deve ao trabalhador os",
           "daysPay": "dias de remuneração em falta",

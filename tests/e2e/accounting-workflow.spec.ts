@@ -153,6 +153,20 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   const receiptDialog = page.getByRole("dialog", { name: /record payment/i });
   await receiptDialog.getByLabel(/reference/i).fill(`INV-RECEIPT-${stamp}`);
   await receiptDialog.getByRole("button", { name: /record payment/i }).click();
+  // FLAKE SITE. The one captured artefact (2026-08-08) showed this dialog
+  // VISIBLE on all 63 polls over 30s — fully populated, submit button idle.
+  // So nothing was slow: the click never took effect, or the write hung with
+  // no failure path that closes the dialog. A Radix overlay still swallowing
+  // pointer events after the DatePicker popover closes fits the first, and
+  // this codebase has a documented instance of exactly that hazard.
+  //
+  // Deliberately NOT asserting the button goes disabled to tell those apart:
+  // RecordPaymentModal binds `disabled={saving}`, so a fast save re-enables
+  // before Playwright could poll and the assertion would fail on SUCCESSFUL
+  // runs — adding flake while claiming to diagnose it. The retained trace
+  // (`trace: "retain-on-failure"`) already records every action and request,
+  // so read that instead. And never raise this timeout: 30s is generous and
+  // the dialog was idle throughout, so more time changes nothing.
   await expect(receiptDialog).toBeHidden({ timeout: 30_000 });
   await expect(page.getByText(/paid/i).first()).toBeVisible();
 

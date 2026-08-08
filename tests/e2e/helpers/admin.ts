@@ -53,19 +53,18 @@ export async function waitForEmulators(timeoutMs = 90_000): Promise<void> {
   // A port that ANSWERS is not a functions emulator that has LOADED anything.
   // The Functions emulator binds :5001 well before it has discovered and
   // compiled the function definitions, so the first spec to invoke a callable
-  // pays that cost inside an ordinary assertion timeout.
+  // pays that cost inside an ordinary assertion timeout. Waiting for the hub
+  // to report the emulator is strictly better than waiting for a socket.
   //
-  // HYPOTHESIS, not a proven diagnosis: accounting-workflow.spec is first
-  // alphabetically and flaked three times in one session on 2026-08-08,
-  // always under a loaded suite and never in isolation, with wall-clock for
-  // that single spec ranging 33s to 1.1m on identical code. Cold start fits
-  // that shape. This waits for the hub to report the functions emulator, which
-  // it only does once definitions are loaded.
+  // This does NOT explain the accounting-workflow flake, and an earlier note
+  // here wrongly implied it might. When that failure was finally captured with
+  // an artefact, the "Record Payment" dialog was VISIBLE on all 63 polls over
+  // 30s — fully populated, button idle. Nothing was slow; the submit never
+  // took effect. Cold start does not produce that shape. See the task notes.
   //
-  // Deliberately NOT a raised timeout: raising it would hide the next real
-  // regression in the longest spec in the suite. If the flake outlives this,
-  // the traces are already kept (`trace: "retain-on-failure"`) — read one
-  // rather than reaching for the timeout knob.
+  // Never reach for the timeout knob here: raising it would hide the next real
+  // regression in the longest spec in the suite, and would not have helped in
+  // the one case we have actual evidence for.
   const warmupDeadline = Date.now() + 30_000;
   for (;;) {
     try {
