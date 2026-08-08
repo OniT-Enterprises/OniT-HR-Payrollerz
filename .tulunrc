@@ -1,0 +1,19 @@
+# Tetun orthography for this repo.
+#
+# `both` is deliberate. client/i18n/locales/tet.ts is genuinely MIXED — it
+# carries INL markers (ll, ñ, kept accents) and DIT ones (lh, nh) side by side,
+# written over two years by different hands.
+#
+# `both` is the TOLERANT mode: it reports a divergence from either standard at
+# info level and asserts neither. It is also the LOUDEST — on the 2026-08-07
+# pass it produced 31 orthography notes (16 ORTH-032 + 15 ORTH-032-INL) where
+# `dit` alone produced 16. That is the honest trade: the extra noise is the file
+# telling you it has not picked a side, and both directions stay INFO, so real
+# ERRORS remain visible. That pass surfaced 14 of them — escaped unicode,
+# Portuguese left untranslated, and a `maié`/`maibé` typo.
+#
+# Pinning INL or DIT would turn several hundred existing, correct strings into
+# findings overnight. Choosing for real is a product decision needing a native
+# reviewer and a one-off sweep of the whole file, not a lint setting. Until
+# then this file exists so nobody has to remember the flag.
+ortho: both
