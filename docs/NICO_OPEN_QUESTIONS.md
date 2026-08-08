@@ -25,6 +25,22 @@ anything still open below.
 ## A. Money-affecting — worth answering first
 
 ### A2. Is Art. 56 service counted in complete 5-year blocks, or prorated?
+**Now a confirmation rather than an open design question.** The July sweep could
+not read this article — the OCR copy truncated it mid-sentence — so we asked
+blind. The clean mj.gov.tl copy gives it in full, and it is one sentence:
+
+> Independentemente do motivo, em caso de cessação do contrato de trabalho o
+> trabalhador tem direito a uma compensação por tempo de serviço no valor
+> correspondente a 1 mês de salário por cada período de 5 anos de trabalho ao
+> serviço do empregador.
+
+There is no proration language and no cap. Statutes that intend proration usually
+say so, so the silence favours **completed blocks** — which is what Xefe does. Are
+we reading that right in practice?
+
+⚠️ **The same sentence opens "Independentemente do motivo".** See A1 below: it was
+closed as "justa causa voids severance", and this text is unqualified.
+
 "um mês de salário por cada período de 5 anos de trabalho" — does a worker with
 7 years get 1 month (one complete block) or 1.4 months (prorated)?
 
@@ -116,6 +132,37 @@ Xefe has no leave type for this. An employer refusing it would be refusing a
 statutory right; today the absence would be recorded as ordinary unpaid leave,
 which loses the fact that it could not lawfully be refused. Is a distinct type
 worth having, or is unpaid leave with a note good enough in practice?
+
+### A8. Is the leave year the calendar year, or the worker's own year?
+Art. 32(1) reads **"O trabalhador tem direito a férias remuneradas por cada ano de
+trabalho prestado"** — per year of work *rendered*, which sounds like the
+employment anniversary. Xefe counts the **calendar** year: `monthsInEntitlementYear`
+opens with `asOfDate.getFullYear()` and runs January to December.
+
+Over a full year the two agree on 12 days. They diverge for anyone hired mid-year,
+and the divergence reaches money at termination. Someone hired 1 July 2024 who
+leaves 31 March 2025 has, on Xefe's reading, accrued 3 days in 2025; on an
+anniversary reading they are 9 months into a cycle that has not completed, so
+Art. 32(3) gives 1 day per month worked — 9 days.
+
+In practice the 2024 leave year would usually have been taken or paid already,
+which is probably why nobody has noticed. **Which basis do TL employers actually
+use, and does the prior year's untaken balance carry into that calculation?**
+
+This was previously unverifiable: the OCR copy the July sweep used had Art. 32(1)
+unreadable, and the gap matrix recorded "leave-year basis unverified — code
+assumes calendar year". The clean mj.gov.tl copy settles what the article SAYS;
+only you can settle what is done.
+
+**What makes this more than a wording quibble:** the same statute says **"cada ano
+civil"** for the 13th month (Art. 44(2)) and **"cada ano de trabalho prestado"**
+for leave (Art. 32(1)). The drafter used different words in adjacent articles.
+
+**And what argues the other way:** a real final-pay worksheet from your firm paid
+2/12 of a month's subsídio and 2 days of leave off one and the same month count —
+we pinned that in a test. So practice appears to use the calendar basis for both.
+If that is simply what everyone does, say so and we will leave it; we would just
+rather it be a decision than an accident.
 
 ## B. Precision — smaller amounts, same certainty problem
 
@@ -232,6 +279,16 @@ The row is badged "Pending confirmation" and tells the owner to ask their
 accountant. Is the practice lawful, and if so under what? If it is not, the setting
 should go.
 
+### B15. Art. 76(4) — may a minor worker-student align leave with school holidays?
+Art. 76(4) gives a worker-student who is a **minor** the right to line their annual
+leave up with the school holidays. Xefe implements 76(3) (paid absence to sit
+exams) but has no concept of a worker-student at all, so nothing prompts this when
+leave is scheduled.
+
+Is this something employers here actually field, or is it dormant in practice? We
+already store date of birth, so the minor half is free; the student half would be
+a new flag on the employee.
+
 ## C. Low stakes — answer if convenient
 
 - **Tax depreciation:** Schedule VII prints 100% first-year expensing, but
@@ -250,7 +307,18 @@ Closed on 2026-08-02 from your firm's own written advisories and a final-pay
 worksheet, not from our reading of the statute. All three are now live in Xefe, so a
 correction changes real behaviour.
 
-### A1. Does justa causa void Art. 56 service compensation? — **no severance, if the process is valid**
+### A1. Does justa causa void Art. 56 service compensation? — **RE-OPENED 2026-08-08**
+
+⚠️ Closed on your firm's advisories, but the clean statute copy now readable says
+Art. 56 applies **"Independentemente do motivo"** — regardless of the reason — in
+an unqualified single sentence. Either another article carves out dismissal for
+cause, or practice diverges from the text.
+
+This is the largest single number on a final payslip, so we would rather ask twice
+than be wrong once. Xefe currently follows your advisory (cause-aware, no
+severance). **Is that still right?** Original answer below.
+
+
 Art. 23(4)(d) ("sem qualquer indemnização ou compensação") prevails over Art. 56's
 "independentemente do motivo". We took "valid" to mean written accusation, right of
 defence and a formal decision, so Xefe asks a reviewer to attest to the process
