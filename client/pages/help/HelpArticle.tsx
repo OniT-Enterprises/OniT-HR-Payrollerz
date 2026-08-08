@@ -13,12 +13,17 @@
  */
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, Info } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarClock, Info } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getArticle, type HelpEntry, type PositionStatus } from "@/lib/help/content";
+import {
+  getArticle,
+  type ArticleLocale,
+  type HelpEntry,
+  type PositionStatus,
+} from "@/lib/help/content";
 
 const STATUS_STYLES: Record<PositionStatus, string> = {
   confirming:
@@ -59,12 +64,15 @@ function EntryCard({ entry, t }: { entry: HelpEntry; t: (k: string) => string })
           <h3 className="text-base font-semibold leading-snug">
             {entry.heading}
           </h3>
-          <Badge
-            variant="outline"
-            className={`shrink-0 font-normal ${STATUS_STYLES[entry.status]}`}
-          >
-            {t(`help.status.${entry.status}`)}
-          </Badge>
+          {/* Guides have no side to be on — only positions carry a status. */}
+          {entry.status && (
+            <Badge
+              variant="outline"
+              className={`shrink-0 font-normal ${STATUS_STYLES[entry.status]}`}
+            >
+              {t(`help.status.${entry.status}`)}
+            </Badge>
+          )}
         </div>
 
         {entry.quote && (
@@ -88,12 +96,28 @@ function EntryCard({ entry, t }: { entry: HelpEntry; t: (k: string) => string })
           ))}
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("help.todayLabel")}
-          </p>
-          <p className="mt-1 text-sm">{entry.today}</p>
-        </div>
+        {/* A deadline is the line people scan for, so it gets its own block
+            with a date-shaped label rather than sitting inside a paragraph. */}
+        {entry.when && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/5 p-3">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                {t("help.whenLabel")}
+              </p>
+              <p className="mt-0.5 text-sm">{entry.when}</p>
+            </div>
+          </div>
+        )}
+
+        {entry.today && (
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("help.todayLabel")}
+            </p>
+            <p className="mt-1 text-sm">{entry.today}</p>
+          </div>
+        )}
 
         {entry.impact && (
           <p className="text-sm text-muted-foreground">
@@ -120,7 +144,7 @@ function EntryCard({ entry, t }: { entry: HelpEntry; t: (k: string) => string })
 export default function HelpArticlePage() {
   const { t, locale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
-  const article = slug ? getArticle(slug) : undefined;
+  const article = slug ? getArticle(slug, locale as ArticleLocale) : undefined;
 
   // Deep links from search carry #entry-id. React Router does not scroll to a
   // fragment on its own, and the content mounts after the route does.
@@ -163,7 +187,9 @@ export default function HelpArticlePage() {
         iconColor="text-primary"
       />
 
-      {locale !== "en" && (
+      {/* Only when THIS article fell back — a reader looking at the Tetun
+          guide should not be told it is English-only. */}
+      {locale !== "en" && article.locale === "en" && (
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-border/60 bg-muted/30 p-3.5">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">

@@ -74,6 +74,7 @@ const messages = {
     contentsHeading: "Iha pájina ne'e",
     backToHelp: "Fila ba ajuda",
     notFound: "Dokumentu ne'e la iha.",
+    whenLabel: "Bainhira:",
     todayLabel: "Saida mak Xefe halo ohin loron",
     impactLabel: "Nia folin:",
     openLabel: "Seidauk konfirma",

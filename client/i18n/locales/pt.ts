@@ -74,6 +74,7 @@ const messages = {
     contentsHeading: "Nesta página",
     backToHelp: "Voltar à ajuda",
     notFound: "Esse documento não existe.",
+    whenLabel: "Quando:",
     todayLabel: "O que o Xefe faz hoje",
     impactLabel: "Quanto vale:",
     openLabel: "Ainda por confirmar",

@@ -892,6 +892,15 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // The position itself, not just the debate around it.
   await expect(page.getByText(/what xefe does today/i).first()).toBeVisible();
 
+  // The monthly guide exists for its deadlines. If those stop rendering the
+  // page is decoration — so assert the dates, not the headings.
+  await page.goto("/help/your-month");
+  await expect(
+    page.getByText(/by the 15th of the following month/i),
+  ).toBeVisible();
+  await expect(page.getByText(/first 10 days of the following month/i)).toBeVisible();
+  await expect(page.getByText(/by 20 december/i)).toBeVisible();
+
   // Art. 64 childcare leave: the days and the fact it is unpaid both have to
   // reach the person configuring the policy.
   await page.goto("/time-leave/settings");
