@@ -2125,7 +2125,7 @@ const messages = {
           "Declaração até ao dia 10, pagamento até ao dia 20 do mês seguinte",
         deductionCapLabel: "Limite de descontos salariais",
         deductionCapValue:
-          "Os descontos estão limitados a 30% do salário do mês (Lei do Trabalho, art. 42.º/3); ordens judiciais ficam fora do limite",
+          "O conjunto dos descontos está limitado a 30% do salário do mês (Lei do Trabalho, art. 42.º/3). O Xefe nunca reduz o imposto sobre salários, o INSS nem um desconto ordenado pelo tribunal — esses consomem o limite primeiro, e só os descontos discricionários são reduzidos.",
         workingHoursLabel: "Tempo de trabalho padrão",
         workingHoursValue:
           "8 horas/dia, 44 horas/semana; horas extra limitadas a 4 h/dia e 16 h/semana (Lei do Trabalho, arts. 25.º–26.º)",
@@ -2134,10 +2134,10 @@ const messages = {
           "21:00–06:00 — as horas neste período recebem o prémio noturno",
         sickBandsLabel: "Pagamento da licença por doença",
         sickBandsValue:
-          "12 dias certificados por ano: primeiros 6 dias a 100%, 6 seguintes a 50%",
+          "12 dias certificados por ano: primeiros 6 dias a 100%, 6 seguintes a 50% (Lei do Trabalho, art. 33.º/4)",
         severanceLabel: "Compensação por antiguidade na cessação",
         severanceValue:
-          "Um mês de salário por cada período completo de 5 anos de serviço, conforme a causa da cessação (Lei do Trabalho, art. 56.º)",
+          "Um mês de salário por cada período completo de 5 anos de serviço (Lei do Trabalho, art. 56.º). O artigo diz que é devido \u201cindependentemente do motivo\u201d da cessação; estamos a confirmar com os nossos revisores de contabilidade se o despedimento com justa causa é uma exceção.",
         nonCashLabel: "Benefícios em espécie",
         nonCashValue:
           "Tributados como salário apenas quando valem mais de $20/mês (Lei Fiscal 8/2008)",
