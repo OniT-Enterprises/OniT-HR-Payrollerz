@@ -36,7 +36,13 @@ export interface ExtractedDocumentFields {
   billDate: string | null;
   dueDate: string | null;
   amount: number | null;
-  taxAmount: number | null;
+  /**
+   * NOT extracted. Timor-Leste has no VAT, and a document's tax line may be
+   * Indonesian PPN, Portuguese IVA, TL services tax or supplier withholding —
+   * four different treatments that cannot be told apart from the document, so
+   * mapping any of them to Bill.taxRate would misstate the tax. Decide the
+   * per-regime meaning before asking for it again.
+   */
   currency: string | null;
   description: string | null;
   category: string;

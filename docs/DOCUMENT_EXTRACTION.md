@@ -70,9 +70,12 @@ hides a real payable. A stored `balanceDue` decides alone — falling back to th
 bill total when it disagrees would offer a bill owing $900 to settle a $472
 payment. Several equal candidates are all shown rather than guessed between.
 
-`taxAmount` is extracted and **deliberately unused**: TL has no VAT, and a
-document's tax line may be Indonesian PPN, Portuguese IVA, TL services tax or
-withholding, so mapping it to `Bill.taxRate` would misstate the treatment.
+`taxAmount` is **not extracted**, deliberately. TL has no VAT, and a document's
+tax line may be Indonesian PPN, Portuguese IVA, TL services tax or supplier
+withholding — four treatments that cannot be told apart from the document alone,
+so mapping any of them to `Bill.taxRate` would misstate the tax. It used to be
+extracted and read by nothing, which looks like a field somebody forgot to wire.
+Decide the per-regime meaning before asking for it again.
 
 ## Attendance spreadsheets
 

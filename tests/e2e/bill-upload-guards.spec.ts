@@ -46,7 +46,6 @@ const baseFields = {
   billDate: "2026-07-01",
   dueDate: "2026-07-31",
   amount: 450,
-  taxAmount: null,
   currency: "USD",
   description: "Accounting services",
   category: "professional_services",

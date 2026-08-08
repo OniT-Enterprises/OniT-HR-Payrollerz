@@ -20,7 +20,7 @@ const { sanitizeFields, parseJsonReply } = require('../extract.js');
 
 const EXPECTED_KEYS = [
   'documentType', 'vendorName', 'vendorTaxId', 'billNumber', 'billDate',
-  'dueDate', 'amount', 'taxAmount', 'currency', 'description', 'category',
+  'dueDate', 'amount', 'currency', 'description', 'category',
   'containsMultipleDocuments', 'confidence',
 ];
 
@@ -96,9 +96,11 @@ describe('sanitizeFields — money', () => {
         assert.equal(sanitizeFields({ amount: 1e15 }).amount, 1e15);
   });
 
-  it('applies the same rules to taxAmount', () => {
-    assert.equal(sanitizeFields({ taxAmount: -5 }).taxAmount, null);
-    assert.equal(sanitizeFields({ taxAmount: 12.345 }).taxAmount, 12.35);
+  it('does not carry taxAmount at all', () => {
+    // Removed deliberately: TL has no VAT, and a document's tax line may be
+    // Indonesian PPN, Portuguese IVA, TL services tax or withholding. Nothing
+    // read it, and a field nobody reads looks like one somebody forgot to wire.
+    assert.equal('taxAmount' in sanitizeFields({ taxAmount: 12.34 }), false);
   });
 });
 
