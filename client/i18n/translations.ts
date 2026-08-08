@@ -1052,7 +1052,7 @@ export const translations = {
       "trace": {
         "heading": "Engine trace — one employee, one month",
         "profile": "Store supervisor · monthly salary · resident",
-        "hourlyRate": "Hourly rate",
+        "hourlyRate": "Hourly rate, rounded to the cent before it is applied",
         "inssNote": "The INSS base excludes overtime and the food allowance",
         "employerInss": "Employer INSS (6%) — an employer cost, not a deduction",
         "thirteenth": "13th-month accrual, due 20 December",
@@ -9001,7 +9001,7 @@ export const translations = {
       "trace": {
         "heading": "Kalkulasaun motór nian — trabalhador ida, fulan ida",
         "profile": "Supervizór loja · saláriu mensál · rezidente",
-        "hourlyRate": "Taxa oráriu",
+        "hourlyRate": "Taxa oras nian, arredonda to'o sentavu molok aplika",
         "inssNote": "Base INSS la inklui oras extra no subsídiu ai-han",
         "employerInss": "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",
         "thirteenth": "Subsídiu anuál (fulan-13), tenke selu to'o 20 Dezembru",
@@ -16950,7 +16950,7 @@ export const translations = {
       "trace": {
         "heading": "Cálculo do motor — um trabalhador, um mês",
         "profile": "Supervisor de loja · salário mensal · residente",
-        "hourlyRate": "Taxa horária",
+        "hourlyRate": "Remuneração horária, arredondada ao cêntimo antes de ser aplicada",
         "inssNote": "A base de INSS exclui as horas extra e o subsídio de alimentação",
         "employerInss": "INSS do empregador (6%) — custo do empregador, não é dedução",
         "thirteenth": "Provisão do 13.º mês, a pagar até 20 de dezembro",

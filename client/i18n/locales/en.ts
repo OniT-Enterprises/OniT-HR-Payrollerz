@@ -1144,7 +1144,7 @@ const messages = {
     trace: {
       heading: "Engine trace — one employee, one month",
       profile: "Store supervisor · monthly salary · resident",
-      hourlyRate: "Hourly rate",
+      hourlyRate: "Hourly rate, rounded to the cent before it is applied",
       inssNote: "The INSS base excludes overtime and the food allowance",
       employerInss: "Employer INSS (6%) — an employer cost, not a deduction",
       thirteenth: "13th-month accrual, due 20 December",

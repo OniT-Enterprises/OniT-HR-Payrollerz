@@ -1144,7 +1144,7 @@ const messages = {
     trace: {
       heading: "Kalkulasaun motór nian — trabalhador ida, fulan ida",
       profile: "Supervizór loja · saláriu mensál · rezidente",
-      hourlyRate: "Taxa oráriu",
+      hourlyRate: "Taxa oras nian, arredonda to'o sentavu molok aplika",
       inssNote: "Base INSS la inklui oras extra no subsídiu ai-han",
       employerInss:
         "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",

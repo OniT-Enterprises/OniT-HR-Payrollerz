@@ -1155,7 +1155,7 @@ const messages = {
     trace: {
       heading: "Cálculo do motor — um trabalhador, um mês",
       profile: "Supervisor de loja · salário mensal · residente",
-      hourlyRate: "Taxa horária",
+      hourlyRate: "Remuneração horária, arredondada ao cêntimo antes de ser aplicada",
       inssNote:
         "A base de INSS exclui as horas extra e o subsídio de alimentação",
       employerInss:

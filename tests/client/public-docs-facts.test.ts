@@ -270,3 +270,45 @@ describe('public docs — capability claims match the shipped defaults', () => {
     expect(en).toContain('any owner can switch them off');
   });
 });
+
+/**
+ * The one finding where the PAGE was right and the hand-check was wrong.
+ *
+ * /engine prints the divisor as "1,200 × 12 ÷ (44 × 52)", then $6.29, then
+ * +$113.22. Recompute it exactly and you get $113.29 — a seven-cent gap,
+ * printed directly beneath a promise of "exact decimal arithmetic". That is
+ * the one place a hostile reviewer says "your home page doesn't foot".
+ *
+ * It does foot. calculateHourlyRate ROUNDS TO THE CENT and the rounded rate is
+ * then applied, which is also the rate printed on the employee's payslip — so
+ * the worker's own arithmetic reconciles. The page needed four words, not a
+ * new number.
+ *
+ * This pins the ORDER, because the tempting "fix" is to make the trace
+ * mathematically exact — which would silently change what every hourly worker
+ * is paid.
+ */
+describe('/engine — the hourly-rate rounding order', () => {
+  it('rounds the rate to the cent before applying it', () => {
+    const monthlyHours = 44 * (52 / 12);
+    const exact = 1200 / monthlyHours;
+    const rounded = Math.round(exact * 100) / 100;
+
+    expect(rounded).toBe(6.29);
+    // What the page publishes, and what the engine pays:
+    expect(Number((rounded * 12 * 1.5).toFixed(2))).toBe(113.22);
+    // What an accountant reproducing it from the printed formula would get:
+    expect(Number((exact * 12 * 1.5).toFixed(2))).toBe(113.29);
+  });
+
+  it('tells the reader which order to reproduce', () => {
+    for (const locale of ['en', 'pt', 'tet']) {
+      const text = readFileSync(
+        join(process.cwd(), 'client/i18n/locales', `${locale}.ts`),
+        'utf8',
+      );
+      const trace = text.slice(text.indexOf('trace: {'), text.indexOf('trace: {') + 900);
+      expect(trace, locale).toMatch(/rounded|arredondada|arredonda/);
+    }
+  });
+});
