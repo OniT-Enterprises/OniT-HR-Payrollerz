@@ -54,6 +54,25 @@ closed as "justa causa voids severance", and this text is unqualified.
 - **Question, as narrowly as we can put it:** *for a leaver with exactly 7 years —
   1 month, or 1.4?* And does a partial final block count at all?
 
+### A5. Are holiday and rest-day 2× premiums inside the INSS contribution base? — **we now think NO, please confirm**
+
+Re-read 2026-08-08 against DL 20/2017 in full, and we think the statute answers
+it. Three provisions, none of which we had cited before:
+
+- **Art. 8(2)(c)** — "os suplementos relativos a trabalho em regime de turnos e
+  **trabalho noturno**" are expressly **IN** the base.
+- **Art. 9(c)** — "os valores pagos pela prestação de **trabalho extraordinário**"
+  are expressly **OUT**.
+- Lei 4/2012 **Art. 27** puts the rest-day / holiday 2× rule *inside* an article
+  headed "Horas extraordinárias", and Art. 2(y) defines trabalho extraordinário
+  as work beyond the normal period — which a rest day is by definition.
+
+So the 2× line is overtime pay and Art. 9(c) excludes it, which is what Xefe
+does. The counter-argument is Art. 8(2)(f) (residual "outros subsídios…"), but a
+specific exclusion beats a residual inclusion.
+
+**Is that how it is actually declared on the DR?** Original question below.
+
 ### A5. Are holiday and rest-day 2× premiums inside the INSS contribution base?
 DL 20/2017 Art. 8(2)(f) includes regular supplements in the base; overtime
 ("trabalho extraordinário") is excluded. A Sunday or public-holiday premium could

@@ -586,6 +586,7 @@ export default function RunPayrollWizard() {
               }
               processing={payrollMutationAction === "submit"}
               selfApprovalAllowed={selfApprovalAllowed}
+              inssEmployerRatePercent={calc.inssEmployerRatePercent}
             />
           </StepContent>
         </StepWizard>

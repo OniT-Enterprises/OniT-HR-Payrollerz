@@ -44,6 +44,8 @@ interface WizardStepReviewProps {
   saving: boolean;
   processing: boolean;
   selfApprovalAllowed?: boolean;
+  /** Employer INSS rate actually applied — 5.4% under the Art. 86 reduction. */
+  inssEmployerRatePercent: number;
 }
 
 export function WizardStepReview({
@@ -58,6 +60,7 @@ export function WizardStepReview({
   onSubmit,
   saving,
   processing,
+  inssEmployerRatePercent,
   selfApprovalAllowed = false,
 }: WizardStepReviewProps) {
   const { t } = useI18n();
@@ -113,7 +116,11 @@ export function WizardStepReview({
           <span className="tabular-nums font-medium">{formatCurrencyTL(totals.inssEmployee)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{t("runPayroll.inssEmployerLabel")}</span>
+          <span className="text-muted-foreground">
+            {t("runPayroll.inssEmployerLabel", {
+              rate: inssEmployerRatePercent,
+            })}
+          </span>
           <span className="tabular-nums font-medium">{formatCurrencyTL(totals.inssEmployer)}</span>
         </div>
       </div>
