@@ -48,6 +48,15 @@ console.error paths) — beacons confirmed reaching the ingest endpoint.
 and the WhatsApp bot channel (via SSH, log-based). GitHub emails the workflow
 author when a scheduled run fails. The WhatsApp step is `continue-on-error`
 until the pairing is re-scanned — flip it to strict after re-pairing.
+Extended 2026-08-08 with two document-extraction probes, because uploads could
+fail totally while `/api/health` kept answering: a half-hourly count of
+request-level `[extract] <id> failed:` lines, and a DAILY synthetic extraction
+(`server/xefe-api/scripts/check-extraction-auth.cjs`) that spends one model call
+to prove the Claude Code **subscription** OAuth token still works. That token
+expires — when it does, every bill, receipt and timesheet upload 502s.
+Replacing it means editing `/opt/xefe-api/.env` on the box and reloading; it is
+deliberately excluded from the deploy rsync.
+
 (An external monitor like UptimeRobot is still a nice-to-have for
 independence from GitHub, but the gap is closed.)
 
@@ -131,8 +140,14 @@ redirect to it. Firebase Auth uses `auth.xefe.tl`. See
   silently 403'd in prod. `deploy-rules.mjs` never provisions this — any new
   project/bucket needs the gcloud binding (see storage.rules header comment
   and docs/INVOICING.md).
-- **xefe-api deploys are still manual**:
-  `rsync -avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules server/xefe-api/ hetzner:/opt/xefe-api/ && ssh hetzner 'cd /opt/xefe-api && npm install --omit=dev && pm2 restart xefe-api'`
+- **xefe-api deploys are automatic since 2026-08-08**: merging anything under
+  `server/xefe-api/` to main runs `deploy-api.yml`. It was dispatch-only before,
+  and the box drifted TWO WEEKS behind main — with a Read-sandbox security fix
+  merged but not running the whole time, while the client half shipped normally.
+  The reload goes through `pm2 startOrReload` and `index.js` drains on SIGTERM
+  (`kill_timeout` 200s > the 180s extraction ceiling), so a deploy no longer cuts
+  off an upload mid-read. Manual fallback if CI is down:
+  `rsync -avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules server/xefe-api/ hetzner:/opt/xefe-api/ && ssh hetzner 'cd /opt/xefe-api && npm ci --omit=dev && pm2 startOrReload ecosystem.config.js --update-env'`
   (the `--exclude` flags protect the server's `.env` and credentials — do not drop them).
 - **nginx security headers** live in `/etc/nginx/snippets/xefe-headers.conf` on Hetzner,
   included at server level AND inside each `location` that has its own `add_header`
