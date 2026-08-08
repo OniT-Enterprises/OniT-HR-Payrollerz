@@ -79,13 +79,85 @@ to lapse, so it still does **not** authorise expiring carried-over days.
 
 ---
 
-## 3. Still to discharge from §7
+## 3. Arts. 39–45 read against the clean copy (2026-08-08)
+
+§7 had 43–48 as "scanned upside-down, decoded by reversal, medium-high
+confidence". Read properly, four confirm Xefe and two sharpen open questions.
+
+### Art. 42 — the 30% cap. Xefe's reading is right.
+
+> 2. …o empregador está autorizado a efetuar descontos ou retenções para o
+>    Sistema de Segurança Social, bem como noutros casos determinados por lei ou
+>    por decisão judicial.
+> 3. **Os descontos efetuados não podem exceder, por mês, 30 por cento** do valor
+>    total da remuneração recebida pelo trabalhador.
+
+`42(3)` caps "os descontos efetuados" — the deductions `42(2)` has just defined,
+which include social security and judicial decisions. There is **no carve-out for
+court orders**, so the mined answer "court orders sit outside the cap" is not what
+the text says.
+
+`calculations-tl.ts` already handles this correctly, and better than the summary
+suggested: tax, INSS and court orders are `protectedDeductions` — they **consume**
+the cap (`availableCap = totalCap − protectedTotal`) and only discretionary lines
+are reduced. A tribunal amount that breaches the cap on its own is **warned about,
+not silently reduced**. That is the right call: the cap binds the employer's
+discretion, and a court order is not the employer's discretion.
+
+**No action.** The only nit is wording — the warning calls Art. 42(3) a
+"guideline" where the statute says "não podem exceder".
+
+### Art. 44 — subsídio anual. Confirms Xefe, and sharpens A8.
+
+> 1. …subsídio anual de valor não inferior a 1 salário mensal, pago **até ao dia
+>    20 de Dezembro** de cada ano civil.
+> 2. O cálculo é proporcional aos meses de trabalho prestado em **cada ano civil**.
+
+Dec-20 deadline ✅, proportional-by-months ✅, and the basis is **explicitly
+"ano civil"**.
+
+That is the sharp edge of A8: the same statute says **"ano civil"** for the
+subsídio and **"ano de trabalho prestado"** for leave (Art. 32(1)). The drafter
+distinguished them. Xefe uses one month count for both — and
+`tests/client/untaken-leave-payout.test.ts` *pins* that conflation:
+
+> it('uses the SAME month count as the Art. 44 subsidio') … "the observed
+> worksheet paid 2/12 of a month's subsidio and 2 days of leave off one and the
+> same month count."
+
+So real practice conflates them too. Text and practice disagree, which is why A8
+is a question rather than a bug report.
+
+### Confirmed, no action
+
+| Article | Says | Xefe |
+|---|---|---|
+| **40(5)** | Pay on the due date, or the preceding working day if it falls on a Saturday, Sunday or holiday | ✅ implemented (`getInitialPayrollDates`) |
+| **43** | No set-off of employer credits against wages; wage credits rank ahead of the State in insolvency | ✅ nothing to build; Xefe never sets off |
+| **45** | Dismissal without just cause prohibited; union activity is never just cause | ✅ NOT-SOFTWARE (employer conduct) |
+
+### Two articles that answer OPEN questions
+
+- **Art. 41** — "O trabalhador a tempo parcial é remunerado, **proporcionalmente**,
+  pelas horas prestadas", calculated on the hourly rate of a **full-time worker in
+  the same post**. That is direct support for pro-rata in **B8** (does the $115
+  minimum wage prorate for a genuine part-timer?), which Xefe already offers as
+  its `pro_rata` treatment.
+- **Art. 39(4)** — expressly excludes from "remuneração": allowances (transport,
+  food, lodging, transfer), profit shares, **overtime payments**, and other
+  extraordinary benefits. Relevant to **A5** (are the 2× premiums inside the INSS
+  base?) — though the INSS base is DL 20/2017's to define, so this is evidence,
+  not an answer.
+
+---
+
+## 4. Still to discharge from §7
 
 Not yet read against the clean copy. Ordered by how much money rides on them:
 
 | Articles | Why they matter | §7 status |
 |---|---|---|
-| **43–48** | Wage protection, deductions, the 30%/month cap chain around Art. 42 | "decoded by reversal, medium-high confidence" |
+| ~~43–48~~ | ~~the 30%/month cap chain~~ | **DISCHARGED above** (39–45 read; 46–48 still to do) |
 | **55(3)(g)** | Notice/termination conditions | "read from garble" |
 | **60–65** | Parental protections, Art. 62 breastfeeding, Art. 64 childcare | "ordering scrambled" |
 | **78** | Body missing entirely | unknown content |

@@ -154,6 +154,16 @@ unreadable, and the gap matrix recorded "leave-year basis unverified — code
 assumes calendar year". The clean mj.gov.tl copy settles what the article SAYS;
 only you can settle what is done.
 
+**What makes this more than a wording quibble:** the same statute says **"cada ano
+civil"** for the 13th month (Art. 44(2)) and **"cada ano de trabalho prestado"**
+for leave (Art. 32(1)). The drafter used different words in adjacent articles.
+
+**And what argues the other way:** a real final-pay worksheet from your firm paid
+2/12 of a month's subsídio and 2 days of leave off one and the same month count —
+we pinned that in a test. So practice appears to use the calendar basis for both.
+If that is simply what everyone does, say so and we will leave it; we would just
+rather it be a decision than an accident.
+
 ## B. Precision — smaller amounts, same certainty problem
 
 ### B6. For the $500 resident WIT exemption, is "month" the month wages were earned or paid?
