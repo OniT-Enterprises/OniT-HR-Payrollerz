@@ -104,14 +104,21 @@ its own, larger budget because ONE attendance import is a dozen chunked calls an
 sharing the document budget made a third import 429 partway through, half
 importing a month.
 
-## Deployment — the two halves ship separately
+## Deployment — both halves, and what watches them
 
-Client changes go out with the normal `main` deploy. `server/xefe-api/` does
-**not**: `deploy-api.yml` is `workflow_dispatch` only, and the box ran two-week-old
-code while a security fix sat merged on main. After changing the extractor, run
-that workflow and check `/api/health`, or the client will ship expecting a schema
-the server does not return.
+Both halves now deploy on a push to `main` — `deploy-api.yml` gained a trigger
+filtered to `server/xefe-api/**` after the box ran two-week-old code while a
+security fix sat merged. It reloads through `pm2 startOrReload`, and `index.js`
+drains on SIGTERM with `kill_timeout` set above the 180s extraction ceiling, so a
+deploy no longer cuts off an upload that is mid-read. Check `/api/health` after a
+server-side change; a client shipping ahead of its schema is what the old split
+caused.
 
 Extraction authenticates with a Claude Code **subscription** OAuth token
-(`CLAUDE_CODE_OAUTH_TOKEN` in `/opt/xefe-api/.env`), not a metered API key. If it
-expires, every upload 502s and nothing currently alerts.
+(`CLAUDE_CODE_OAUTH_TOKEN` in `/opt/xefe-api/.env`), not a metered API key. When it
+expires every upload 502s while `/api/health` still answers happily, so two probes
+in `uptime.yml` cover it: a half-hourly count of request-level failures in the API
+log, and a daily synthetic extraction
+(`server/xefe-api/scripts/check-extraction-auth.cjs`) that catches a dead token
+before a customer does. Replacing the token means editing `/opt/xefe-api/.env` on
+the box and reloading — it is deliberately excluded from the deploy rsync.
