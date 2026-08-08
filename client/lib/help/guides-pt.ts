@@ -99,8 +99,9 @@ export const MONTH_PT: HelpArticle = {
           id: "subsidio",
           heading: "O décimo terceiro mês (subsídio anual)",
           body: [
-            "Cada trabalhador tem direito a mais um mês de salário por ano. Quem está consigo há menos de um ano recebe a parte proporcional, não nada.",
-            "É um direito legal, não uma gratificação que decide dar.",
+            "Cada trabalhador tem direito a **pelo menos** mais um mês por ano. Quem está consigo há menos de um ano recebe a parte proporcional, não nada.",
+            "Esse mês é o **salário base** — não as horas extraordinárias, não os subsídios, não outras gratificações. O art. 39.º(4) deixa de fora da *remuneração* os abonos de despesas, os prémios de desempenho da empresa, o trabalho extraordinário e outros benefícios extraordinários, e o subsídio calcula-se sobre o que resta.",
+            "É um direito legal e um mínimo, não uma gratificação que decide dar. Um contrato pode prometer mais.",
           ],
           when: "Até 20 de dezembro (Lei do Trabalho, art. 44.º).",
         },
@@ -166,6 +167,7 @@ export const LEAVER_PT: HelpArticle = {
           heading: "Compensação por tempo de serviço",
           body: [
             "Um mês de salário por cada cinco anos de trabalho. É habitualmente a maior rubrica do recibo final.",
+            "**Isso é o mínimo legal, não a resposta.** Muitos empregadores timorenses prometem bastante mais no contrato — acumular um mês por *ano* de serviço é comum aqui, cinco vezes o mínimo legal. Verifique o que acordou antes de pagar o mínimo; o Xefe calcula o mínimo e não conhece o seu contrato.",
             "O Xefe conta blocos completos de cinco anos, que é a leitura menor onde a lei é omissa — sete anos pagam um mês, não 1,4. Essa interpretação está explicada em *Onde o Xefe toma posição sobre a lei*, e vale uma conversa com o seu contabilista quando o valor é elevado.",
           ],
         },
@@ -174,13 +176,15 @@ export const LEAVER_PT: HelpArticle = {
           heading: "A parte proporcional do décimo terceiro",
           body: [
             "Quem sai em junho ganhou metade de um décimo terceiro. É pago com o restante acerto final, sem esperar por dezembro.",
+            "Calculado sobre o salário base, tal como o de dezembro — horas extraordinárias e subsídios não o aumentam.",
           ],
         },
         {
           id: "notice",
           heading: "Aviso prévio — trabalhado ou pago",
           body: [
-            "Ou cumpre o aviso prévio, ou é pago em substituição. Num despedimento por extinção do posto de trabalho, o trabalhador tem ainda direito a tempo pago durante o aviso para procurar outro emprego.",
+            "Ou cumpre o aviso prévio, ou é pago em substituição. A duração depende da antiguidade: **15 dias até dois anos, 30 dias acima disso**.",
+            "Num despedimento por extinção do posto de trabalho, o trabalhador tem ainda direito a tempo pago durante o aviso para procurar outro emprego — **dois dias pagos por semana** (art. 53.º(4)). O Xefe conta semanas completas e apresenta o valor como mínimo, porque a lei não diz o que uma semana incompleta final dá direito.",
           ],
         },
       ],

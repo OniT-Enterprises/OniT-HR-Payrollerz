@@ -102,8 +102,9 @@ export const MONTH_TET: HelpArticle = {
           id: "subsidio",
           heading: "Fulan sanulu-resin-tolu (subsídiu anuál)",
           body: [
-            "Traballadór ida-idak iha direitu ba saláriu fulan ida tan kada tinan. Ema ne'ebé servisu ho ita menus husi tinan ida simu parte proporsionál, la'ós buat ida.",
-            "Ne'e direitu legál, la'ós prémiu ne'ebé ita hili atu fó.",
+            "Traballadór ida-idak iha direitu ba **pelu menus** fulan ida tan kada tinan. Ema ne'ebé servisu ho ita menus husi tinan ida simu parte proporsionál, la'ós buat ida.",
+            "Fulan ne'e mak **saláriu báziku** — la'ós oras extraordináriu, la'ós subsídiu, la'ós prémiu seluk. Art. 39(4) hasai husi *remunerasaun* abonu despeza, prémiu dezempeñu kompañia nian, serbisu extraordináriu no benefísiu extraordináriu seluk, no subsídiu sura tuir saida mak resta.",
+            "Ne'e direitu legál no mínimu ida, la'ós prémiu ne'ebé ita hili atu fó. Kontratu bele promete liu.",
           ],
           when: "To'o loron 20 Dezembru (Lei Trabálhu, Art. 44).",
         },
@@ -169,6 +170,7 @@ export const LEAVER_TET: HelpArticle = {
           heading: "Kompensasaun ba tempu servisu",
           body: [
             "Saláriu fulan ida ba kada tinan lima servisu. Baibain ne'e liña boot liu iha resibu ikus.",
+            "**Ne'e mínimu legál, la'ós resposta.** Empregadór timoroan barak promete liu tan iha kontratu — akumula fulan ida ba *tinan* ida servisu baibain iha ne'e, dala lima husi mínimu legál. Verifika saida mak ita akorda molok selu mínimu; Xefe sura mínimu no la hatene ita-nia kontratu.",
             "Xefe sura bloku kompletu tinan lima nian, ne'ebé mak leitura ki'ik liu iha fatin ne'ebé lei nonook — tinan hitu selu fulan ida, la'ós 1,4. Interpretasaun ne'e esplika iha *Fatin ne'ebé Xefe foti pozisaun kona-ba lei*, no vale koalia ho ita-nia kontabilista bainhira valór boot.",
           ],
         },
@@ -177,13 +179,15 @@ export const LEAVER_TET: HelpArticle = {
           heading: "Parte proporsionál husi fulan sanulu-resin-tolu",
           body: [
             "Ema ne'ebé sai iha Juñu manán ona sorin husi fulan sanulu-resin-tolu. Selu hamutuk ho pagamentu ikus, la hein Dezembru.",
+            "Sura tuir saláriu báziku, hanesan ida Dezembru nian — oras extraordináriu no subsídiu la hasa'e nia.",
           ],
         },
         {
           id: "notice",
           heading: "Avizu prévia — servisu ka selu",
           body: [
-            "Ka nia kumpre períodu avizu prévia, ka ita selu nu'udar substituisaun. Iha despedimentu tanba postu servisu lakon, traballadór iha direitu mós ba tempu ho pagamentu durante avizu atu buka servisu seluk.",
+            "Ka nia kumpre períodu avizu prévia, ka ita selu nu'udar substituisaun. Durasaun depende ba antiguidade: **loron 15 to'o tinan rua, loron 30 liu tan ne'e**.",
+            "Iha despedimentu tanba postu servisu lakon, traballadór iha direitu mós ba tempu ho pagamentu durante avizu atu buka servisu seluk — **loron rua ho pagamentu kada semana** (Art. 53(4)). Xefe sura semana kompletu no hatudu valór nu'udar mínimu, tanba lei la dehan semana ikus ne'ebé la kompletu fó direitu ba saida.",
           ],
         },
       ],

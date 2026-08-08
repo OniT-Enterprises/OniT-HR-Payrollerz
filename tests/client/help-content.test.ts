@@ -273,6 +273,32 @@ describe('the guides say the deadlines that cost money', () => {
     expect(leaver).toContain('10th of the month after');
   });
 
+  // Each of these was WRONG or vague in the first draft and was corrected
+  // against the mined corpus — real filed returns and a practitioner's written
+  // advisories, which outrank a careful reading of the statute.
+  it('says the thirteenth month is base salary, and a floor', () => {
+    // "One extra month of salary" reads as a month of TOTAL pay. Art. 39(4)
+    // keeps overtime and allowances out of remuneração, so an owner following
+    // the loose wording would overpay.
+    expect(monthText).toContain('base salary');
+    expect(monthText).toContain('at least');
+  });
+
+  it('says service compensation is the legal minimum, not the answer', () => {
+    // The mined corpus has a real employer accruing a month per YEAR — five
+    // times the statutory floor. Presenting the floor as the figure is how a
+    // reader underpays somebody whose contract promised more.
+    const leaver = JSON.stringify(getArticle('when-someone-leaves'));
+    expect(leaver).toContain('legal minimum, not the answer');
+    expect(leaver).toContain('does not know your contract');
+  });
+
+  it('gives the actual notice periods rather than gesturing at them', () => {
+    const leaver = JSON.stringify(getArticle('when-someone-leaves'));
+    expect(leaver).toContain('15 days up to two years');
+    expect(leaver).toContain('two paid days a week');
+  });
+
   it('says plainly that a generated file is not a filed one', () => {
     // The single most expensive misunderstanding available: an INSS export
     // sitting in a downloads folder looks exactly like a submitted return.
