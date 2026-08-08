@@ -62,16 +62,16 @@ export const article: LocalizedDocArticle = {
         type: "table",
         headers: ["Leave type", "Typical length", "Pay", "Statute"],
         rows: [
-          ["Annual leave", "12 working days a year", "Full pay", "Art. 32"],
+          ["Annual leave", "At least 12 working days a year", "Full pay", "Art. 32(2)"],
           [
             "Sick leave",
-            "12 days a year, with a medical certificate",
+            "Up to 12 days a year, with a medical certificate",
             "First 6 days full pay, next 6 days half pay",
-            "Art. 34",
+            "Art. 33(4)",
           ],
           [
             "Maternity leave",
-            "12 weeks (at least 10 after the birth)",
+            "At least 12 weeks, of which 10 must follow the birth",
             "Paid directly by INSS to workers who qualify",
             "Art. 59",
           ],
@@ -101,6 +101,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
+          "Every figure in the table is a legal MINIMUM, not a ceiling: Art. 1(2) of the Labour Law lets a contract depart from the Code only \"para estabelecer condições mais favoráveis ao trabalhador\" — more favourably to the worker. Whatever your contract promises above these, it owes. The one exception is sick leave, where Art. 33(4) caps the PAID days at 12.",
           "Maternity, paternity, and post-loss leave are paid directly by Timor-Leste's social security institute (INSS) to workers who meet the contribution requirement — Xefe helps prepare the declaration a worker needs for that claim.",
           "Family event leave is one pooled allowance covering marriage, a death in the family, and community or religious events — not three separate entitlements.",
           "A returning mother's paid breastfeeding time and a pregnant worker's paid time for medical exams are handled as ordinary worked time in attendance, never docked.",
@@ -186,19 +187,19 @@ export const article: LocalizedDocArticle = {
         rows: [
           [
             "Férias anuais",
-            "12 dias úteis por ano",
+            "Pelo menos 12 dias úteis por ano",
             "Salário completo",
-            "Art. 32.º",
+            "Art. 32.º(2)",
           ],
           [
             "Licença por doença",
-            "12 dias por ano, com certificado médico",
+            "Até 12 dias por ano, com certificado médico",
             "Primeiros 6 dias a 100%, os 6 seguintes a 50%",
-            "Art. 34.º",
+            "Art. 33.º(4)",
           ],
           [
             "Licença de maternidade",
-            "12 semanas (pelo menos 10 após o parto)",
+            "No mínimo 12 semanas, das quais 10 após o parto",
             "Paga diretamente pelo INSS aos trabalhadores elegíveis",
             "Art. 59.º",
           ],
@@ -238,6 +239,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
+          "Todos os valores da tabela são MÍNIMOS legais, não tetos: o art. 1.º(2) da Lei do Trabalho só permite afastar o Código \"para estabelecer condições mais favoráveis ao trabalhador\". O que o seu contrato prometer acima disto, é devido. A exceção é a licença por doença, em que o art. 33.º(4) limita a 12 os dias PAGOS.",
           "A licença de maternidade, de paternidade e por interrupção da gravidez são pagas diretamente pelo Instituto Nacional de Segurança Social (INSS) aos trabalhadores que cumprem o requisito de contribuições — o Xefe ajuda a preparar a declaração necessária para esse pedido.",
           "A licença por motivo familiar é uma única alocação que cobre casamento, falecimento de familiar e eventos comunitários ou religiosos — não são três direitos separados.",
           "As pausas pagas para amamentação de uma trabalhadora que regressa e o tempo pago de uma trabalhadora grávida para exames médicos são tratados como tempo de trabalho normal na presença, nunca descontados.",
@@ -321,16 +323,16 @@ export const article: LocalizedDocArticle = {
         type: "table",
         headers: ["Tipu lisensa", "Durasaun jerál", "Pagamentu", "Artigu"],
         rows: [
-          ["Lisensa Anual", "loron servisu 12 kada tinan", "Saláriu kompletu", "Art. 32"],
+          ["Lisensa Anual", "Pelu menus loron servisu 12 kada tinan", "Saláriu kompletu", "Art. 32(2)"],
           [
             "Lisensa Doensa",
-            "loron 12 kada tinan, ho sertifikadu médiku",
+            "To'o loron 12 kada tinan, ho sertifikadu médiku",
             "Loron 6 primeiru 100%, loron 6 tuir mai 50%",
-            "Art. 34",
+            "Art. 33(4)",
           ],
           [
             "Lisensa Maternidade",
-            "semana 12 (pelu menus 10 depois partu)",
+            "Pelu menus semana 12, ne'ebé 10 tenke depois partu",
             "INSS selu diretamente ba traballadór ne'ebé kualifika",
             "Art. 59",
           ],
@@ -360,6 +362,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
+          "Valór hotu iha tabela ne'e MÍNIMU legál, la'ós teto: Art. 1(2) Lei Trabálhu nian só permite hases husi Kódigu bainhira fó kondisaun di'ak liu ba traballadór. Saida mak ita-nia kontratu promete liu ne'e, tenke selu. Esesaun mak lisensa doensa, ne'ebé Art. 33(4) limita loron SELU ba 12.",
           "Lisensa maternidade, paternidade, no interrupsaun gravidés INSS selu diretamente ba traballadór ne'ebé kumpri kontribuisaun presiza — Xefe ajuda prepara deklarasaun ne'ebé traballadór presiza ba pedidu subsídiu ne'e.",
           "Lisensa espesiál mak alokasaun ida de'it ne'ebé kobre kazamentu, mate família nian, no eventu komunidade ka relijiozu — la'ós direitu tolu separadu.",
           "Pausa selu ba amamentasaun traballadora ne'ebé fila husi lisensa maternidade, no tempu selu traballadora isin-rua nian ba konsulta médiku, trata nu'udar tempu servisu normál iha prezensa, la bele deskonta.",

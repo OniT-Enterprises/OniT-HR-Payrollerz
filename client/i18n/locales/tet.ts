@@ -2008,7 +2008,7 @@ const messages = {
         "Depois fila husi lisensa maternidade, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, atu fó susu to'o bebé halo fulan 6, no falta traballadora isin-rua nian ba konsulta médiku mós selu (Lei Trabálhu Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta. Laiha buat atu konfigura iha ne'e.",
       miscarriageLeave: "Lisensa interrupsaun gravidés (Art. 59.4)",
       miscarriageLeaveHint:
-        "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
+        "Pelu menus semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
       studyLeave: "Lisensa Estudu (Art. 76.3)",
       studyLeaveHint:
         "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
@@ -2046,7 +2046,8 @@ const messages = {
       maternityDaysHint: "Loron (12 semana = 84 loron)",
       annualLeaveHint:
         "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
-      maternityHint: "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
+      maternityHint:
+        "Durasaun legál: pelu menus semana 12 — Art. 59(1) fó \"períodu mínimu semana 12\", no 10 tenke goza depois partu. Kontratu bele fó liu tan.",
       paternityHint: "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 60).",
       sickPayBandsTitle: "Pagamentu lisensa doensa fixu tuir lei",
       sickPayBandsText:
@@ -2137,7 +2138,7 @@ const messages = {
           "21:00–06:00 — oras iha janela ne'e hetan prémiu kalan",
         sickBandsLabel: "Pagamentu lisensa doensa",
         sickBandsValue:
-          "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4)",
+          "To'o loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4). Empregadór bele fó liu tan.",
         severanceLabel: "Kompensasaun servisu iha terminasaun",
         severanceValue:
           "Saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu \u201cla haree ba motivu\u201d ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
@@ -2581,7 +2582,7 @@ const messages = {
         "Tinan 15-16 iha admisaun: servisu ki'ik de'it — máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu (Lei Trabálhu Art. 69).",
       probationEndDate: "Remata períodu esperiénsia",
       probationEndDateHelp:
-        "Art. 14: loron 8/15 ba kontratu ho prazu, loron 30-90 ba kontratu permanente.",
+        "Art. 14 limita períodu esperiénsia ba loron 8 ka 15 iha kontratu ho prazu, no loron 30 iha kontratu permanente — to'o 90 ba funsaun ho kompleksidade tékniku ka responsabilidade aas, ka pozisaun konfiansa nian.",
       firstName: "Naran *",
       lastName: "Apelidu *",
       email: "Email *",
@@ -3593,7 +3594,7 @@ const messages = {
           unjustified: "La mai servisu",
         },
         help: {
-          sick: "Lei Trabálhu selu: loron 6 primeiru kada tinan ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
+          sick: "Lei Trabálhu selu, to'o loron 12 kada tinan: loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
           special: "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 33.3).",
           unpaid: "La selu. Sura ba loron 30 laiha pagamentu kada tinan ne'ebé Xefe permite.",
           unjustified: "La selu, no rejista hasoru traballadór.",
@@ -3702,7 +3703,7 @@ const messages = {
       },
       toast: {
         breakEntitlement:
-          "Art. 25(2): traballadór iha direitu ba intervalu oras 1 hafoin servisu oras 5 tuir malu.",
+          "Art. 25(2): hafoin servisu oras 5 tuir malu, traballadór iha direitu ba intervalu deskansu ho durasaun pelu menus oras 1.",
         errorTitle: "Erru",
         loadFailed: "Falha karrega dadus prezensa.",
         validationTitle: "Erru validasaun",
