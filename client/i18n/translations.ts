@@ -1845,6 +1845,8 @@ export const translations = {
         "save": "Save leave settings"
       },
       "payroll": {
+        "petroleumLabel": "We are a petroleum Contractor (Law 8/2008 Sec. 68.1)",
+        "petroleumHint": "Turn this on only if your company is a party to a Petroleum Agreement. Your employees are then taxed under Schedule IX, not the ordinary wage tax — a different regime with its own rates, depreciation rules and filing desk. Xefe does not calculate it, so it will stop payroll rather than work it out wrongly and leave you owing the difference.",
         "currentRatesTitle": "The rates you are using now",
         "changeRatesTitle": "Change the legal rates",
         "title": "Payroll Configuration",
@@ -6726,6 +6728,9 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "petroleumBlockTitle": "Payroll is not available for a petroleum Contractor",
+      "petroleumBlockBody": "Your settings say this company is a party to a Petroleum Agreement. Employees of a Contractor are taxed under Law 8/2008 Schedule IX — 10% up to $550 a month then 30% for a resident with a tax number, 20% for a non-resident, 30% otherwise — and the return goes to the petroleum directorate, not the ordinary wage-tax desk. Xefe has not built that, and calculating it as ordinary payroll would withhold too little and leave the shortfall with you.",
+      "petroleumBlockCta": "Change this in Payroll settings",
       "syncDock": {
         "title": "This will dock pay",
         "description": "Attendance is missing for some working days in this period. Payroll treats a working day with no record as an unpaid absence, so syncing will reduce pay for {{count}} people:",
@@ -9787,6 +9792,8 @@ export const translations = {
         "save": "Rai konfigurasaun lisensa"
       },
       "payroll": {
+        "petroleumLabel": "Ami Kontratante petróleu nian (Lei 8/2008, Sek. 68.1)",
+        "petroleumHint": "Loke ida-ne'e de'it se ita-nia empreza tama iha Akordu Petróleu. Ita-nia traballadór sira sei selu impostu tuir Anexu IX, la'ós impostu saláriu baibain — rejime seluk ho taxa, regra amortizasaun no fatin entrega rasik. Xefe la kalkula ne'e, tan ne'e sei para folha duke kalkula sala no husik Ita selu diferensa.",
         "currentRatesTitle": "Valór ne'ebé ita uza agora",
         "changeRatesTitle": "Muda valór legál sira",
         "title": "Konfigurasaun Folha",
@@ -14668,6 +14675,9 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "petroleumBlockTitle": "Folha la disponivel ba Kontratante petróleu nian",
+      "petroleumBlockBody": "Ita-nia konfigurasaun hatete katak empreza ne'e tama iha Akordu Petróleu. Traballadór Kontratante nian selu impostu tuir Anexu IX Lei 8/2008 — 10% to'o $550 kada fulan no depois 30% ba residente ho númeru fiskál, 20% ba la'ós residente, 30% ba seluk — no deklarasaun ba diresaun petróleu. Xefe seidauk halo ne'e, no kalkula hanesan folha baibain sei retein uitoan liu, no diferensa sai Ita-nia.",
+      "petroleumBlockCta": "Muda iha konfigurasaun Folha",
       "syncDock": {
         "title": "Ida-ne'e sei deskonta saláriu",
         "description": "Laiha rejistu prezensa ba loron servisu balun iha períodu ne'e. Folha trata loron servisu ne'ebé laiha rejistu nu'udar falta laiha pagamentu, tanba ne'e sinkroniza sei hamenus pagamentu ba ema {{count}}:",
@@ -17729,6 +17739,8 @@ export const translations = {
         "save": "Guardar definições de licenças"
       },
       "payroll": {
+        "petroleumLabel": "Somos um Contratante petrolífero (Lei 8/2008, Sec. 68.1)",
+        "petroleumHint": "Ative apenas se a sua empresa for parte de um Acordo Petrolífero. Os seus trabalhadores passam a ser tributados pelo Anexo IX e não pelo imposto sobre salários comum — um regime diferente, com taxas, regras de amortização e serviço de entrega próprios. O Xefe não o calcula, por isso vai parar a folha em vez de a calcular mal e deixá-lo a dever a diferença.",
         "currentRatesTitle": "As taxas que está a usar agora",
         "changeRatesTitle": "Alterar as taxas legais",
         "title": "Configuração da Folha",
@@ -22610,6 +22622,9 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "petroleumBlockTitle": "A folha não está disponível para um Contratante petrolífero",
+      "petroleumBlockBody": "As suas definições indicam que esta empresa é parte de um Acordo Petrolífero. Os trabalhadores de um Contratante são tributados pelo Anexo IX da Lei 8/2008 — 10% até $550 por mês e depois 30% para um residente com número fiscal, 20% para um não residente, 30% nos restantes casos — e a declaração vai para a direção de petróleo. O Xefe não implementa isso, e calcular como folha comum reteria de menos, ficando a diferença consigo.",
+      "petroleumBlockCta": "Alterar nas definições da Folha",
       "syncDock": {
         "title": "Isto vai descontar salário",
         "description": "Faltam registos de assiduidade em alguns dias úteis deste período. A folha trata um dia útil sem registo como falta não paga, por isso sincronizar vai reduzir o vencimento de {{count}} pessoas:",

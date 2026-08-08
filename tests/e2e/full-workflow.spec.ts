@@ -868,6 +868,9 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
       "tax.form_c_preparation_updated",
     ]),
   );
+  // ── 10. Help, and the Art. 64 policy row ────────────────────────────────
+  // Before the petroleum step below, which deliberately blocks payroll.
+  //
   // The sidebar's "Get help" used to open WhatsApp in a new tab. It now
   // navigates, which is precisely the kind of change that passes typecheck,
   // lint and every unit test while being completely broken in a browser.
@@ -897,6 +900,37 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   });
   await expect(childcareRow).toBeVisible();
   await expect(page.getByText(/5 unpaid days a year/i)).toBeVisible();
+
+  // ── 11. A petroleum Contractor cannot run domestic payroll ──────────────
+  // Lei 8/2008 Sec. 72.2 sends a Contractor's employees to Schedule IX, a
+  // parallel regime. Xefe has not built it, and running them at Schedule V
+  // rates UNDER-withholds — Sec. 25.3 makes the shortfall the employer's. The
+  // wizard must therefore refuse, not compute. Last in the journey because it
+  // deliberately blocks the thing every earlier step needed.
+  await page.goto("/payroll/settings");
+  // The editable statutory rates sit behind a disclosure — a first-time owner
+  // should not meet them by accident.
+  await page.getByRole("button", { name: /change the legal rates/i }).click();
+  const petroleumToggle = page.locator("#petroleum-contractor");
+  await petroleumToggle.click();
+  await expect(petroleumToggle).toHaveAttribute("data-state", "checked");
+  await page
+    .getByRole("button", { name: /save payroll configuration/i })
+    .click();
+  await expect(page.getByText(/saved/i).first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  await page.goto("/payroll/run");
+  await expect(
+    page.getByText(/payroll is not available for a petroleum contractor/i),
+  ).toBeVisible({ timeout: 20_000 });
+  // The wizard itself must be gone, not merely warned over.
+  await expect(page.getByRole("button", { name: /^next$/i })).toHaveCount(0);
+
+  // And it lets you back out — a setting that traps you is worse than the bug.
+  await page.getByRole("button", { name: /change this in payroll settings/i }).click();
+  await expect(page).toHaveURL(/payroll\/settings/, { timeout: 15_000 });
 
   expect(updateDepthErrors, "React update loops detected").toEqual([]);
 });

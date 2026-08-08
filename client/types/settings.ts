@@ -293,6 +293,24 @@ export interface PayrollConfig {
    * employee 4% is never reduced. Default false.
    */
   smallEmployerInssDiscount?: boolean;
+  /**
+   * This tenant is a petroleum Contractor — a party to a Petroleum Agreement
+   * under Lei 8/2008 Sec. 68.1.
+   *
+   * If so, its employees are NOT taxed under Schedule V. Sec. 72.2 sends them
+   * to SCHEDULE IX instead: resident with a TIN 10% to $550/mo then 30%,
+   * non-resident 20% flat, anyone else 30% flat, plus a $10/month personal
+   * credit. Depreciation likewise moves to Schedule X. It is a parallel regime,
+   * not a rate tweak, and filing goes to ATTL's petroleum directorate.
+   *
+   * Xefe does not implement it, so when this is set the payroll run is REFUSED
+   * rather than computed at domestic rates. Guessing would under-withhold — a
+   * non-resident on $3,000/month is $300 under Schedule V against $600 under
+   * Schedule IX — and Sec. 25.3 makes the shortfall the employer's liability.
+   * `client/lib/tax/withholding-tl.ts` already refuses supplier withholding for
+   * the same reason.
+   */
+  petroleumContractor?: boolean;
 }
 
 // ============================================
