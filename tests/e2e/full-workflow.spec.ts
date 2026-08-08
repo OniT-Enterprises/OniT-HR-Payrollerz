@@ -868,5 +868,35 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
       "tax.form_c_preparation_updated",
     ]),
   );
+  // The sidebar's "Get help" used to open WhatsApp in a new tab. It now
+  // navigates, which is precisely the kind of change that passes typecheck,
+  // lint and every unit test while being completely broken in a browser.
+  checkpoint("Form C saved; checking help and the Art. 64 policy row");
+  await page.getByRole("button", { name: /get help/i }).click();
+  await expect(page).toHaveURL(/\/help$/);
+  // The human escape hatch has to survive the change, and stay an external
+  // link — routing to WhatsApp would strand someone whose app is broken.
+  const whatsapp = page.getByRole("link", { name: /whatsapp/i });
+  await expect(whatsapp).toHaveAttribute("href", /wa\.me/);
+
+  // Search has to find an entry by the word a reader would type, not by the
+  // words the statute uses. "Severance" appears nowhere in the article prose.
+  await page.getByRole("searchbox").fill("severance");
+  const hit = page.getByRole("link", { name: /service compensation/i }).first();
+  await expect(hit).toBeVisible();
+  await hit.click();
+  await expect(page).toHaveURL(/\/help\/how-xefe-reads-the-law/);
+  // The position itself, not just the debate around it.
+  await expect(page.getByText(/what xefe does today/i).first()).toBeVisible();
+
+  // Art. 64 childcare leave: the days and the fact it is unpaid both have to
+  // reach the person configuring the policy.
+  await page.goto("/time-leave/settings");
+  const childcareRow = page.getByRole("button", {
+    name: /caring for a sick child/i,
+  });
+  await expect(childcareRow).toBeVisible();
+  await expect(page.getByText(/5 unpaid days a year/i)).toBeVisible();
+
   expect(updateDepthErrors, "React update loops detected").toEqual([]);
 });

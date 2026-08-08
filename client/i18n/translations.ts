@@ -48,6 +48,31 @@ export const translations = {
         "s8Body": "suporte@onit.tl"
       }
     },
+    "help": {
+      "title": "Help & documentation",
+      "subtitle": "How Xefe works, and how it reads Timor-Leste law.",
+      "talkToUsTitle": "Talk to a person on WhatsApp",
+      "talkToUsBody": "Stuck on something? This is usually the fastest way out.",
+      "searchPlaceholder": "Search — try “severance”, “INSS”, “sick leave”",
+      "searchLabel": "Search the documentation",
+      "resultCount": "{{count}} matching section(s)",
+      "noResults": "Nothing found for “{{query}}”.",
+      "noResultsHint": "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp above and we will answer directly.",
+      "articlesHeading": "Documents",
+      "updated": "Updated {{date}}",
+      "contentsHeading": "On this page",
+      "backToHelp": "Back to help",
+      "notFound": "That document does not exist.",
+      "todayLabel": "What Xefe does today",
+      "impactLabel": "What it is worth:",
+      "openLabel": "Still being confirmed",
+      "englishOnly": "This document is only available in English for now. It quotes labour and tax law closely, and we would rather wait for a proper translation than publish a machine-made one nobody has checked.",
+      "status": {
+        "confirming": "Confirming",
+        "settled": "Settled",
+        "asks-you": "Xefe asks you"
+      }
+    },
     "common": {
       "weekdaysShort": {
         "0": "Sun",
@@ -7965,6 +7990,31 @@ export const translations = {
         "s8Body": "suporte@onit.tl"
       }
     },
+    "help": {
+      "title": "Ajuda no dokumentasaun",
+      "subtitle": "Oinsá Xefe servisu, no oinsá nia lee lei Timor-Leste nian.",
+      "talkToUsTitle": "Koalia ho ema iha WhatsApp",
+      "talkToUsBody": "Pega iha buat ruma? Baibain ne'e dalan lalais liu.",
+      "searchPlaceholder": "Buka — koko “kompensasaun”, “INSS”, “lisensa doensa”",
+      "searchLabel": "Buka iha dokumentasaun",
+      "resultCount": "Seksaun {{count}} ne'ebé hanesan",
+      "noResults": "La hetan buat ida ba “{{query}}”.",
+      "noResultsHint": "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
+      "articlesHeading": "Dokumentu",
+      "updated": "Atualiza iha {{date}}",
+      "contentsHeading": "Iha pájina ne'e",
+      "backToHelp": "Fila ba ajuda",
+      "notFound": "Dokumentu ne'e la iha.",
+      "todayLabel": "Saida mak Xefe halo ohin loron",
+      "impactLabel": "Nia folin:",
+      "openLabel": "Seidauk konfirma",
+      "englishOnly": "Dokumentu ne'e iha de'it iha lian Inglés ba oras ne'e. Nia sita besik lei traballu no fiskál, no ami prefere hein tradusaun ne'ebé di'ak duke publika tradusaun makina nian ne'ebé ema ida seidauk verifika.",
+      "status": {
+        "confirming": "Seidauk konfirma",
+        "settled": "Rezolve tiha",
+        "asks-you": "Xefe husu ba ita"
+      }
+    },
     "common": {
       "weekdaysShort": {
         "0": "Dom",
@@ -15880,6 +15930,31 @@ export const translations = {
         "s7Body": "Estes termos regem-se pelas leis de Timor-Leste.",
         "s8Title": "Contacto",
         "s8Body": "suporte@onit.tl"
+      }
+    },
+    "help": {
+      "title": "Ajuda e documentação",
+      "subtitle": "Como o Xefe funciona e como interpreta a lei timorense.",
+      "talkToUsTitle": "Fale com uma pessoa no WhatsApp",
+      "talkToUsBody": "Preso nalguma coisa? Costuma ser a saída mais rápida.",
+      "searchPlaceholder": "Pesquisar — experimente “compensação”, “INSS”, “licença por doença”",
+      "searchLabel": "Pesquisar na documentação",
+      "resultCount": "{{count}} secção(ões) correspondente(s)",
+      "noResults": "Nada encontrado para “{{query}}”.",
+      "noResultsHint": "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp acima e respondemos diretamente.",
+      "articlesHeading": "Documentos",
+      "updated": "Atualizado a {{date}}",
+      "contentsHeading": "Nesta página",
+      "backToHelp": "Voltar à ajuda",
+      "notFound": "Esse documento não existe.",
+      "todayLabel": "O que o Xefe faz hoje",
+      "impactLabel": "Quanto vale:",
+      "openLabel": "Ainda por confirmar",
+      "englishOnly": "Este documento só está disponível em inglês para já. Cita de perto a legislação laboral e fiscal, e preferimos esperar por uma tradução adequada a publicar uma tradução automática que ninguém verificou.",
+      "status": {
+        "confirming": "Por confirmar",
+        "settled": "Resolvido",
+        "asks-you": "O Xefe pergunta-lhe"
       }
     },
     "common": {

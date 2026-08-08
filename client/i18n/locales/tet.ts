@@ -57,6 +57,34 @@ const messages = {
       s8Body: "suporte@onit.tl",
     },
   },
+  help: {
+    title: "Ajuda no dokumentasaun",
+    subtitle: "Oinsá Xefe servisu, no oinsá nia lee lei Timor-Leste nian.",
+    talkToUsTitle: "Koalia ho ema iha WhatsApp",
+    talkToUsBody: "Pega iha buat ruma? Baibain ne'e dalan lalais liu.",
+    searchPlaceholder:
+      "Buka — koko “kompensasaun”, “INSS”, “lisensa doensa”",
+    searchLabel: "Buka iha dokumentasaun",
+    resultCount: "Seksaun {{count}} ne'ebé hanesan",
+    noResults: "La hetan buat ida ba “{{query}}”.",
+    noResultsHint:
+      "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
+    articlesHeading: "Dokumentu",
+    updated: "Atualiza iha {{date}}",
+    contentsHeading: "Iha pájina ne'e",
+    backToHelp: "Fila ba ajuda",
+    notFound: "Dokumentu ne'e la iha.",
+    todayLabel: "Saida mak Xefe halo ohin loron",
+    impactLabel: "Nia folin:",
+    openLabel: "Seidauk konfirma",
+    englishOnly:
+      "Dokumentu ne'e iha de'it iha lian Inglés ba oras ne'e. Nia sita besik lei traballu no fiskál, no ami prefere hein tradusaun ne'ebé di'ak duke publika tradusaun makina nian ne'ebé ema ida seidauk verifika.",
+    status: {
+      confirming: "Seidauk konfirma",
+      settled: "Rezolve tiha",
+      "asks-you": "Xefe husu ba ita",
+    },
+  },
   common: {
     weekdaysShort: {
       "0": "Dom",

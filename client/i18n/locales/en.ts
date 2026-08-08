@@ -57,6 +57,33 @@ const messages = {
       s8Body: "suporte@onit.tl",
     },
   },
+  help: {
+    title: "Help & documentation",
+    subtitle: "How Xefe works, and how it reads Timor-Leste law.",
+    talkToUsTitle: "Talk to a person on WhatsApp",
+    talkToUsBody: "Stuck on something? This is usually the fastest way out.",
+    searchPlaceholder: "Search — try “severance”, “INSS”, “sick leave”",
+    searchLabel: "Search the documentation",
+    resultCount: "{{count}} matching section(s)",
+    noResults: "Nothing found for “{{query}}”.",
+    noResultsHint:
+      "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp above and we will answer directly.",
+    articlesHeading: "Documents",
+    updated: "Updated {{date}}",
+    contentsHeading: "On this page",
+    backToHelp: "Back to help",
+    notFound: "That document does not exist.",
+    todayLabel: "What Xefe does today",
+    impactLabel: "What it is worth:",
+    openLabel: "Still being confirmed",
+    englishOnly:
+      "This document is only available in English for now. It quotes labour and tax law closely, and we would rather wait for a proper translation than publish a machine-made one nobody has checked.",
+    status: {
+      confirming: "Confirming",
+      settled: "Settled",
+      "asks-you": "Xefe asks you",
+    },
+  },
   common: {
     weekdaysShort: {
       "0": "Sun",

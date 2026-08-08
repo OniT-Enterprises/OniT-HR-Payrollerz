@@ -57,6 +57,34 @@ const messages = {
       s8Body: "suporte@onit.tl",
     },
   },
+  help: {
+    title: "Ajuda e documentação",
+    subtitle: "Como o Xefe funciona e como interpreta a lei timorense.",
+    talkToUsTitle: "Fale com uma pessoa no WhatsApp",
+    talkToUsBody: "Preso nalguma coisa? Costuma ser a saída mais rápida.",
+    searchPlaceholder:
+      "Pesquisar — experimente “compensação”, “INSS”, “licença por doença”",
+    searchLabel: "Pesquisar na documentação",
+    resultCount: "{{count}} secção(ões) correspondente(s)",
+    noResults: "Nada encontrado para “{{query}}”.",
+    noResultsHint:
+      "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp acima e respondemos diretamente.",
+    articlesHeading: "Documentos",
+    updated: "Atualizado a {{date}}",
+    contentsHeading: "Nesta página",
+    backToHelp: "Voltar à ajuda",
+    notFound: "Esse documento não existe.",
+    todayLabel: "O que o Xefe faz hoje",
+    impactLabel: "Quanto vale:",
+    openLabel: "Ainda por confirmar",
+    englishOnly:
+      "Este documento só está disponível em inglês para já. Cita de perto a legislação laboral e fiscal, e preferimos esperar por uma tradução adequada a publicar uma tradução automática que ninguém verificou.",
+    status: {
+      confirming: "Por confirmar",
+      settled: "Resolvido",
+      "asks-you": "O Xefe pergunta-lhe",
+    },
+  },
   common: {
     weekdaysShort: {
       "0": "Dom",
