@@ -94,6 +94,34 @@ slice of a 30-employee grid took 88s and a 4-row slice exceeded the ceiling.
 `planExtraction()` sizes chunks from that measurement — treat it as a real limit,
 not a tuning knob.
 
+## The holdout is the regression set — keep it held out
+
+`doc-holdout/` is 30 documents chosen at random that no prompt was ever tuned
+against, and it earns its keep: it is what caught a **payslip being booked as an
+expense** ($255.40, with the employee as the vendor) and a password-protected PDF
+being reported as merely unreadable. The 151-document corpus cannot do that job
+any more — the prompt has now seen it.
+
+Re-run it after **any** prompt or schema change; it is ~30 documents and a few
+minutes:
+
+```bash
+node scripts/extraction-audit/run-audit.cjs \
+  --corpus ~/Sites/m365-mail-export/doc-holdout --out /tmp/holdout.json
+node scripts/extraction-audit/compare-runs.cjs /tmp/holdout-previous.json /tmp/holdout.json
+```
+
+Latest holdout result (2026-08-08, after a day of prompt changes): 21 usable
+reads unchanged, the same 16 bill / 5 payment_proof / 9 other split, **no
+regressions and no amount changes**. One `billDate` moved a day on a BNU
+comprovativo — those slips carry both a *Data do movimento* and a *Data Valor*,
+so the model picked the other field.
+
+Watch for `documentType` flips and any movement in `amount` or `billDate`, then
+**open the file** before believing either reading. Refresh the sample with
+`fetch-holdout.py` from time to time: once a set has driven a few prompt edits it
+has quietly become a second training set, and stops being evidence.
+
 ## ⚠️ The Read sandbox
 
 `probe-read-sandbox.cjs` checks a security control, not a feature. The extractor
