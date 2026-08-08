@@ -336,6 +336,21 @@ exports.bootstrapFirstAdmin = (0, https_1.onCall)(async (request) => {
     if (!/^[a-z0-9-]+$/.test(companySlug) || companySlug.length > 50) {
         throw new https_1.HttpsError("invalid-argument", "Invalid company slug format");
     }
+    // Deploy-time allowlist gate. Granting the superadmin claim must never be
+    // reachable by an arbitrary authenticated caller: bootstrap is only for a
+    // pre-approved operator email, set at deploy time. Fail CLOSED when the
+    // allowlist is unset — an unconfigured allowlist means bootstrap is not open.
+    // (Existing superadmins are provisioned via scripts/set-superadmin.mjs, which
+    // also writes the _bootstrap/initialized sentinel, permanently closing this.)
+    const allowedEmails = (process.env.BOOTSTRAP_ALLOWED_EMAILS || "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+    const normalizedCaller = (callerEmail || "").trim().toLowerCase();
+    if (allowedEmails.length === 0 || !normalizedCaller || !allowedEmails.includes(normalizedCaller)) {
+        firebase_functions_1.logger.warn(`bootstrapFirstAdmin denied for ${callerEmail || callerUid}: not on BOOTSTRAP_ALLOWED_EMAILS`);
+        throw new https_1.HttpsError("permission-denied", "Not authorized to bootstrap.");
+    }
     const db = (0, firestore_2.getFirestore)();
     const auth = (0, auth_1.getAuth)();
     // Check if bootstrap has already occurred
@@ -356,6 +371,12 @@ exports.bootstrapFirstAdmin = (0, https_1.onCall)(async (request) => {
             const userRef = db.doc(`users/${callerUid}`);
             const tenantRef = db.doc(`tenants/${companySlug}`);
             const memberRef = db.doc(`tenants/${companySlug}/members/${callerUid}`);
+            // Never overwrite an existing tenant: a colliding slug would otherwise
+            // clobber another company's doc and install the caller as its owner.
+            const tenantSnap = await transaction.get(tenantRef);
+            if (tenantSnap.exists) {
+                throw new https_1.HttpsError("already-exists", "A company with this slug already exists");
+            }
             // 1. Create/update user profile as superadmin
             const userSnap = await transaction.get(userRef);
             if (userSnap.exists) {

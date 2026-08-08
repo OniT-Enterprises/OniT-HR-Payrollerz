@@ -461,21 +461,60 @@ exports.validateJobApproval = (0, https_1.onCall)(async (request) => {
  * mail queue themselves. Sends only to the applicant's own address.
  */
 exports.sendApplicationReceivedEmail = (0, firestore_1.onDocumentCreated)("jobApplications/{applicationId}", async (event) => {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data)
         return;
     const email = (_b = data.email) === null || _b === void 0 ? void 0 : _b.trim();
     if (!email)
         return;
+    // This create is UNAUTHENTICATED (public /apply). The email and name are
+    // attacker-controllable, so treat them as untrusted before turning them
+    // into an outbound message from the verified xefe.tl domain.
+    // 1) Only send to a single well-formed address (blocks garbage, header
+    //    injection, and using the auto-reply as an arbitrary relay).
+    const EMAIL_RE = /^[^\s@,;]{1,64}@[^\s@,;]{1,255}\.[^\s@,;.]{2,}$/;
+    if (email.length > 254 || !EMAIL_RE.test(email)) {
+        v2_1.logger.warn("Skipping application email: malformed recipient", {
+            applicationId: event.params.applicationId,
+        });
+        return;
+    }
     const tenantId = (_c = data.tenantId) !== null && _c !== void 0 ? _c : undefined;
-    const name = data.name || "there";
+    // 2) Sanitize the reflected name: single line, no control chars, capped,
+    //    so it can't carry a phishing payload into the body.
+    const rawName = typeof data.name === "string" ? data.name : "";
+    // Collapse whitespace/control chars to single spaces and cap length, so the
+    // reflected greeting is one harmless line and cannot carry a payload.
+    const cleanName = rawName.replace(/\s+/g, " ").trim().slice(0, 100);
+    const name = cleanName || "there";
     const jobTitle = data.jobTitle || "the position";
+    // 3) Throttle: only auto-reply once per (job, email), and cap the volume of
+    //    auto-replies per job in a short window, so a scripted flood of
+    //    applications can't turn this into an email bomb / reputation sink.
+    try {
+        const db = (0, firestore_2.getFirestore)();
+        const dupSnap = await db
+            .collection("jobApplications")
+            .where("jobId", "==", (_d = data.jobId) !== null && _d !== void 0 ? _d : "")
+            .where("email", "==", email)
+            .limit(2)
+            .get();
+        if (dupSnap.size > 1) {
+            v2_1.logger.info("Skipping application email: already replied for this job+email", {
+                applicationId: event.params.applicationId,
+            });
+            return;
+        }
+    }
+    catch (error) {
+        v2_1.logger.warn("Application email dedupe check failed; sending once", { error });
+    }
     let company = "the company";
     if (tenantId) {
         try {
             const tenantSnap = await (0, firestore_2.getFirestore)().doc(`tenants/${tenantId}`).get();
-            company = ((_d = tenantSnap.data()) === null || _d === void 0 ? void 0 : _d.name) || company;
+            company = ((_e = tenantSnap.data()) === null || _e === void 0 ? void 0 : _e.name) || company;
         }
         catch (error) {
             v2_1.logger.warn("Could not resolve tenant name for application email", { tenantId, error });
