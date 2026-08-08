@@ -2097,7 +2097,7 @@ const messages = {
           "Statement by day 10, payment by day 20 of the following month",
         deductionCapLabel: "Wage deductions cap",
         deductionCapValue:
-          "Deductions are capped at 30% of the month's wages (Labour Law Art. 42.3); court orders sit outside the cap",
+          "All deductions together are capped at 30% of the month's wages (Labour Law Art. 42.3). Xefe never reduces wage tax, INSS or a court-ordered deduction — those use up the cap first, and only the discretionary ones are trimmed.",
         workingHoursLabel: "Standard working time",
         workingHoursValue:
           "8 hours/day, 44 hours/week; overtime capped at 4 hours/day and 16 hours/week (Labour Law Arts. 25–26)",
@@ -2106,10 +2106,10 @@ const messages = {
           "21:00–06:00 — hours in this window earn the night premium",
         sickBandsLabel: "Sick leave pay",
         sickBandsValue:
-          "12 certified days per year: first 6 days at 100% pay, next 6 at 50%",
+          "12 certified days per year: first 6 days at 100% pay, next 6 at 50% (Labour Law Art. 33.4)",
         severanceLabel: "Service compensation on termination",
         severanceValue:
-          "One month's salary per completed 5-year period of service, by termination cause (Labour Law Art. 56)",
+          "One month's salary per completed 5-year period of service (Labour Law Art. 56). The article says this is owed \u201cregardless of the reason\u201d the job ended; we are confirming with our accounting reviewers whether dismissal for cause is an exception.",
         nonCashLabel: "Non-cash benefits",
         nonCashValue:
           "Taxed as wages only when worth more than $20/month (Tax Law 8/2008)",

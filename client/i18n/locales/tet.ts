@@ -2084,7 +2084,7 @@ const messages = {
           "Deklarasaun to'o loron 10, pagamentu to'o loron 20 fulan tuir mai",
         deductionCapLabel: "Limite dedusaun saláriu",
         deductionCapValue:
-          "Dedusaun sira limite ba 30% husi saláriu fulan nian (Lei Trabálhu Art. 42.3); orden tribunál la tama iha limite",
+          "Dedusaun hotu hamutuk iha limite 30% husi saláriu fulan nian (Lei Trabálhu Art. 42.3). Xefe nunka hamenus impostu saláriu, INSS ka dedusaun ne'ebé tribunál determina — sira-ne'e uza limite ne'e uluk, no dedusaun diskresionáriu de'it mak hamenus.",
         workingHoursLabel: "Oras servisu padraun",
         workingHoursValue:
           "Oras 8/loron, oras 44/semana; oras estra limite ba oras 4/loron no oras 16/semana (Lei Trabálhu Art. 25–26)",
@@ -2093,10 +2093,10 @@ const messages = {
           "21:00–06:00 — oras iha janela ne'e hetan prémiu kalan",
         sickBandsLabel: "Pagamentu lisensa doensa",
         sickBandsValue:
-          "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%",
+          "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4)",
         severanceLabel: "Kompensasaun servisu iha terminasaun",
         severanceValue:
-          "Saláriu fulan ida kada períodu tinan 5 kompletu, tuir kauza terminasaun (Lei Trabálhu Art. 56)",
+          "Saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu \u201cla haree ba motivu\u201d ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
         nonCashLabel: "Benefísiu la'ós osan",
         nonCashValue:
           "Sai impostu hanesan saláriu de'it bainhira valor liu $20/fulan (Lei Impostu 8/2008)",
