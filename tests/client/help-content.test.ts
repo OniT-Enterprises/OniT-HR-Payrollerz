@@ -17,6 +17,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HELP_ARTICLES,
+  articlesFor,
   getArticle,
   searchHelp,
 } from '../../client/lib/help/content';
@@ -46,6 +47,11 @@ const allEntries = HELP_ARTICLES.flatMap((article) =>
   article.groups.flatMap((group) => group.entries),
 );
 
+/** Positions articles are the ones that must disclose a side. */
+const positionEntries = HELP_ARTICLES.filter(
+  (article) => article.kind === 'positions',
+).flatMap((article) => article.groups.flatMap((group) => group.entries));
+
 describe('help content — names nobody agreed to publish', () => {
   // Both the person and the firm. Lower-cased so a mid-sentence or possessive
   // form ("Nico's reading") is caught too.
@@ -74,29 +80,37 @@ describe('help content — every position is disclosed', () => {
     expect(allEntries.length).toBeGreaterThan(10);
   });
 
-  it('states what Xefe does today, for every single entry', () => {
-    for (const entry of allEntries) {
-      expect(entry.today.trim().length).toBeGreaterThan(20);
+  it('states what Xefe does today, for every position it takes', () => {
+    for (const entry of positionEntries) {
+      expect(entry.today?.trim().length ?? 0).toBeGreaterThan(20);
     }
   });
 
   it('leaves nothing open on an entry marked settled', () => {
     // "Settled" plus a dangling open question would be a contradiction the
     // reader has to resolve themselves.
-    for (const entry of allEntries.filter((e) => e.status === 'settled')) {
+    for (const entry of positionEntries.filter((e) => e.status === 'settled')) {
       expect(entry.open).toBeUndefined();
     }
   });
 
   it('says what is still open on everything not settled', () => {
-    for (const entry of allEntries.filter((e) => e.status !== 'settled')) {
+    for (const entry of positionEntries.filter((e) => e.status !== 'settled')) {
       expect(entry.open?.trim().length ?? 0).toBeGreaterThan(20);
     }
   });
 
-  it('gives every entry a unique anchor, so deep links land', () => {
-    const ids = allEntries.map((entry) => entry.id);
-    expect(new Set(ids).size).toBe(ids.length);
+  it('gives every position entry a status badge', () => {
+    for (const entry of positionEntries) {
+      expect(entry.status).toBeTruthy();
+    }
+  });
+
+  it('gives every entry a unique anchor within its article', () => {
+    for (const article of HELP_ARTICLES) {
+      const ids = article.groups.flatMap((g) => g.entries.map((e) => e.id));
+      expect(new Set(ids).size, article.slug).toBe(ids.length);
+    }
   });
 
   it('cites a source whenever it quotes one', () => {
@@ -147,6 +161,99 @@ describe('searchHelp', () => {
 
   it('is case-insensitive', () => {
     expect(searchHelp('INSS').length).toBe(searchHelp('inss').length);
+  });
+});
+
+describe('translated guides', () => {
+  const LOCALES = ['pt', 'tet'] as const;
+
+  it('translates every guide, and does not pretend to translate the law article', () => {
+    // The split is deliberate: guides are for the Timor-Leste owner doing the
+    // work, the positions article is for a reviewer checking our reading. If
+    // someone adds a guide, this fails until it is translated — which is the
+    // point, because an untranslated guide silently serves English to the
+    // people it was written for.
+    for (const locale of LOCALES) {
+      for (const article of articlesFor(locale)) {
+        if (article.kind === 'guide') {
+          expect(article.locale, `${article.slug} in ${locale}`).toBe(locale);
+        } else {
+          expect(article.locale).toBe('en');
+        }
+      }
+    }
+  });
+
+  it('keeps the same articles, in the same order, in every language', () => {
+    // The index must not reshuffle when someone switches language, and a
+    // missing translation must fall back rather than drop the row.
+    const spine = HELP_ARTICLES.map((a) => a.slug);
+    for (const locale of LOCALES) {
+      expect(articlesFor(locale).map((a) => a.slug)).toEqual(spine);
+    }
+  });
+
+  it('keeps entry anchors identical across languages, so deep links survive', () => {
+    // Search results and any link we ever paste carry #entry-id. If the Tetun
+    // copy renames an anchor, those links land on the top of the page instead
+    // of the answer — with no error anywhere.
+    for (const article of HELP_ARTICLES) {
+      const spine = article.groups.flatMap((g) => g.entries.map((e) => e.id));
+      for (const locale of LOCALES) {
+        const translated = getArticle(article.slug, locale);
+        if (!translated || translated.locale === 'en') continue;
+        const ids = translated.groups.flatMap((g) => g.entries.map((e) => e.id));
+        expect(ids, `${article.slug} / ${locale}`).toEqual(spine);
+      }
+    }
+  });
+
+  it('states a deadline in every language wherever English states one', () => {
+    // A missing `when` is how a translated guide quietly loses the only line
+    // on the page that costs money.
+    for (const article of HELP_ARTICLES) {
+      const englishWhen = article.groups.flatMap((g) =>
+        g.entries.filter((e) => e.when).map((e) => e.id),
+      );
+      for (const locale of LOCALES) {
+        const translated = getArticle(article.slug, locale);
+        if (!translated || translated.locale === 'en') continue;
+        const localeWhen = translated.groups.flatMap((g) =>
+          g.entries.filter((e) => e.when).map((e) => e.id),
+        );
+        expect(localeWhen, `${article.slug} / ${locale}`).toEqual(englishWhen);
+      }
+    }
+  });
+
+  it('falls back to English for an unknown locale rather than emptying the page', () => {
+    expect(articlesFor('xx' as never).map((a) => a.slug)).toEqual(
+      HELP_ARTICLES.map((a) => a.slug),
+    );
+  });
+});
+
+describe('the guides say the deadlines that cost money', () => {
+  const month = getArticle('your-month')!;
+  const monthText = JSON.stringify(month);
+
+  it('gives the wage income tax date', () => {
+    expect(monthText).toContain('15th');
+  });
+
+  it('gives both INSS dates — declaring and paying are not the same day', () => {
+    expect(monthText).toContain('first 10 days');
+    expect(monthText).toContain('20th');
+  });
+
+  it('gives the thirteenth-month date', () => {
+    expect(monthText).toContain('20 December');
+  });
+
+  it('warns that an undeclared leaver keeps accruing contributions', () => {
+    const leaver = JSON.stringify(getArticle('when-someone-leaves'));
+    expect(leaver).toContain('presumed to still exist');
+    expect(leaver).toContain('10th of the month after');
   });
 });
 

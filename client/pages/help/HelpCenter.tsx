@@ -20,16 +20,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SUPPORT_WHATSAPP_URL } from "@/lib/support";
-import { HELP_ARTICLES, searchHelp } from "@/lib/help/content";
+import { articlesFor, searchHelp, type ArticleLocale } from "@/lib/help/content";
 
 export default function HelpCenter() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [query, setQuery] = useState("");
 
+  const articles = useMemo(
+    () => articlesFor(locale as ArticleLocale),
+    [locale],
+  );
   const trimmed = query.trim();
   const results = useMemo(
-    () => (trimmed.length > 1 ? searchHelp(trimmed) : []),
-    [trimmed],
+    () => (trimmed.length > 1 ? searchHelp(trimmed, locale as ArticleLocale) : []),
+    [trimmed, locale],
   );
   const searching = trimmed.length > 1;
 
@@ -90,7 +94,9 @@ export default function HelpCenter() {
               >
                 <p className="text-sm font-medium">{hit.entry.heading}</p>
                 <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {hit.entry.today}
+                  {/* A guide step has no "today" line — its deadline, or
+                      failing that its opening sentence, is the better hint. */}
+                  {hit.entry.today ?? hit.entry.when ?? hit.entry.body[0]}
                 </p>
                 <p className="mt-1.5 text-[11px] uppercase tracking-wide text-muted-foreground/70">
                   {hit.group.heading}
@@ -111,7 +117,7 @@ export default function HelpCenter() {
             {t("help.articlesHeading")}
           </h2>
           <div className="space-y-3">
-            {HELP_ARTICLES.map((article) => (
+            {articles.map((article) => (
               <Card key={article.slug} className="overflow-hidden">
                 <CardContent className="p-0">
                   <Link

@@ -73,6 +73,7 @@ const messages = {
     contentsHeading: "On this page",
     backToHelp: "Back to help",
     notFound: "That document does not exist.",
+    whenLabel: "When:",
     todayLabel: "What Xefe does today",
     impactLabel: "What it is worth:",
     openLabel: "Still being confirmed",

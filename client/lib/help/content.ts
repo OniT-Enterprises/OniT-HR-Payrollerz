@@ -15,6 +15,10 @@
  * worse for this content than an honest English fallback.
  */
 
+import { MONTH_EN, LEAVER_EN } from "./guides-en";
+import { MONTH_PT, LEAVER_PT } from "./guides-pt";
+import { MONTH_TET, LEAVER_TET } from "./guides-tet";
+
 export type ArticleLocale = "en" | "pt" | "tet";
 
 /** How settled a position is. Drives the badge and the search filter. */
@@ -29,14 +33,20 @@ export type PositionStatus =
 export interface HelpEntry {
   id: string;
   heading: string;
-  status: PositionStatus;
+  /** Positions articles only. A guide step has no "side" to be on. */
+  status?: PositionStatus;
   /** The statutory text, quoted. Empty when the point is not textual. */
   quote?: string;
   quoteCite?: string;
   /** The reasoning, as paragraphs. */
   body: string[];
+  /**
+   * Guides only: the deadline, stated as a date rather than buried in prose.
+   * These are the lines a reader is scanning for.
+   */
+  when?: string;
   /** What the product does right now — always stated, never implied. */
-  today: string;
+  today?: string;
   /** Money at stake, when there is any. */
   impact?: string;
   /** What remains unanswered. Absent for settled entries. */
@@ -59,6 +69,15 @@ export interface HelpGroup {
 
 export interface HelpArticle {
   slug: string;
+  /**
+   * `positions` — where Xefe reads the law, for the accountant checking us.
+   * `guide` — how the work actually goes, for the owner doing it. Guides are
+   * the ones that get translated: their reader is a Timor-Leste small
+   * business, not a reviewer.
+   */
+  kind: "positions" | "guide";
+  /** Which language THIS object is written in. */
+  locale: ArticleLocale;
   /** ISO date of the last substantive edit. */
   updated: string;
   title: string;
@@ -71,6 +90,8 @@ export interface HelpArticle {
 
 const LAW_POSITIONS: HelpArticle = {
   slug: "how-xefe-reads-the-law",
+  kind: "positions",
+  locale: "en",
   updated: "2026-08-08",
   title: "Where Xefe takes a position on the law",
   summary:
@@ -413,10 +434,41 @@ const LAW_POSITIONS: HelpArticle = {
   ],
 };
 
-export const HELP_ARTICLES: HelpArticle[] = [LAW_POSITIONS];
+/**
+ * The canonical set, in reading order. Guides come first: far more people
+ * need to know when the INSS declaration is due than need our reading of
+ * Art. 56.
+ *
+ * English is the spine — every article exists here, so nothing can vanish
+ * from the index by being untranslated. Other locales only need to carry the
+ * articles they have.
+ */
+export const HELP_ARTICLES: HelpArticle[] = [MONTH_EN, LEAVER_EN, LAW_POSITIONS];
 
-export function getArticle(slug: string): HelpArticle | undefined {
-  return HELP_ARTICLES.find((article) => article.slug === slug);
+const TRANSLATIONS: Record<ArticleLocale, HelpArticle[]> = {
+  en: [],
+  pt: [MONTH_PT, LEAVER_PT],
+  tet: [MONTH_TET, LEAVER_TET],
+};
+
+/**
+ * The article list for a reader, English standing in wherever a translation
+ * does not exist yet. Order always follows HELP_ARTICLES, so the index does
+ * not reshuffle when someone switches language.
+ */
+export function articlesFor(locale: ArticleLocale = "en"): HelpArticle[] {
+  const translated = TRANSLATIONS[locale] ?? [];
+  return HELP_ARTICLES.map(
+    (article) =>
+      translated.find((candidate) => candidate.slug === article.slug) ?? article,
+  );
+}
+
+export function getArticle(
+  slug: string,
+  locale: ArticleLocale = "en",
+): HelpArticle | undefined {
+  return articlesFor(locale).find((article) => article.slug === slug);
 }
 
 export interface HelpSearchHit {
@@ -432,7 +484,8 @@ function haystack(entry: HelpEntry): string {
   return [
     entry.heading,
     entry.body.join(" "),
-    entry.today,
+    entry.today ?? "",
+    entry.when ?? "",
     entry.impact ?? "",
     entry.open ?? "",
     entry.quote ?? "",
@@ -449,12 +502,15 @@ function haystack(entry: HelpEntry): string {
  * matching the body, so typing "severance" leads with the severance entry
  * rather than with whatever paragraph happens to mention the word.
  */
-export function searchHelp(query: string): HelpSearchHit[] {
+export function searchHelp(
+  query: string,
+  locale: ArticleLocale = "en",
+): HelpSearchHit[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
 
   const hits: HelpSearchHit[] = [];
-  for (const article of HELP_ARTICLES) {
+  for (const article of articlesFor(locale)) {
     for (const group of article.groups) {
       for (const entry of group.entries) {
         const heading = entry.heading.toLowerCase();
