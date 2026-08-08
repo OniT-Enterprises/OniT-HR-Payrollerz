@@ -151,20 +151,69 @@ is a question rather than a bug report.
 
 ---
 
-## 4. Still to discharge from §7
+## 4. §7 is now fully discharged (2026-08-08)
 
-Not yet read against the clean copy. Ordered by how much money rides on them:
+Every article the July sweep flagged as unreadable has been read against the
+clean copy. **Nothing it guessed was wrong except where the OCR lost the article
+entirely** — and the two real findings are in §1–§3 above.
 
-| Articles | Why they matter | §7 status |
-|---|---|---|
-| ~~43–48~~ | ~~the 30%/month cap chain~~ | **DISCHARGED above** (39–45 read; 46–48 still to do) |
-| **55(3)(g)** | Notice/termination conditions | "read from garble" |
-| **60–65** | Parental protections, Art. 62 breastfeeding, Art. 64 childcare | "ordering scrambled" |
-| **78** | Body missing entirely | unknown content |
-| **61** | Employer pay duty during parental leave | tail cut (already settled separately via DL 18/2017) |
+| §7 item | Verdict |
+|---|---|
+| **Arts. 43–48** "upside-down, decoded by reversal" | Read. 42 cap is right (§3), 43 wage protection and 45 dismissal grounds are NOT-SOFTWARE, 44 confirms the subsídio, **46–47 map cleanly onto Xefe's departure reasons** |
+| **Art. 55(3)(g)** "read from garble" | **Confirmed** — "6 meses … superior a 5 anos". `art55IndemnityMonths` matches all seven rungs exactly |
+| **Art. 56** "truncated, divisor NOT verifiable" | Read in full (§1). Answers A2; re-opens A1 |
+| **Art. 32 n.º 1** "unrecoverable" | Read (§2). **Mismatch** → A8 |
+| **Art. 61** "tail cut" | Already settled separately via DL 18/2017 |
+| **Arts. 60–65** "ordering scrambled" | Read in full on 2026-08-07: 60 paternity (corrected from 59), 62 breastfeeding (handled, note-only by design), **64 childcare — missing, now A7** |
+| **Art. 78** "body missing" | Read: *Princípios gerais* of **freedom of association / trade-union freedom**. NOT-SOFTWARE. The gap was benign |
 
-Arts. 49, 50, 52, 53 were already discharged on 2026-07-31 (PR #23).
+### Arts. 46–47 vs Xefe's departure reasons — full coverage
 
-**Method that worked:** read the article in the clean text, quote it in full, then
-check the code path that claims to implement it. Both findings above came from a
-quotation disagreeing with a comment, not from reading code.
+Art. 46 lists five cessation forms and Art. 47 three caducidade grounds. Every one
+has a Xefe reason:
+
+| Statute | Xefe |
+|---|---|
+| 46(b) agreement / Art. 48 | `mutual_agreement` |
+| 46(c) worker-initiated | `resignation` |
+| 46(d) employer, just cause | `termination` |
+| 46(e) market/technological/structural | `redundancy` |
+| 47(1)(a) fixed-term expiry | `contract_end` |
+| 47(1)(b) death | `death` |
+| 47(1)(c) retirement, old age or invalidity | `retirement` |
+
+Worth noting because Art. 56 pays severance **"independentemente do motivo"** — so
+retirement and contract expiry earn it too, not just dismissal.
+
+### One new gap: Art. 76(4)
+
+The study-leave article has more in it than Xefe implements. 76(3) (paid exam
+absence) is built; **76(4) is not**:
+
+> Traballadór-estudante idade menór iha direitu hodi hatuur ho loloos períudu
+> férias traballu ho períudu férias eskola nian.
+
+A **minor** worker-student may align their annual leave with the school holidays.
+Xefe has no concept of a worker-student, let alone a minor one, so nothing
+surfaces this when leave is scheduled. Small, and it needs the `dateOfBirth` and
+student status Xefe already stores — but it is a right, not a courtesy.
+
+### Art. 77 — foreign workers
+
+Same rights and duties as nationals; the contract **must be written and
+authorised by the competent authority**. Xefe tracks `workingVisaResidency` for
+non-Timorese and holds a work-contract document, so the pieces exist. Whether the
+*authorisation* is evidenced anywhere is a separate question.
+
+---
+
+## 5. What this exercise says about method
+
+Two wrong citations and two mismatched assumptions came out of one clean PDF and
+about an hour of reading. All four were invisible to typecheck, lint and 1,250
+unit tests, because they are disagreements between a comment and a statute — not
+between code and its own expectations.
+
+The productive move each time was the same: **quote the article in full, then
+read the code that claims to implement it.** Reading the code first found
+nothing; the code was internally consistent every time.

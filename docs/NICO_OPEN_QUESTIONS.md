@@ -279,6 +279,16 @@ The row is badged "Pending confirmation" and tells the owner to ask their
 accountant. Is the practice lawful, and if so under what? If it is not, the setting
 should go.
 
+### B15. Art. 76(4) — may a minor worker-student align leave with school holidays?
+Art. 76(4) gives a worker-student who is a **minor** the right to line their annual
+leave up with the school holidays. Xefe implements 76(3) (paid absence to sit
+exams) but has no concept of a worker-student at all, so nothing prompts this when
+leave is scheduled.
+
+Is this something employers here actually field, or is it dormant in practice? We
+already store date of birth, so the minor half is free; the student half would be
+a new flag on the employee.
+
 ## C. Low stakes — answer if convenient
 
 - **Tax depreciation:** Schedule VII prints 100% first-year expensing, but
