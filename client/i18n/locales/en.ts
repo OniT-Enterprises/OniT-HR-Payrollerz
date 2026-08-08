@@ -979,7 +979,7 @@ const messages = {
         foodAllowance: "Food Allowance",
         gross: "Gross Pay",
         wit: "WIT (10% over $500)",
-        inss: "INSS (4%)",
+        inss: "INSS (4% of basic salary)",
         net: "Net Pay",
         badge: "Auto-calculated",
       },
@@ -1183,8 +1183,9 @@ const messages = {
       inss: {
         rates: "4% employee + 6% employer, uncapped base",
         exclude:
-          "Base excludes overtime, per-diems, and travel, food and housing allowances",
-        include: "Base includes the 13th month",
+          "Base excludes overtime, per-diems, representation expenses, and travel, food and housing allowances",
+        include:
+          "Base INCLUDES the 13th month and the shift and night-work supplements — not every premium is outside it",
         bonus:
           "Bonuses must be classified before they contribute — the engine will not guess",
       },

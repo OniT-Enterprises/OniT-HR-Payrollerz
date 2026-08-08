@@ -979,7 +979,7 @@ const messages = {
         foodAllowance: "Subsidiu Ai-han",
         gross: "Total Brutu",
         wit: "WIT (10% liu $500)",
-        inss: "INSS (4%)",
+        inss: "INSS (4% husi saláriu báziku)",
         net: "Saláriu Liquidu",
         badge: "Auto-kalkuladu",
       },
@@ -1187,8 +1187,9 @@ const messages = {
       inss: {
         rates: "4% trabalhador + 6% empregador, base la iha limite",
         exclude:
-          "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
-        include: "Base inklui subsídiu anuál (fulan-13)",
+          "Base la inklui oras extra, per diem, despeza reprezentasaun, no subsídiu viajen, ai-han no uma",
+        include:
+          "Base INKLUI subsídiu anuál (fulan-13) no suplementu servisu turnu no servisu kalan — la'ós adisional hotu mak sai husi base",
         bonus: "Bónus tenke klasifika uluk molok tama base — motór la adivinha",
       },
       configTitle: "Konfigurável, maibé nunka inventa",

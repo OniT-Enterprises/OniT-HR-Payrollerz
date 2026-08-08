@@ -906,7 +906,7 @@ export const translations = {
           "foodAllowance": "Food Allowance",
           "gross": "Gross Pay",
           "wit": "WIT (10% over $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% of basic salary)",
           "net": "Net Pay",
           "badge": "Auto-calculated"
         }
@@ -1086,8 +1086,8 @@ export const translations = {
         "inssSub": "Social security",
         "inss": {
           "rates": "4% employee + 6% employer, uncapped base",
-          "exclude": "Base excludes overtime, per-diems, and travel, food and housing allowances",
-          "include": "Base includes the 13th month",
+          "exclude": "Base excludes overtime, per-diems, representation expenses, and travel, food and housing allowances",
+          "include": "Base INCLUDES the 13th month and the shift and night-work supplements — not every premium is outside it",
           "bonus": "Bonuses must be classified before they contribute — the engine will not guess"
         },
         "configTitle": "Configurable, never inventive",
@@ -8855,7 +8855,7 @@ export const translations = {
           "foodAllowance": "Subsidiu Ai-han",
           "gross": "Total Brutu",
           "wit": "WIT (10% liu $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% husi saláriu báziku)",
           "net": "Saláriu Liquidu",
           "badge": "Auto-kalkuladu"
         }
@@ -9035,8 +9035,8 @@ export const translations = {
         "inssSub": "Seguransa sosiál",
         "inss": {
           "rates": "4% trabalhador + 6% empregador, base la iha limite",
-          "exclude": "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
-          "include": "Base inklui subsídiu anuál (fulan-13)",
+          "exclude": "Base la inklui oras extra, per diem, despeza reprezentasaun, no subsídiu viajen, ai-han no uma",
+          "include": "Base INKLUI subsídiu anuál (fulan-13) no suplementu servisu turnu no servisu kalan — la'ós adisional hotu mak sai husi base",
           "bonus": "Bónus tenke klasifika uluk molok tama base — motór la adivinha"
         },
         "configTitle": "Konfigurável, maibé nunka inventa",
@@ -16804,7 +16804,7 @@ export const translations = {
           "foodAllowance": "Subsídio de Alimentação",
           "gross": "Salário Bruto",
           "wit": "IRT (10% acima de $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% do salário base)",
           "net": "Salário Líquido",
           "badge": "Calculado automaticamente"
         }
@@ -16984,8 +16984,8 @@ export const translations = {
         "inssSub": "Segurança social",
         "inss": {
           "rates": "4% trabalhador + 6% empregador, base sem teto",
-          "exclude": "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
-          "include": "A base inclui o 13.º mês",
+          "exclude": "A base exclui horas extra, ajudas de custo, despesas de representação e subsídios de viagem, alimentação e alojamento",
+          "include": "A base INCLUI o 13.º mês e os suplementos de trabalho por turnos e noturno — nem todos os adicionais ficam de fora",
           "bonus": "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha"
         },
         "configTitle": "Configurável, nunca inventivo",

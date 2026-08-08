@@ -312,3 +312,31 @@ describe('/engine — the hourly-rate rounding order', () => {
     }
   });
 });
+
+describe('/engine and the landing payslip — the INSS base is legible', () => {
+  it('names the base on the landing payslip, so 4% reconciles', () => {
+    // The specimen shows a $1,413.22 gross and a $48.00 INSS line. 4% of the
+    // displayed gross is $56.53, so labelling it a bare "INSS (4%)" makes the
+    // homepage's headline calculation look broken to the exact audience —
+    // accountants — the page is trying to convince. $48 is 4% of the $1,200
+    // BASE, which Art. 9 strips of overtime and the food allowance. Correct
+    // arithmetic; the label just never said what it was a percentage OF.
+    expect(en).toContain('INSS (4% of basic salary)');
+  });
+
+  it('states what the base INCLUDES, not only what it excludes', () => {
+    // The card listed exclusions beside the overtime row, so a reader
+    // generalises "premiums are outside INSS" and lands on the wrong answer
+    // for night work. DL 20/2017 Art. 8(2)(c) puts shift and night-work
+    // supplements INSIDE the base.
+    expect(en).toContain('shift and night-work supplements');
+    expect(en).toContain('not every premium is outside it');
+  });
+
+  it('lists the sixth exclusion DL 30/2021 added', () => {
+    // Art. 9(f) "As despesas de representação". The engine already knew this
+    // (constants-tl.ts carries 'representation_expense'); only the public copy
+    // was lagging shipped code.
+    expect(en).toContain('representation expenses');
+  });
+});

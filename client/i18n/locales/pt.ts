@@ -990,7 +990,7 @@ const messages = {
         foodAllowance: "Subsídio de Alimentação",
         gross: "Salário Bruto",
         wit: "IRT (10% acima de $500)",
-        inss: "INSS (4%)",
+        inss: "INSS (4% do salário base)",
         net: "Salário Líquido",
         badge: "Calculado automaticamente",
       },
@@ -1199,8 +1199,9 @@ const messages = {
       inss: {
         rates: "4% trabalhador + 6% empregador, base sem teto",
         exclude:
-          "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
-        include: "A base inclui o 13.º mês",
+          "A base exclui horas extra, ajudas de custo, despesas de representação e subsídios de viagem, alimentação e alojamento",
+        include:
+          "A base INCLUI o 13.º mês e os suplementos de trabalho por turnos e noturno — nem todos os adicionais ficam de fora",
         bonus:
           "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha",
       },
