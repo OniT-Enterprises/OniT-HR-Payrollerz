@@ -342,16 +342,21 @@ describe('the guides say the deadlines that cost money', () => {
     expect(wage).toContain('SEFOPE');
   });
 
-  it('admits the working week moves leave but not pay', () => {
-    // attendanceCalculations.ts hardcodes Sunday and never receives the
-    // tenant's workingDays setting. The entry used to be badged "settled" and
-    // written in the past tense about a bug that is still live.
+  it('states the two real limits of the working-week setting', () => {
+    // The premium now follows the configured rest day (Art. 27(2) attaches to
+    // "dia de descanso semanal" and never says "domingo"). Two limits remain
+    // and both change what someone is paid, so both must be on the page:
+    //   - a seven-day company gets NO automatic rest day, because Art. 30(1)
+    //     grants one rest period and nothing identifies which day it is;
+    //   - a five-day week rests on SUNDAY, and Saturday is an ordinary day
+    //     off — treating both as rest days would double Saturday pay.
     const week = getArticle('how-xefe-reads-the-law')!
       .groups.flatMap((g) => g.entries)
       .find((e) => e.id === 'working-week')!;
-    expect(week.status).not.toBe('settled');
-    expect(week.today).toContain('LEAVE only');
-    expect(week.today).toContain('Pay has not moved');
+    expect(week.status).not.toBe('settled'); // per-employee rest days still open
+    expect(week.today).toContain('will not guess');
+    expect(week.today).toContain('Sunday');
+    expect(week.open).toContain('per-employee');
   });
 
   it('says plainly that a generated file is not a filed one', () => {

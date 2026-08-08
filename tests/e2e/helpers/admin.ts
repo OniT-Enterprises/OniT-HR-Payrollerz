@@ -26,9 +26,12 @@ let app: App | null = null;
  * emulator the journey touches before any test begins.
  */
 export async function waitForEmulators(timeoutMs = 90_000): Promise<void> {
+  const firestorePort = (process.env.FIRESTORE_EMULATOR_HOST || "localhost:8081")
+    .split(":")
+    .pop();
   const targets = [
     ["auth", "http://localhost:9100"],
-    ["firestore", "http://localhost:8081"],
+    ["firestore", `http://localhost:${firestorePort}`],
     ["storage", "http://localhost:9199"],
     ["functions", "http://localhost:5001"],
   ] as const;
@@ -45,6 +48,38 @@ export async function waitForEmulators(timeoutMs = 90_000): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, 1_000));
       }
     }
+  }
+
+  // A port that ANSWERS is not a functions emulator that has LOADED anything.
+  // The Functions emulator binds :5001 well before it has discovered and
+  // compiled the function definitions, so the first spec to invoke a callable
+  // pays that cost inside an ordinary assertion timeout.
+  //
+  // HYPOTHESIS, not a proven diagnosis: accounting-workflow.spec is first
+  // alphabetically and flaked three times in one session on 2026-08-08,
+  // always under a loaded suite and never in isolation, with wall-clock for
+  // that single spec ranging 33s to 1.1m on identical code. Cold start fits
+  // that shape. This waits for the hub to report the functions emulator, which
+  // it only does once definitions are loaded.
+  //
+  // Deliberately NOT a raised timeout: raising it would hide the next real
+  // regression in the longest spec in the suite. If the flake outlives this,
+  // the traces are already kept (`trace: "retain-on-failure"`) — read one
+  // rather than reaching for the timeout knob.
+  const warmupDeadline = Date.now() + 30_000;
+  for (;;) {
+    try {
+      const res = await fetch("http://localhost:4400/emulators");
+      if (res.ok) {
+        const body = (await res.json()) as Record<string, unknown>;
+        if (body.functions) break;
+      }
+    } catch {
+      // Hub not up yet, or this build reports a different shape. Either way
+      // the loop below bounds the wait — a warmup must never fail a run.
+    }
+    if (Date.now() > warmupDeadline) break;
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 }
 

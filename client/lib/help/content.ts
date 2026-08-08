@@ -229,9 +229,9 @@ const LAW_POSITIONS: HelpArticle = {
           ],
           synonyms: ["saturday", "sunday", "rest day", "working days", "six-day week"],
           today:
-            "**Half-built — check these figures yourself.** The company working week in Settings changes **LEAVE only**. **Pay has not moved.** Xefe still pays the double rest-day rate for Sunday work and ordinary rate on every other day, so for someone who rests on, say, Wednesday you must enter their rest-day hours on the payroll row by hand — and enter them again if you re-sync attendance, which overwrites the field.",
+            "The company working week in Settings now drives BOTH leave duration and the double rest-day rate. Set your week and the premium follows your actual rest day. Two limits worth knowing: if your company works every day, Xefe will not guess which day is the rest day and leaves those hours at ordinary rate for you to enter by hand; and a five-day week still treats **Sunday** as the rest day and Saturday as an ordinary day off, because Art. 30(1) grants one rest period, not two.",
           open:
-            "Whether the rest-day premium follows the worker's actual rest day or attaches to Sunday regardless, and whether the working week is a fact about the company or about each employee. Until that is settled, the pay side stays manual.",
+            "Art. 30(2) applies its test to \"o trabalhador\", so two people in one business can lawfully rest on different days. Xefe\'s working week is company-wide, so a per-employee rest day still needs entering on the payroll row by hand.",
         },
         {
           id: "leave-year",
