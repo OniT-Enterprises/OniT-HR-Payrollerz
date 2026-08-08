@@ -2026,6 +2026,9 @@ const messages = {
       save: "Save leave settings",
     },
     payroll: {
+      petroleumLabel: "We are a petroleum Contractor (Law 8/2008 Sec. 68.1)",
+      petroleumHint:
+        "Turn this on only if your company is a party to a Petroleum Agreement. Your employees are then taxed under Schedule IX, not the ordinary wage tax — a different regime with its own rates, depreciation rules and filing desk. Xefe does not calculate it, so it will stop payroll rather than work it out wrongly and leave you owing the difference.",
       currentRatesTitle: "The rates you are using now",
       changeRatesTitle: "Change the legal rates",
       title: "Payroll Configuration",
@@ -7208,6 +7211,10 @@ const messages = {
     },
   },
   runPayroll: {
+    petroleumBlockTitle: "Payroll is not available for a petroleum Contractor",
+    petroleumBlockBody:
+      "Your settings say this company is a party to a Petroleum Agreement. Employees of a Contractor are taxed under Law 8/2008 Schedule IX — 10% up to $550 a month then 30% for a resident with a tax number, 20% for a non-resident, 30% otherwise — and the return goes to the petroleum directorate, not the ordinary wage-tax desk. Xefe has not built that, and calculating it as ordinary payroll would withhold too little and leave the shortfall with you.",
+    petroleumBlockCta: "Change this in Payroll settings",
     syncDock: {
       title: "This will dock pay",
       description:

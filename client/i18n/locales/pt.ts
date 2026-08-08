@@ -2050,6 +2050,9 @@ const messages = {
       save: "Guardar definições de licenças",
     },
     payroll: {
+      petroleumLabel: "Somos um Contratante petrolífero (Lei 8/2008, Sec. 68.1)",
+      petroleumHint:
+        "Ative apenas se a sua empresa for parte de um Acordo Petrolífero. Os seus trabalhadores passam a ser tributados pelo Anexo IX e não pelo imposto sobre salários comum — um regime diferente, com taxas, regras de amortização e serviço de entrega próprios. O Xefe não o calcula, por isso vai parar a folha em vez de a calcular mal e deixá-lo a dever a diferença.",
       currentRatesTitle: "As taxas que está a usar agora",
       changeRatesTitle: "Alterar as taxas legais",
       title: "Configuração da Folha",
@@ -7313,6 +7316,10 @@ const messages = {
     },
   },
   runPayroll: {
+    petroleumBlockTitle: "A folha não está disponível para um Contratante petrolífero",
+    petroleumBlockBody:
+      "As suas definições indicam que esta empresa é parte de um Acordo Petrolífero. Os trabalhadores de um Contratante são tributados pelo Anexo IX da Lei 8/2008 — 10% até $550 por mês e depois 30% para um residente com número fiscal, 20% para um não residente, 30% nos restantes casos — e a declaração vai para a direção de petróleo. O Xefe não implementa isso, e calcular como folha comum reteria de menos, ficando a diferença consigo.",
+    petroleumBlockCta: "Alterar nas definições da Folha",
     syncDock: {
       title: "Isto vai descontar salário",
       description:

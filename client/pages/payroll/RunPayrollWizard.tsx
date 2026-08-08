@@ -136,6 +136,8 @@ export default function RunPayrollWizard() {
     staleTime: 5 * 60 * 1000,
   });
   const selfApprovalAllowed = tenantSettings?.payrollConfig?.allowSelfApproval === true;
+  const isPetroleumContractor =
+    tenantSettings?.payrollConfig?.petroleumContractor === true;
   const configuredSchedule =
     tenantSettings === undefined
       ? undefined
@@ -498,6 +500,33 @@ export default function RunPayrollWizard() {
             <span className="shrink-0 font-medium text-primary">{t("runPayroll.freePlanNoticeCta")}</span>
           </button>
         )}
+        {/* Lei 8/2008 Sec. 72.2 sends a Contractor's employees to Schedule IX —
+            a parallel regime with its own rates, depreciation (Schedule X) and
+            filing desk. Xefe has not built it, and running them at Schedule V
+            rates UNDER-withholds, which Sec. 25.3 makes the employer's
+            liability. So the wizard stops instead of computing. Same posture as
+            withholding-tl.ts, which throws rather than guess. */}
+        {isPetroleumContractor ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="flex items-start gap-3">
+              <Calculator className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="min-w-0 space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                <p className="font-medium">
+                  {t("runPayroll.petroleumBlockTitle")}
+                </p>
+                <p>{t("runPayroll.petroleumBlockBody")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/payroll/settings")}
+                >
+                  {t("runPayroll.petroleumBlockCta")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
         <StepWizard
           steps={wizardSteps}
           currentStep={currentStep}
@@ -590,6 +619,7 @@ export default function RunPayrollWizard() {
             />
           </StepContent>
         </StepWizard>
+        )}
 
         {/* A sync that would DOCK people is never applied silently: absence is
             measured against a full-month expectation, so any working day nobody

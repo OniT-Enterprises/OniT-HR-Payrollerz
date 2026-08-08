@@ -2015,6 +2015,9 @@ const messages = {
       save: "Rai konfigurasaun lisensa",
     },
     payroll: {
+      petroleumLabel: "Ami Kontratante petróleu nian (Lei 8/2008, Sek. 68.1)",
+      petroleumHint:
+        "Loke ida-ne'e de'it se ita-nia empreza tama iha Akordu Petróleu. Ita-nia traballadór sira sei selu impostu tuir Anexu IX, la'ós impostu saláriu baibain — rejime seluk ho taxa, regra amortizasaun no fatin entrega rasik. Xefe la kalkula ne'e, tan ne'e sei para folha duke kalkula sala no husik Ita selu diferensa.",
       currentRatesTitle: "Valór ne'ebé ita uza agora",
       changeRatesTitle: "Muda valór legál sira",
       title: "Konfigurasaun Folha",
@@ -7186,6 +7189,10 @@ const messages = {
     },
   },
   runPayroll: {
+    petroleumBlockTitle: "Folha la disponivel ba Kontratante petróleu nian",
+    petroleumBlockBody:
+      "Ita-nia konfigurasaun hatete katak empreza ne'e tama iha Akordu Petróleu. Traballadór Kontratante nian selu impostu tuir Anexu IX Lei 8/2008 — 10% to'o $550 kada fulan no depois 30% ba residente ho númeru fiskál, 20% ba la'ós residente, 30% ba seluk — no deklarasaun ba diresaun petróleu. Xefe seidauk halo ne'e, no kalkula hanesan folha baibain sei retein uitoan liu, no diferensa sai Ita-nia.",
+    petroleumBlockCta: "Muda iha konfigurasaun Folha",
     syncDock: {
       title: "Ida-ne'e sei deskonta saláriu",
       description:
