@@ -57,6 +57,28 @@ export function useVendorBills(vendorId: string | undefined) {
   });
 }
 
+/**
+ * Open bills across the tenant — used to offer the bill a payment slip settles
+ * (client/lib/money/payment-match.ts). Not vendor-scoped: a BNU transfer slip
+ * names the account holder and the beneficiary account, not necessarily a vendor
+ * already on file. Disabled until a slip is actually recognised, so an ordinary
+ * bill upload does not pay for this query.
+ */
+export function useOpenBills(enabled: boolean) {
+  const tenantId = useTenantId();
+  const filters: BillFilters = {
+    status: ['pending', 'partial', 'overdue'],
+    pageSize: 200,
+  };
+  return useQuery({
+    queryKey: billKeys.list(tenantId, filters),
+    queryFn: () => billService.getBills(tenantId, filters),
+    enabled: Boolean(tenantId && enabled),
+    staleTime: 60 * 1000,
+    select: (data: PaginatedResult<Bill>) => data.data,
+  });
+}
+
 export function useBill(id: string | undefined) {
   const tenantId = useTenantId();
   return useQuery({

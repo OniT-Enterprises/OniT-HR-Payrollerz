@@ -35,8 +35,14 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useActiveVendors, vendorKeys } from "@/hooks/useVendors";
 import { vendorService } from "@/services/vendorService";
-import { useCreateBill, useVendorBills } from "@/hooks/useBills";
+import {
+  useCreateBill,
+  useOpenBills,
+  useRecordBillPayment,
+  useVendorBills,
+} from "@/hooks/useBills";
 import { findDuplicateBills } from "@/lib/money/duplicate-bill";
+import { findBillsSettledBy } from "@/lib/money/payment-match";
 import { fileUploadService } from "@/services/fileUploadService";
 import BillAttachmentsInput from "@/components/money/BillAttachmentsInput";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
@@ -136,6 +142,9 @@ export default function QuickBillDialog({
   // amount and number are ambiguous — pre-filling either would create a bill for
   // the wrong document and silently drop the rest.
   const [aiMultipleDocuments, setAiMultipleDocuments] = useState(false);
+  // What a recognised payment slip said, so the bill it settles can be offered.
+  const [aiPayment, setAiPayment] = useState<{ amount: number; date: string; reference: string | null } | null>(null);
+  const [settlingBillId, setSettlingBillId] = useState<string | null>(null);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Set when the document is priced in a currency Xefe cannot book (bills are
   // USD-only). The amount is then left blank rather than pre-filled with a
@@ -176,6 +185,7 @@ export default function QuickBillDialog({
       setAiOtherKind(null);
       setAiProtectedPdf(false);
       setAiMultipleDocuments(false);
+      setAiPayment(null);
       return;
     }
     const file = initialFiles[0];
@@ -189,6 +199,7 @@ export default function QuickBillDialog({
     setAiOtherKind(null);
     setAiProtectedPdf(false);
     setAiMultipleDocuments(false);
+    setAiPayment(null);
     extractDocument(file, tenantId, "bill")
       .then(async (fields) => {
         if (aiRun.current !== run) return;
@@ -196,6 +207,15 @@ export default function QuickBillDialog({
         // claiming the file could not be read.
         if (fields.documentType === "payment_proof") {
           setAiOtherKind("payment_proof");
+          // A slip is only actionable if it says how much left the account and
+          // when; without both there is nothing to match a bill against.
+          if (fields.amount != null && fields.billDate) {
+            setAiPayment({
+              amount: fields.amount,
+              date: fields.billDate,
+              reference: fields.billNumber,
+            });
+          }
           setAiStatus("notABill");
           return;
         }
@@ -296,6 +316,45 @@ export default function QuickBillDialog({
       setAiVendorName(null);
     }
   }, [aiVendorName, vendors, vendorId]);
+
+  // A recognised payment slip: offer the open bill it settles, so evidence of
+  // payment does not dead-end at "this is a bank slip".
+  const { data: openBills = [] } = useOpenBills(Boolean(aiPayment));
+  const recordPaymentMutation = useRecordBillPayment();
+  const settlementCandidates = aiPayment
+    ? findBillsSettledBy(openBills, { amount: aiPayment.amount, date: aiPayment.date }).slice(0, 3)
+    : [];
+
+  const handleSettleBill = async (billId: string) => {
+    if (!aiPayment || settlingBillId) return;
+    setSettlingBillId(billId);
+    try {
+      await recordPaymentMutation.mutateAsync({
+        billId,
+        payment: {
+          date: aiPayment.date,
+          amount: aiPayment.amount,
+          method: "bank_transfer",
+          reference: aiPayment.reference || "",
+          notes: t("money.ai.paymentFromSlip") || "Recorded from an uploaded payment slip",
+        },
+      });
+      toast({
+        title: t("common.success") || "Success",
+        description: t("money.ai.paymentRecorded") || "Payment recorded against the bill",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error recording payment from slip:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("money.ai.paymentFailed") || "Could not record the payment",
+        variant: "destructive",
+      });
+    } finally {
+      setSettlingBillId(null);
+    }
+  };
 
   // Warn, never block: two invoices from one supplier on one day for one amount
   // is a real thing, so the person decides — they can see the existing bill.
@@ -448,6 +507,36 @@ export default function QuickBillDialog({
                   "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below."
                 : t("money.ai.failed") ||
                   "XefeBot couldn't read this file — fill in the details manually."}
+            </div>
+          )}
+          {aiStatus === "notABill" && settlementCandidates.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm">
+              <p className="text-foreground/80">
+                {(
+                  t("money.ai.slipSettlesBill") ||
+                  "This payment slip matches {{count}} open bill(s). Record the payment against one?"
+                ).replace("{{count}}", String(settlementCandidates.length))}
+              </p>
+              {settlementCandidates.map(({ bill }) => (
+                <div key={bill.id} className="flex items-center justify-between gap-3">
+                  <span className="text-foreground/80">
+                    {bill.vendorName || t("money.bills.vendor") || "Vendor"}
+                    {bill.billNumber ? ` · ${bill.billNumber}` : ""} · {bill.billDate} ·{" "}
+                    ${(bill.balanceDue ?? bill.total ?? 0).toFixed(2)}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={Boolean(settlingBillId) || !canManage()}
+                    onClick={() => handleSettleBill(bill.id)}
+                  >
+                    {settlingBillId === bill.id
+                      ? t("common.saving") || "Saving..."
+                      : t("money.ai.recordPayment") || "Record payment"}
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
           {aiStatus === "notABill" && (

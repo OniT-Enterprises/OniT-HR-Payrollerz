@@ -6870,6 +6870,12 @@ const messages = {
         "O XefeBot leu este ficheiro, mas não é uma fatura nem um recibo — introduza os dados abaixo.",
       pdfProtected:
         "Este PDF está protegido por palavra-passe, por isso nada o consegue ler. Guarde uma cópia sem proteção ou introduza os dados abaixo.",
+      slipSettlesBill:
+        "Este comprovativo corresponde a {{count}} fatura(s) em aberto. Registar o pagamento numa delas?",
+      recordPayment: "Registar pagamento",
+      paymentRecorded: "Pagamento registado na fatura",
+      paymentFromSlip: "Registado a partir de um comprovativo carregado",
+      paymentFailed: "Não foi possível registar o pagamento",
       looksLikeCreditMemo:
         "Isto parece uma nota de crédito, que reduz o que deve em vez de acrescentar uma fatura. Registe-a contra a fatura original.",
       multipleDocuments:

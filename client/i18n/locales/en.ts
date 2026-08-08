@@ -6770,6 +6770,12 @@ const messages = {
         "XefeBot read this file but it isn't a bill or receipt — enter the details below.",
       pdfProtected:
         "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.",
+      slipSettlesBill:
+        "This payment slip matches {{count}} open bill(s). Record the payment against one?",
+      recordPayment: "Record payment",
+      paymentRecorded: "Payment recorded against the bill",
+      paymentFromSlip: "Recorded from an uploaded payment slip",
+      paymentFailed: "Could not record the payment",
       looksLikeCreditMemo:
         "This looks like a credit note, which reduces what you owe rather than adding a bill. Record it against the original bill instead.",
       multipleDocuments:

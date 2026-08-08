@@ -36,7 +36,7 @@ has its own tests in `server/xefe-api/test/extract-sanitize.test.mjs`.
 | `documentType` | Meaning | Form behaviour |
 |---|---|---|
 | `bill` / `receipt` | A supplier document to record | Pre-fills, user confirms |
-| `payment_proof` | A **bank** document evidencing payment — transfer slip, *comprovativo*, ATM *levantamento* | Refuses, explains what it is |
+| `payment_proof` | A **bank** document evidencing payment — transfer slip, *comprovativo*, ATM *levantamento* | Does not create a bill; offers the open bill it settles (`payment-match.ts`) |
 | `credit_memo` | A credit note: it **reduces** what is owed | Refuses — booking one as a bill pays out money the business is owed |
 | `other` | Not a bill/receipt, or unreadable | Confidence ≥ 0.5 → "read it, but it isn't a bill"; below → "couldn't read this file" |
 
@@ -63,6 +63,12 @@ document broke it:
 - **A password-protected PDF says so.** Detected by an `/Encrypt` byte scan
   (`pdf-protected.ts`), because "XefeBot couldn't read this file" is true but
   useless. Flags exactly the encrypted document out of 30 held-out files.
+
+Settling from a slip is deliberately strict: only an **exact** cent match against
+an open bill is offered, because marking a supplier paid who has not been paid
+hides a real payable. A stored `balanceDue` decides alone — falling back to the
+bill total when it disagrees would offer a bill owing $900 to settle a $472
+payment. Several equal candidates are all shown rather than guessed between.
 
 `taxAmount` is extracted and **deliberately unused**: TL has no VAT, and a
 document's tax line may be Indonesian PPN, Portuguese IVA, TL services tax or
