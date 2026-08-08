@@ -212,3 +212,109 @@ export const LEAVER_PT: HelpArticle = {
     },
   ],
 };
+
+export const BOUNDARIES_PT: HelpArticle = {
+  slug: "what-xefe-does-not-do",
+  kind: "guide",
+  locale: "pt",
+  updated: "2026-08-08",
+  title: "O que o Xefe não faz",
+  summary:
+    "As tarefas que continuam a ser suas, e os pontos em que o Xefe pára de propósito em vez de adivinhar. Vale a pena ler uma vez, porque presumir que uma entrega foi feita é o erro mais caro que existe.",
+  keywords: [
+    "entregar",
+    "submeter",
+    "carregar",
+    "portal",
+    "pagamento",
+    "registar",
+    "aconselhamento",
+    "limites",
+  ],
+  intro: [
+    "Um programa que faz discretamente *quase* todo o trabalho é mais perigoso do que um que faz metade, porque só se descobre no pior momento.",
+    "Por isso esta página é a fronteira honesta. Nada aqui é uma falha que nos escapou — cada ponto é ou uma obrigação que é legalmente sua, ou um sítio onde adivinhar lhe custaria mais do que parar.",
+  ],
+  groups: [
+    {
+      id: "still-yours",
+      heading: "Continua a ser consigo",
+      blurb:
+        "O Xefe prepara cada um destes por completo. Nenhum fica concluído sem a sua ação.",
+      entries: [
+        {
+          id: "no-filing",
+          heading: "O Xefe não entrega nada ao Estado",
+          body: [
+            "Produz o ficheiro da declaração do INSS e os valores da declaração fiscal, corretos e prontos. Não entra no portal do INSS nem submete à administração fiscal.",
+            "É o ponto que merece mais clareza, porque um ficheiro gerado parece muito com um ficheiro entregue. Se ninguém o carregou, nada foi entregue — e o prazo passou na mesma.",
+          ],
+        },
+        {
+          id: "no-payments",
+          heading: "O Xefe não movimenta dinheiro",
+          body: [
+            "Nenhum banco em Timor-Leste disponibiliza uma ligação que o permitisse. Os salários saem quando faz a transferência ou entrega o numerário.",
+            "Para um lote de salários bancário, o Xefe monta o pacote que o banco realmente quer e uma carta de acompanhamento em português. Enviá-lo e assinar a ordem de pagamento são consigo.",
+          ],
+        },
+        {
+          id: "no-registration",
+          heading: "O Xefe não regista a sua empresa nem inscreve os trabalhadores",
+          body: [
+            "O registo comercial, o seu número de empregador na segurança social, os números fiscais seus ou dos seus trabalhadores — tudo isso se trata no serviço competente, não aqui.",
+            "O Xefe guarda os números depois de existirem e avisa-o quando falta algum, antes que bloqueie alguma coisa. Não os consegue obter por si.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "refuses",
+      heading: "Onde o Xefe pára de propósito",
+      blurb:
+        "Em cada um destes casos, apresentar um número convincente seria pior do que não apresentar nenhum.",
+      entries: [
+        {
+          id: "petroleum",
+          heading: "Recusa processar salários de um contratante petrolífero",
+          body: [
+            "Os trabalhadores de uma parte num Acordo Petrolífero são tributados por uma tabela inteiramente separada, com taxas diferentes e um serviço diferente. O Xefe não implementou esse regime.",
+            "Processá-los às taxas comuns reteria a menos — e a diferença é legalmente do empregador, não do trabalhador. Por isso o assistente pára, em vez de calcular algo plausível.",
+          ],
+        },
+        {
+          id: "dismissal",
+          heading: "Não decide se um despedimento foi lícito",
+          body: [
+            "Saber se um despedimento por justa causa retira a compensação por tempo de serviço depende de ter havido um processo devido: acusação escrita, oportunidade real de defesa, decisão formal.",
+            "Nenhuma lista pendente o pode comprovar. O Xefe pede que uma pessoa identificada o ateste, e trata um despedimento que saltou esses passos como mantendo o direito.",
+          ],
+        },
+        {
+          id: "no-guessing",
+          heading: "Não adivinha quando a lei é genuinamente ambígua",
+          body: [
+            "Onde a lei admite mais do que uma leitura, o Xefe fica pelo lado conservador — retém a mais em vez de a menos, revela em vez de deduzir — e di-lo no ecrã onde isso importa.",
+            "Cada uma dessas escolhas está escrita em *Onde o Xefe toma posição sobre a lei*, com o artigo em que assenta, para que o seu contabilista possa discordar de uma frase concreta e não de um total.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "not-advice",
+      heading: "E não é aconselhamento",
+      blurb:
+        "A última fronteira, e a que mais conta quando os valores são elevados.",
+      entries: [
+        {
+          id: "professional-advice",
+          heading: "O Xefe não é o seu contabilista nem o seu advogado",
+          body: [
+            "Aplica a lei timorense com todo o cuidado que consegue e mostra o raciocínio — o artigo por detrás de cada regra, os valores, e onde ficou em dúvida.",
+            "Isso serve para tornar o trabalho de um profissional mais rápido, não para o substituir. Para qualquer situação grande ou contestada — uma compensação por longa antiguidade, um despedimento, uma inspeção — os valores aqui são o ponto de partida dessa conversa.",
+          ],
+        },
+      ],
+    },
+  ],
+};

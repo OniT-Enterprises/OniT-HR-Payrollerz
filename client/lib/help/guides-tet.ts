@@ -215,3 +215,109 @@ export const LEAVER_TET: HelpArticle = {
     },
   ],
 };
+
+export const BOUNDARIES_TET: HelpArticle = {
+  slug: "what-xefe-does-not-do",
+  kind: "guide",
+  locale: "tet",
+  updated: "2026-08-08",
+  title: "Saida mak Xefe la halo",
+  summary:
+    "Serbisu sira ne'ebé sei ita-nia, no fatin sira ne'ebé Xefe para ho konsiénsia duke adivinha. Vale lee dala ida, tanba hanoin katak entrega ida halo tiha ona mak sala ne'ebé karun liu.",
+  keywords: [
+    "entrega",
+    "submete",
+    "hasa'e",
+    "portál",
+    "pagamentu",
+    "rejista",
+    "konsellu",
+    "limite",
+  ],
+  intro: [
+    "Programa ne'ebé halo neineik *besik* serbisu tomak perigozu liu duke ida ne'ebé halo sorin de'it, tanba ita deskobre iha momentu aat liu.",
+    "Entaun pájina ne'e mak fronteira honestu. Buat ida iha ne'e la'ós falha ne'ebé ami haluha — ida-idak ka obrigasaun ne'ebé legalmente ita-nia, ka fatin ne'ebé adivinha sei gasta liu duke para.",
+  ],
+  groups: [
+    {
+      id: "still-yours",
+      heading: "Sei ita-nia serbisu",
+      blurb:
+        "Xefe prepara ida-idak kompletu. Ida ne'ebé la remata to'o ita halo asaun.",
+      entries: [
+        {
+          id: "no-filing",
+          heading: "Xefe la entrega buat ida ba Estadu",
+          body: [
+            "Nia halo arkivu deklarasaun INSS no valór deklarasaun fiskál nian, loos no prontu. Nia la tama portál INSS no la submete ba administrasaun fiskál.",
+            "Ne'e mak pontu ne'ebé presiza klaru liu, tanba arkivu ne'ebé jera hanesan tebes ho arkivu ne'ebé entrega tiha ona. Se ema ida la hasa'e, buat ida la entrega — no prazu liu ona.",
+          ],
+        },
+        {
+          id: "no-payments",
+          heading: "Xefe la book osan",
+          body: [
+            "Banku ida iha Timor-Leste seidauk fó ligasaun ne'ebé bele halo ne'e. Saláriu sai bainhira ita halo transferénsia ka entrega osan iha liman.",
+            "Ba lote saláriu banku nian, Xefe halo pakote ne'ebé banku husu duni no karta akompañamentu iha lian portugés. Haruka no asina orden pagamentu mak ita-nia serbisu.",
+          ],
+        },
+        {
+          id: "no-registration",
+          heading: "Xefe la rejista ita-nia empreza no la inskreve traballadór",
+          body: [
+            "Rejistu komersiál, ita-nia númeru empregadór iha seguransa sosiál, númeru fiskál ita-nia ka ita-nia traballadór nian — hotu-hotu halo iha serbisu kompetente, la'ós iha ne'e.",
+            "Xefe rai númeru sira depois sira iha ona, no fó hatene bainhira ida lakon molok bloka buat ruma. Nia la bele hetan ida ba ita.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "refuses",
+      heading: "Fatin ne'ebé Xefe para ho konsiénsia",
+      blurb:
+        "Iha kazu ida-idak ne'e, fó sai númeru ne'ebé hanesan loos sei aat liu duke la fó sai buat ida.",
+      entries: [
+        {
+          id: "petroleum",
+          heading: "Nia rekuza prosesa saláriu ba kontratante petrolíferu",
+          body: [
+            "Traballadór husi parte ida iha Akordu Petrolíferu selu impostu tuir tabela ketak tomak, ho taxa diferente no serbisu diferente. Xefe seidauk halo rejime ne'e.",
+            "Prosesa sira ho taxa komún sei retein menus — no diferensa ne'e legalmente empregadór nian, la'ós traballadór nian. Entaun asistente para, duke sura buat ruma ne'ebé hanesan loos.",
+          ],
+        },
+        {
+          id: "dismissal",
+          heading: "Nia la deside se despedimentu ida lisitu ka lae",
+          body: [
+            "Atu hatene se despedimentu ho justa causa hasai kompensasaun tempu servisu depende ba prosesu ne'ebé kumpre duni: akuzasaun hakerek, oportunidade loos atu defende, desizaun formál.",
+            "Lista tun ida la bele prova ne'e. Xefe husu ema ho naran atu ateste, no trata despedimentu ne'ebé lakon pasu sira-ne'e nu'udar nafatin iha direitu.",
+          ],
+        },
+        {
+          id: "no-guessing",
+          heading: "Nia la adivinha bainhira lei la klaru duni",
+          body: [
+            "Iha fatin ne'ebé lei simu leitura liu ida, Xefe hili sorin konservadór — retein liu duke menus, fó sai duke dedus — no dehan ne'e iha ekrán ne'ebé importante.",
+            "Eskolla ida-idak hakerek ona iha *Fatin ne'ebé Xefe foti pozisaun kona-ba lei*, ho artigu ne'ebé nia bazeia ba, atu ita-nia kontabilista bele la konkorda ho fraze konkretu ida, la'ós ho totál ida.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "not-advice",
+      heading: "No ne'e la'ós konsellu profisionál",
+      blurb:
+        "Fronteira ikus, no ida ne'ebé importante liu bainhira valór boot.",
+      entries: [
+        {
+          id: "professional-advice",
+          heading: "Xefe la'ós ita-nia kontabilista ka ita-nia advogadu",
+          body: [
+            "Nia aplika lei Timor-Leste ho kuidadu tomak ne'ebé nia bele no hatudu nia razaun — artigu iha regra ida-idak nia kotuk, valór sira, no fatin ne'ebé nia seidauk serteza.",
+            "Ne'e atu halo profisionál nia serbisu lalais liu, la'ós atu troka nia. Ba situasaun boot ka kontestadu ida de'it — kompensasaun ba antiguidade naruk, despedimentu, ka inspesaun — valór iha ne'e mak pontu hahú ba konversa ne'e.",
+          ],
+        },
+      ],
+    },
+  ],
+};

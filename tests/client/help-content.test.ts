@@ -106,10 +106,27 @@ describe('help content — every position is disclosed', () => {
     }
   });
 
-  it('gives every entry a unique anchor within its article', () => {
+  it('gives every anchor in an article a unique id — groups included', () => {
+    // Groups and entries both render as DOM ids on the same page, so they
+    // share one namespace even though they are separate arrays in the data.
+    // Written after doing exactly this: a group and one of its own entries
+    // both called "not-advice", which is invalid HTML and makes the contents
+    // link jump to whichever the browser saw first.
     for (const article of HELP_ARTICLES) {
-      const ids = article.groups.flatMap((g) => g.entries.map((e) => e.id));
+      const ids = article.groups.flatMap((g) => [
+        g.id,
+        ...g.entries.map((e) => e.id),
+      ]);
       expect(new Set(ids).size, article.slug).toBe(ids.length);
+    }
+  });
+
+  it('never renders an empty group blurb', () => {
+    for (const article of HELP_ARTICLES) {
+      for (const group of article.groups) {
+        expect(group.blurb.trim().length, `${article.slug}/${group.id}`)
+          .toBeGreaterThan(0);
+      }
     }
   });
 
@@ -254,6 +271,14 @@ describe('the guides say the deadlines that cost money', () => {
     const leaver = JSON.stringify(getArticle('when-someone-leaves'));
     expect(leaver).toContain('presumed to still exist');
     expect(leaver).toContain('10th of the month after');
+  });
+
+  it('says plainly that a generated file is not a filed one', () => {
+    // The single most expensive misunderstanding available: an INSS export
+    // sitting in a downloads folder looks exactly like a submitted return.
+    const boundaries = JSON.stringify(getArticle('what-xefe-does-not-do'));
+    expect(boundaries).toContain('nothing was filed');
+    expect(boundaries).toContain('does not move money');
   });
 });
 

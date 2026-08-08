@@ -15,9 +15,9 @@
  * worse for this content than an honest English fallback.
  */
 
-import { MONTH_EN, LEAVER_EN } from "./guides-en";
-import { MONTH_PT, LEAVER_PT } from "./guides-pt";
-import { MONTH_TET, LEAVER_TET } from "./guides-tet";
+import { MONTH_EN, LEAVER_EN, BOUNDARIES_EN } from "./guides-en";
+import { MONTH_PT, LEAVER_PT, BOUNDARIES_PT } from "./guides-pt";
+import { MONTH_TET, LEAVER_TET, BOUNDARIES_TET } from "./guides-tet";
 
 export type ArticleLocale = "en" | "pt" | "tet";
 
@@ -443,12 +443,17 @@ const LAW_POSITIONS: HelpArticle = {
  * from the index by being untranslated. Other locales only need to carry the
  * articles they have.
  */
-export const HELP_ARTICLES: HelpArticle[] = [MONTH_EN, LEAVER_EN, LAW_POSITIONS];
+export const HELP_ARTICLES: HelpArticle[] = [
+  MONTH_EN,
+  LEAVER_EN,
+  BOUNDARIES_EN,
+  LAW_POSITIONS,
+];
 
 const TRANSLATIONS: Record<ArticleLocale, HelpArticle[]> = {
   en: [],
-  pt: [MONTH_PT, LEAVER_PT],
-  tet: [MONTH_TET, LEAVER_TET],
+  pt: [MONTH_PT, LEAVER_PT, BOUNDARIES_PT],
+  tet: [MONTH_TET, LEAVER_TET, BOUNDARIES_TET],
 };
 
 /**

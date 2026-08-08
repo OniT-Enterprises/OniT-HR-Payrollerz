@@ -224,3 +224,110 @@ export const LEAVER_EN: HelpArticle = {
     },
   ],
 };
+
+export const BOUNDARIES_EN: HelpArticle = {
+  slug: "what-xefe-does-not-do",
+  kind: "guide",
+  locale: "en",
+  updated: "2026-08-08",
+  title: "What Xefe does not do",
+  summary:
+    "The jobs that are still yours, and the places Xefe deliberately stops instead of guessing. Worth reading once, because assuming a filing happened is the most expensive mistake available.",
+  keywords: [
+    "file",
+    "filing",
+    "submit",
+    "upload",
+    "portal",
+    "payment",
+    "register",
+    "advice",
+    "limits",
+  ],
+  intro: [
+    "Software that quietly does *almost* the whole job is more dangerous than software that does half of it, because you find out at the wrong moment.",
+    "So this page is the honest boundary. Nothing here is a gap we forgot — each one is either a job that is legally yours, or a place where guessing would cost you more than stopping does.",
+  ],
+  groups: [
+    {
+      id: "still-yours",
+      heading: "Still yours to do",
+      blurb:
+        "Xefe prepares each of these completely. None of them is finished until you act.",
+      entries: [
+        {
+          id: "no-filing",
+          heading: "Xefe does not file anything with the government",
+          body: [
+            "It produces the INSS declaration file and the tax return figures, correct and ready. It does not log in to the INSS portal, and it does not submit to the tax authority.",
+            "This is the one worth being clear about, because a generated file looks a lot like a filed one. If nobody uploaded it, nothing was filed — and the deadline passed anyway.",
+          ],
+        },
+        {
+          id: "no-payments",
+          heading: "Xefe does not move money",
+          body: [
+            "No bank in Timor-Leste offers an interface that would let it. Salaries move when you make the transfer or hand over the cash.",
+            "For a bank salary batch, Xefe assembles the pack the bank actually wants and a covering letter in Portuguese. Sending it and signing the payment order are yours.",
+          ],
+        },
+        {
+          id: "no-registration",
+          heading: "Xefe does not register your business or enrol your workers",
+          body: [
+            "Company registration, your employer social-security number, tax numbers for you or your staff — all of those happen at the relevant office, not in here.",
+            "Xefe records the numbers once they exist, and tells you when one is missing before it blocks something. It cannot obtain one for you.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "refuses",
+      heading: "Where Xefe stops on purpose",
+      blurb:
+        "In each of these, producing a confident number would be worse than producing none.",
+      entries: [
+        {
+          id: "petroleum",
+          heading: "It refuses payroll for a petroleum contractor",
+          body: [
+            "Employees of a party to a Petroleum Agreement are taxed under an entirely separate schedule, with different rates and a different desk. Xefe has not built that regime.",
+            "Running them at ordinary rates would under-withhold — and the shortfall is legally the employer's to pay, not the worker's. So the wizard stops rather than computing something plausible.",
+          ],
+        },
+        {
+          id: "dismissal",
+          heading: "It does not decide whether a dismissal was lawful",
+          body: [
+            "Whether a dismissal for cause removes the service compensation depends on whether a proper process happened: a written accusation, a real chance to answer, a formal decision.",
+            "No dropdown can establish that. Xefe asks a named person to attest to it, and treats a dismissal that skipped those steps as keeping the entitlement.",
+          ],
+        },
+        {
+          id: "no-guessing",
+          heading: "It does not guess when the law is genuinely unclear",
+          body: [
+            "Where the statute admits more than one reading, Xefe takes the conservative side — over-withholding rather than under, disclosing rather than inferring — and says so on the screen where it matters.",
+            "Every one of those choices is written down in *Where Xefe takes a position on the law*, with the article it rests on, so your accountant can disagree with a specific sentence rather than with a total.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "not-advice",
+      heading: "And it is not advice",
+      blurb:
+        "The last boundary, and the one that matters most when the amounts are large.",
+      entries: [
+        {
+          id: "professional-advice",
+          heading: "Xefe is not your accountant or your lawyer",
+          body: [
+            "It applies Timor-Leste law as carefully as it can and shows its working — the article behind each rule, the amounts, and where it was unsure.",
+            "That is meant to make a professional's job faster, not to replace it. For anything large or contested — a long-service payout, a dismissal, an audit — the figures here are a starting point for that conversation.",
+          ],
+        },
+      ],
+    },
+  ],
+};
