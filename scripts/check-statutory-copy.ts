@@ -43,6 +43,32 @@ const ROOT = process.cwd();
 const SCANNED = [
   "client/lib/help",
   "client/i18n/locales",
+  // The PUBLIC site. Added 2026-08-08 after this guard shipped scanning only
+  // the two directories above and consequently missed both defects a marketing
+  // fact-check found within minutes: `client/content/docs/time-and-leave.ts`
+  // cited Art. 34 (occupational safety) for SICK LEAVE, and the same table
+  // stated every statutory minimum as a fixed figure.
+  //
+  // A public page is the WORSE place for either error — it is indexed,
+  // quotable, and read by people deciding whether to trust us at all.
+  "client/content/docs",
+];
+
+/**
+ * Marketing page components. Scanned as individual files rather than by
+ * directory: client/pages holds ~111 files and almost all are app screens,
+ * whose statutory strings live in the locales already covered above.
+ */
+const SCANNED_FILES = [
+  "client/pages/Landing.tsx",
+  "client/pages/ProductDetails.tsx",
+  "client/pages/XefeEngine.tsx",
+  "client/pages/Pricing.tsx",
+  "client/pages/AccountantPartners.tsx",
+  "client/pages/SecurityPage.tsx",
+  "client/pages/DocsIndex.tsx",
+  "client/pages/DocsMoneyChain.tsx",
+  "client/pages/DocsArticle.tsx",
 ];
 
 const LAW_TEXT = join(
@@ -58,8 +84,27 @@ const CITES_ARTICLE =
   /\b(?:Art(?:igo|\.)?|Arts?\.)\s*\d+|\bLabour Law\b|\bLei 4\/2012\b|\bLei 8\/2008\b|\bDL \d+\/\d{4}\b/i;
 
 /** States a quantity a reader could act on. */
-const STATES_A_NUMBER =
-  /\b\d+(?:[.,]\d+)?\s*(?:days?|dias?|loron|weeks?|semanas?|months?|meses|fulan|hours?|horas?|oras|%|percent|por cento)\b|\$\s?\d/i;
+/**
+ * States a quantity a reader could act on.
+ *
+ * TWO orders, not one. English and Portuguese put the number first ("12 dias"),
+ * Tetun puts it last ("loron 12", "loron servisu 5"). The first version of this
+ * pattern only matched number-then-unit, so it was systematically blind to
+ * Tetun — it passed the whole Tetun leave table while flagging the identical
+ * English and Portuguese rows. A guard that cannot see one of the three
+ * languages we publish in is worse than no guard, because it reports green.
+ */
+const STATES_A_NUMBER = new RegExp(
+  [
+    // number then unit: "12 days", "12 dias", "44 horas"
+    String.raw`\b\d+(?:[.,]\d+)?\s*(?:days?|dias?|loron|weeks?|semanas?|semana|months?|meses|fulan|hours?|horas?|oras|%|percent|por cento)\b`,
+    // unit then number, the Tetun order: "loron 12", "semana 4", "fulan 6"
+    String.raw`\b(?:loron|semana|fulan|oras)(?:\s+\w+)?\s+\d+\b`,
+    // bare money
+    String.raw`\$\s?\d`,
+  ].join("|"),
+  "i",
+);
 
 /**
  * Words that tell a reader which way the number can move. Generous on
@@ -76,8 +121,11 @@ const DIRECTION_WORDS = [
   "pelo menos", "mínimo", "mínima", "não inferior", "no mínimo",
   "até", "máximo", "máxima", "não superior", "acima", "abaixo",
   "limite", "teto", "ou inferior", "no prazo", "exceder",
-  // Tetun
-  "pelu menus", "menus", "to'o", "liu", "maksimu", "mínimu", "limite",
+  // Tetun. Both spellings of maximum/minimum: the app's Tetun is mixed
+  // orthography (see .tulunrc), so "maksimu" and "máximu" both occur in
+  // shipped strings and a guard that knows only one silently passes the other.
+  "pelu menus", "menus", "to'o", "liu", "limite",
+  "maksimu", "máximu", "maksimun", "mínimu", "minimu",
 ];
 
 /**
@@ -144,6 +192,34 @@ const ALLOWED: Array<{ match: string; reason: string }> = [
     match: "pausa 2 kada loron",
     reason: "As above (tet).",
   },
+  // ── Public leave table: rows whose figure is EXACT in the statute ──
+  // Art. 1(2) still makes each an improvable floor, but the row itself is not
+  // misquoting anything, and the table now carries one Art. 1(2) note beneath
+  // it rather than repeating "at least" in every cell. Cell-by-cell hedging
+  // would make a reference table unreadable, which is its own kind of harm.
+  {
+    match: "Art. 60",
+    reason:
+      "Paternity. Art. 60(1) states an exact figure — 'licença remunerada de 5 dias úteis' — not a floor formula. Covered by the table's Art. 1(2) note.",
+  },
+  {
+    match: "Art. 33(3)",
+    reason:
+      "Family events. Art. 33(3) states 'pode faltar justificadamente 3 dias por ano' — exact. Covered by the table's Art. 1(2) note.",
+  },
+  {
+    match: "Art. 33.º(3)",
+    reason: "As above (pt).",
+  },
+  {
+    match: "Art. 59(4)",
+    reason:
+      "Pregnancy loss. Art. 59(4) states 'licença com a duração de 4 semanas' — exact. Covered by the table's Art. 1(2) note.",
+  },
+  {
+    match: "Art. 59.º(4)",
+    reason: "As above (pt).",
+  },
 ];
 
 // ── Article inventory, parsed from the statute itself ────────────────────
@@ -200,27 +276,65 @@ function* walk(dir: string): Generator<string> {
 /** Quoted string literals, with their line numbers. */
 function stringLiterals(source: string): Array<{ text: string; line: number }> {
   const out: Array<{ text: string; line: number }> = [];
-  source.split("\n").forEach((line, i) => {
-    // Skip comment lines: engine notes are for engineers.
+  const lines = source.split("\n");
+
+  lines.forEach((line, i) => {
+    // Skip comment lines: engine notes are for engineers, who can read the
+    // statute sitting next to them.
     if (/^\s*(?:\/\/|\*|\/\*)/.test(line)) return;
     for (const m of line.matchAll(/"((?:[^"\\]|\\.)*)"/g)) {
       if (m[1].length > 25) out.push({ text: m[1], line: i + 1 });
     }
   });
+
+  // TABLE ROWS. The public docs render statutory tables as arrays of short
+  // cells, so the number and its citation land in SEPARATE literals:
+  //
+  //     ["Sick leave", "12 days a year, …", "First 6 days full pay…", "Art. 34"]
+  //
+  // Scanning literal-by-literal sees a duration with no citation and a
+  // citation with no duration, and clears both — which is exactly how a
+  // wrong article number and four unqualified statutory minimums sat on the
+  // public site while this guard reported green. Join each bracketed row into
+  // one pseudo-literal so a row is judged as the reader reads it: whole.
+  const joined = lines.join("\n");
+  for (const m of joined.matchAll(/\[\s*"(?:[^"\\]|\\.)*"(?:\s*,\s*"(?:[^"\\]|\\.)*")+\s*,?\s*\]/g)) {
+    const cells = [...m[0].matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((c) => c[1]);
+    if (cells.length < 2) continue;
+    const line = joined.slice(0, m.index ?? 0).split("\n").length;
+    out.push({ text: cells.join(" · "), line });
+  }
+
   return out;
 }
 
 const problems: string[] = [];
 const articles = loadArticles();
 
-for (const dir of SCANNED) {
-  const abs = join(ROOT, dir);
-  let entries: string[];
-  try {
-    entries = [...walk(abs)];
-  } catch {
-    continue;
+/** Every file to scan: the walked directories, plus the named page files. */
+function filesToScan(): string[] {
+  const out: string[] = [];
+  for (const dir of SCANNED) {
+    try {
+      out.push(...walk(join(ROOT, dir)));
+    } catch {
+      // Directory absent in this checkout — skip rather than fail the build.
+    }
   }
+  for (const file of SCANNED_FILES) {
+    const abs = join(ROOT, file);
+    try {
+      statSync(abs);
+      out.push(abs);
+    } catch {
+      // A page that has been renamed or removed. Not this guard's business.
+    }
+  }
+  return out;
+}
+
+{
+  const entries = filesToScan();
 
   for (const file of entries) {
     const rel = relative(ROOT, file);

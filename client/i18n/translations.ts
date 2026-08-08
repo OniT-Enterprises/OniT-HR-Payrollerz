@@ -906,7 +906,7 @@ export const translations = {
           "foodAllowance": "Food Allowance",
           "gross": "Gross Pay",
           "wit": "WIT (10% over $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% of basic salary)",
           "net": "Net Pay",
           "badge": "Auto-calculated"
         }
@@ -1052,7 +1052,7 @@ export const translations = {
       "trace": {
         "heading": "Engine trace — one employee, one month",
         "profile": "Store supervisor · monthly salary · resident",
-        "hourlyRate": "Hourly rate",
+        "hourlyRate": "Hourly rate, rounded to the cent before it is applied",
         "inssNote": "The INSS base excludes overtime and the food allowance",
         "employerInss": "Employer INSS (6%) — an employer cost, not a deduction",
         "thirteenth": "13th-month accrual, due 20 December",
@@ -1066,27 +1066,28 @@ export const translations = {
         "description": "The payroll core implements Law 4/2012, Law 8/2008, Law 12/2016, DL 20/2017 and DL 30/2021 — with the statutory text quoted in the code next to the arithmetic it governs. These are tested rules, not lookup tables.",
         "labourSub": "Labour law",
         "labour": {
-          "hours": "44-hour week, 8-hour day",
-          "ot": "Overtime ×1.5 · rest day and public holiday ×2.0 · night work +25%",
+          "hours": "Normal hours capped at 44 a week and 8 a day",
+          "ot": "Overtime ×1.5 · rest day and public holiday ×2.0",
+          "night": "Night work 21:00–06:00 at +25%",
           "otCap": "Overtime capped at 16 h/week and 4 h/day, validated on every run",
           "sick": "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
           "cap": "30% monthly deduction ceiling, reconciled to the cent",
-          "thirteenth": "13th month, prorated, due 20 December",
-          "severance": "Severance: one month per completed five years of service"
+          "thirteenth": "13th month: at least one month's base salary, prorated, payable by 20 December",
+          "severance": "Severance: at least one month per completed five years of service — the statutory minimum"
         },
         "taxSub": "Wage income tax & withholding",
         "tax": {
           "resident": "Residents: 10% on wages above $500/month, per employee",
           "nonResident": "Non-residents: flat 10% from the first dollar",
           "periods": "Threshold prorated by the actual pay periods in the month",
-          "wht": "Supplier withholding: nine categories, from rent to construction",
+          "wht": "Supplier withholding: eight categories, from rent to construction",
           "refuse": "Petroleum-regime payrolls are refused, never guessed"
         },
         "inssSub": "Social security",
         "inss": {
           "rates": "4% employee + 6% employer, uncapped base",
-          "exclude": "Base excludes overtime, per-diems, and travel, food and housing allowances",
-          "include": "Base includes the 13th month",
+          "exclude": "Base excludes overtime, per-diems, representation expenses, and travel, food and housing allowances",
+          "include": "Base INCLUDES the 13th month and the shift and night-work supplements — not every premium is outside it",
           "bonus": "Bonuses must be classified before they contribute — the engine will not guess"
         },
         "configTitle": "Configurable, never inventive",
@@ -1345,7 +1346,7 @@ export const translations = {
           }
         },
         "modeTitle": "Advanced detail appears only when it helps.",
-        "modeDescription": "Accountants see specialist tax controls automatically. An owner can turn on the same mode if their accountant asks. Everyone else keeps the simple flow."
+        "modeDescription": "Accountants see specialist tax controls automatically, and any owner can switch them off to keep the simple flow. Withholding, VAT and the detailed filing screens all live behind that one switch."
       },
       "workflow": {
         "eyebrow": "How work moves through Xefe",
@@ -8854,7 +8855,7 @@ export const translations = {
           "foodAllowance": "Subsidiu Ai-han",
           "gross": "Total Brutu",
           "wit": "WIT (10% liu $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% husi saláriu báziku)",
           "net": "Saláriu Liquidu",
           "badge": "Auto-kalkuladu"
         }
@@ -9000,7 +9001,7 @@ export const translations = {
       "trace": {
         "heading": "Kalkulasaun motór nian — trabalhador ida, fulan ida",
         "profile": "Supervizór loja · saláriu mensál · rezidente",
-        "hourlyRate": "Taxa oráriu",
+        "hourlyRate": "Taxa oras nian, arredonda to'o sentavu molok aplika",
         "inssNote": "Base INSS la inklui oras extra no subsídiu ai-han",
         "employerInss": "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",
         "thirteenth": "Subsídiu anuál (fulan-13), tenke selu to'o 20 Dezembru",
@@ -9014,27 +9015,28 @@ export const translations = {
         "description": "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
         "labourSub": "Lei laboral",
         "labour": {
-          "hours": "Semana oras 44, loron oras 8",
-          "ot": "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+          "hours": "Oras servisu normál: máximu oras 44 kada semana no oras 8 kada loron",
+          "ot": "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
+          "night": "Servisu kalan oras 21:00–06:00 ho +25%",
           "otCap": "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
           "sick": "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
           "cap": "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
-          "thirteenth": "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
-          "severance": "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak"
+          "thirteenth": "Subsídiu anuál (fulan-13): valór la menus husi saláriu báziku fulan ida, proporsionál, tenke selu to'o 20 Dezembru",
+          "severance": "Kompensasaun servisu: pelu menus fulan ida ba tinan 5 kompletu ida-idak — mínimu tuir lei"
         },
         "taxSub": "Impostu saláriu no retensaun",
         "tax": {
           "resident": "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
           "nonResident": "La'ós rezidente: 10% husi dolar primeiru",
           "periods": "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
-          "wht": "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+          "wht": "Retensaun ba fornesedór: kategoria walu, husi renda to'o konstrusaun",
           "refuse": "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha"
         },
         "inssSub": "Seguransa sosiál",
         "inss": {
           "rates": "4% trabalhador + 6% empregador, base la iha limite",
-          "exclude": "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
-          "include": "Base inklui subsídiu anuál (fulan-13)",
+          "exclude": "Base la inklui oras extra, per diem, despeza reprezentasaun, no subsídiu viajen, ai-han no uma",
+          "include": "Base INKLUI subsídiu anuál (fulan-13) no suplementu servisu turnu no servisu kalan — la'ós adisional hotu mak sai husi base",
           "bonus": "Bónus tenke klasifika uluk molok tama base — motór la adivinha"
         },
         "configTitle": "Konfigurável, maibé nunka inventa",
@@ -9756,7 +9758,7 @@ export const translations = {
         },
         "breastfeedingNote": "Depois fila husi lisensa maternidade, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, atu fó susu to'o bebé halo fulan 6, no falta traballadora isin-rua nian ba konsulta médiku mós selu (Lei Trabálhu Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta. Laiha buat atu konfigura iha ne'e.",
         "miscarriageLeave": "Lisensa interrupsaun gravidés (Art. 59.4)",
-        "miscarriageLeaveHint": "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
+        "miscarriageLeaveHint": "Pelu menus semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
         "studyLeave": "Lisensa Estudu (Art. 76.3)",
         "studyLeaveHint": "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
         "childcareLeave": "Falta ba Asisténsia Oan (Art. 64)",
@@ -9786,7 +9788,7 @@ export const translations = {
         "requiresMedicalCert": "Presiza sertifikadu mediku",
         "maternityDaysHint": "Loron (12 semana = 84 loron)",
         "annualLeaveHint": "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
-        "maternityHint": "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
+        "maternityHint": "Durasaun legál: pelu menus semana 12 — Art. 59(1) fó \"períodu mínimu semana 12\", no 10 tenke goza depois partu. Kontratu bele fó liu tan.",
         "paternityHint": "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 60).",
         "sickPayBandsTitle": "Pagamentu lisensa doensa fixu tuir lei",
         "sickPayBandsText": "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral (Art. 33.4): loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
@@ -9857,7 +9859,7 @@ export const translations = {
           "nightWindowLabel": "Janela servisu kalan",
           "nightWindowValue": "21:00–06:00 — oras iha janela ne'e hetan prémiu kalan",
           "sickBandsLabel": "Pagamentu lisensa doensa",
-          "sickBandsValue": "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4)",
+          "sickBandsValue": "To'o loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4). Empregadór bele fó liu tan.",
           "severanceLabel": "Kompensasaun servisu iha terminasaun",
           "severanceValue": "Saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu “la haree ba motivu” ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
           "nonCashLabel": "Benefísiu la'ós osan",
@@ -10272,7 +10274,7 @@ export const translations = {
         "fixedTermMotiveWarning": "Art. 12(2): kontratu ho prazu ne'ebé la deklara motivu konsidera nu'udar permanente.",
         "minorLightWorkNote": "Tinan 15-16 iha admisaun: servisu ki'ik de'it — máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu (Lei Trabálhu Art. 69).",
         "probationEndDate": "Remata períodu esperiénsia",
-        "probationEndDateHelp": "Art. 14: loron 8/15 ba kontratu ho prazu, loron 30-90 ba kontratu permanente.",
+        "probationEndDateHelp": "Art. 14 limita períodu esperiénsia ba loron 8 ka 15 iha kontratu ho prazu, no loron 30 iha kontratu permanente — to'o 90 ba funsaun ho kompleksidade tékniku ka responsabilidade aas, ka pozisaun konfiansa nian.",
         "firstName": "Naran *",
         "lastName": "Apelidu *",
         "email": "Email *",
@@ -11222,7 +11224,7 @@ export const translations = {
             "unjustified": "La mai servisu"
           },
           "help": {
-            "sick": "Lei Trabálhu selu: loron 6 primeiru kada tinan ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
+            "sick": "Lei Trabálhu selu, to'o loron 12 kada tinan: loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
             "special": "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 33.3).",
             "unpaid": "La selu. Sura ba loron 30 laiha pagamentu kada tinan ne'ebé Xefe permite.",
             "unjustified": "La selu, no rejista hasoru traballadór."
@@ -11326,7 +11328,7 @@ export const translations = {
           "notAvailable": "N/A"
         },
         "toast": {
-          "breakEntitlement": "Art. 25(2): traballadór iha direitu ba intervalu oras 1 hafoin servisu oras 5 tuir malu.",
+          "breakEntitlement": "Art. 25(2): hafoin servisu oras 5 tuir malu, traballadór iha direitu ba intervalu deskansu ho durasaun pelu menus oras 1.",
           "errorTitle": "Erru",
           "loadFailed": "Falha karrega dadus prezensa.",
           "validationTitle": "Erru validasaun",
@@ -15260,7 +15262,7 @@ export const translations = {
       "inssDesc": "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
       "openInssFiling": "Loke Submisaun INSS",
       "formC": {
-        "title": "Impostu rendimentu negósiu anual (TADR-IT 1)",
+        "title": "Impostu rendimentu negósiu anual (ATRD – IT 1)",
         "savedTitle": "Preparasaun rai ona",
         "savedDescription": "Lista preparasaun impostu rendimentu anual atualiza ona.",
         "saveError": "La konsege rai lista preparasaun.",
@@ -15268,7 +15270,7 @@ export const translations = {
         "startPreparation": "Hahu preparasaun",
         "dialogTitle": "Prepara impostu rendimentu anual {{year}}",
         "dialogDescription": "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
-        "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (TADR-IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (ATRD – IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
         "checklist": {
           "profitAndLoss": "Lucro no prejuízu reviza ona",
           "balanceSheet": "Balansu reviza ona",
@@ -15279,7 +15281,7 @@ export const translations = {
         "reviewNotePlaceholder": "Revizór, buat ne'ebé sei falta, no asaun tuir mai",
         "workpaper": {
           "pageTitle": "Preparasaun impostu rendimentu anual",
-          "pageSubtitle": "Papel servisu tuir formuláriu ofisiál TADR-IT 1 impostu rendimentu anual",
+          "pageSubtitle": "Papel servisu tuir formuláriu ofisiál ATRD – IT 1 impostu rendimentu anual",
           "openWorkpaper": "Loke papel servisu",
           "taxYear": "Tinan fiskál",
           "entityType": "Tipu empreza (Q.1 iha formuláriu)",
@@ -15336,9 +15338,9 @@ export const translations = {
           "addAdjustment": "Aumenta ajustamentu",
           "adjustmentNote": "Razaun (rai iha papel servisu)",
           "creditsTitle": "Prejuízu transita, prestasaun no créditu",
-          "creditsDesc": "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu TADR",
+          "creditsDesc": "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu ATRD",
           "lossCarriedForward": "Prejuízu transita (liña 145)",
-          "lossCarriedForwardHint": "Valor ne'ebé TADR verifika ona de'it mak válidu iha formuláriu.",
+          "lossCarriedForwardHint": "Valor ne'ebé ATTL verifika ona de'it mak válidu iha formuláriu.",
           "installmentsPaid": "Prestasaun impostu rendimentu ne'ebé selu ona (liña 175)",
           "foreignTaxCredits": "Créditu impostu rai-li'ur (liña 170)",
           "whtCreditsTitle": "Créditu retensaun iha fonte (liña 180–205)",
@@ -16802,7 +16804,7 @@ export const translations = {
           "foodAllowance": "Subsídio de Alimentação",
           "gross": "Salário Bruto",
           "wit": "IRT (10% acima de $500)",
-          "inss": "INSS (4%)",
+          "inss": "INSS (4% do salário base)",
           "net": "Salário Líquido",
           "badge": "Calculado automaticamente"
         }
@@ -16948,7 +16950,7 @@ export const translations = {
       "trace": {
         "heading": "Cálculo do motor — um trabalhador, um mês",
         "profile": "Supervisor de loja · salário mensal · residente",
-        "hourlyRate": "Taxa horária",
+        "hourlyRate": "Remuneração horária, arredondada ao cêntimo antes de ser aplicada",
         "inssNote": "A base de INSS exclui as horas extra e o subsídio de alimentação",
         "employerInss": "INSS do empregador (6%) — custo do empregador, não é dedução",
         "thirteenth": "Provisão do 13.º mês, a pagar até 20 de dezembro",
@@ -16962,27 +16964,28 @@ export const translations = {
         "description": "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
         "labourSub": "Lei laboral",
         "labour": {
-          "hours": "Semana de 44 horas, dia de 8 horas",
-          "ot": "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+          "hours": "Período normal de trabalho limitado a 44 h por semana e 8 h por dia",
+          "ot": "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
+          "night": "Trabalho noturno das 21h00 às 06h00 com +25%",
           "otCap": "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
           "sick": "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
           "cap": "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
-          "thirteenth": "13.º mês, proporcional, a pagar até 20 de dezembro",
-          "severance": "Compensação: um mês por cada cinco anos completos de serviço"
+          "thirteenth": "13.º mês: valor não inferior a 1 salário mensal base, proporcional, a pagar até 20 de dezembro",
+          "severance": "Compensação: pelo menos um mês por cada cinco anos completos de serviço — o mínimo legal"
         },
         "taxSub": "Imposto sobre salários e retenções",
         "tax": {
           "resident": "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
           "nonResident": "Não residentes: 10% desde o primeiro dólar",
           "periods": "Limiar ajustado aos períodos de pagamento reais do mês",
-          "wht": "Retenção a fornecedores: nove categorias, da renda à construção",
+          "wht": "Retenção a fornecedores: oito categorias, da renda à construção",
           "refuse": "Folhas do regime petrolífero são recusadas, nunca adivinhadas"
         },
         "inssSub": "Segurança social",
         "inss": {
           "rates": "4% trabalhador + 6% empregador, base sem teto",
-          "exclude": "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
-          "include": "A base inclui o 13.º mês",
+          "exclude": "A base exclui horas extra, ajudas de custo, despesas de representação e subsídios de viagem, alimentação e alojamento",
+          "include": "A base INCLUI o 13.º mês e os suplementos de trabalho por turnos e noturno — nem todos os adicionais ficam de fora",
           "bonus": "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha"
         },
         "configTitle": "Configurável, nunca inventivo",
@@ -23208,7 +23211,7 @@ export const translations = {
       "inssDesc": "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
       "openInssFiling": "Abrir Declaração INSS",
       "formC": {
-        "title": "Imposto anual sobre o rendimento empresarial (TADR-IT 1)",
+        "title": "Imposto anual sobre o rendimento empresarial (ATRD – IT 1)",
         "savedTitle": "Preparação guardada",
         "savedDescription": "A lista de preparação do imposto anual foi atualizada.",
         "saveError": "Não foi possível guardar a lista de preparação.",
@@ -23216,7 +23219,7 @@ export const translations = {
         "startPreparation": "Iniciar preparação",
         "dialogTitle": "Preparar o imposto anual de {{year}}",
         "dialogDescription": "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
-        "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (TADR-IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (ATRD – IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
         "checklist": {
           "profitAndLoss": "Demonstração de resultados revista",
           "balanceSheet": "Balanço revisto",
@@ -23227,7 +23230,7 @@ export const translations = {
         "reviewNotePlaceholder": "Revisor, pontos em aberto e próxima ação",
         "workpaper": {
           "pageTitle": "Preparação do imposto anual sobre o rendimento",
-          "pageSubtitle": "Papel de trabalho alinhado ao formulário oficial TADR-IT 1 do imposto anual",
+          "pageSubtitle": "Papel de trabalho alinhado ao formulário oficial ATRD – IT 1 do imposto anual",
           "openWorkpaper": "Abrir papel de trabalho",
           "taxYear": "Ano fiscal",
           "entityType": "Tipo de empresa (Q.1 do formulário)",
@@ -23284,9 +23287,9 @@ export const translations = {
           "addAdjustment": "Adicionar ajustamento",
           "adjustmentNote": "Motivo (fica no papel de trabalho)",
           "creditsTitle": "Prejuízos transitados, prestações e créditos",
-          "creditsDesc": "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos TADR",
+          "creditsDesc": "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos ATRD",
           "lossCarriedForward": "Prejuízo transitado (linha 145)",
-          "lossCarriedForwardHint": "Só o valor verificado pela TADR é válido no formulário.",
+          "lossCarriedForwardHint": "Só o valor verificado pela ATTL é válido no formulário.",
           "installmentsPaid": "Prestações do imposto sobre o rendimento pagas (linha 175)",
           "foreignTaxCredits": "Créditos de imposto estrangeiro (linha 170)",
           "whtCreditsTitle": "Créditos de retenção na fonte (linhas 180–205)",

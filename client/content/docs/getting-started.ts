@@ -71,7 +71,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Add an employee",
-            body: "From People, add each person's basics — name, email, date of birth — plus job details (department, job title, start date, employment type) and monthly salary. Timorese staff need a Bilhete de Identidade and an INSS number on file; foreign staff need a passport. The rest of the profile can be filled in later.",
+            body: "From People, add each person's basics — name, email, date of birth — plus job details (department, job title, start date, employment type) and monthly salary. For identification, Xefe asks Timorese staff for a Bilhete de Identidade and foreign staff for a passport. None of it blocks you: create the record now and fill in the ID and INSS numbers when you have them. The INSS number is the one to chase first, because the monthly INSS declaration cannot be filed without it — enrolment is due by the date you file the first declaration that includes that worker (DL 20/2017, Art. 3(2)), and Xefe names anyone still missing one before you file.",
           },
           {
             title: "Invite your teammates",
@@ -157,7 +157,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Adicionar um funcionário",
-            body: "Em Pessoas, adicione os dados básicos de cada pessoa — nome, email, data de nascimento —, os dados profissionais (departamento, cargo, data de início, tipo de contrato) e o salário mensal. Os funcionários timorenses precisam de Bilhete de Identidade e de um número de INSS registado; os funcionários estrangeiros precisam de passaporte. O resto do perfil pode ser preenchido mais tarde.",
+            body: "Em Pessoas, adicione os dados básicos de cada pessoa — nome, email, data de nascimento — mais os dados da função (departamento, cargo, data de início, tipo de contrato) e o salário mensal. Para identificação, o Xefe pede o Bilhete de Identidade aos trabalhadores timorenses e o passaporte aos estrangeiros. Nada disto o bloqueia: crie o registo agora e preencha os números de identificação e do INSS quando os tiver. O número do INSS é o primeiro a tratar, porque a declaração mensal do INSS não pode ser entregue sem ele — a inscrição é devida até à data de entrega da primeira declaração de remunerações que inclua esse trabalhador (DL 20/2017, art. 3.º(2)), e o Xefe identifica quem ainda não o tem antes de entregar.",
           },
           {
             title: "Convide a sua equipa",
@@ -243,7 +243,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Aumenta funsionáriu",
-            body: "Iha Pessoal, hatama detallu báziku ema ida-idak — naran, email, data moris — hamutuk ho detallu servisu (departamentu, kargu, data hahú, tipu kontratu) no saláriu mensál. Trabalhador Timor-oan presiza Bilhete de Identidade no numeru INSS rejistadu; trabalhador estranjeiru presiza pasaporte. Restu perfil bele kompleta depois.",
+            body: "Iha Pessoal, hatama detallu báziku ema ida-idak — naran, email, data moris — tan detallu servisu (departamentu, kargu, data hahú, tipu kontratu) no saláriu mensál. Ba identifikasaun, Xefe husu Bilhete de Identidade ba traballadór timoroan no pasaporte ba estranjeiru. Buat ida husi ne'e la bloka ita: kria rejistu agora no prenche númeru identifikasaun no INSS bainhira ita iha. Númeru INSS mak primeiru atu buka, tanba deklarasaun INSS mensál la bele entrega sem nia — inskrisaun tenke halo to'o data entrega deklarasaun remunerasaun primeiru ne'ebé inklui traballadór ne'e (DL 20/2017, Art. 3(2)), no Xefe fó sai naran ema ne'ebé seidauk iha molok ita entrega.",
           },
           {
             title: "Konvida ita-nia kolega",

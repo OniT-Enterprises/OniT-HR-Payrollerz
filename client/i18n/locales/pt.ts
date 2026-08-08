@@ -990,7 +990,7 @@ const messages = {
         foodAllowance: "Subsídio de Alimentação",
         gross: "Salário Bruto",
         wit: "IRT (10% acima de $500)",
-        inss: "INSS (4%)",
+        inss: "INSS (4% do salário base)",
         net: "Salário Líquido",
         badge: "Calculado automaticamente",
       },
@@ -1155,7 +1155,7 @@ const messages = {
     trace: {
       heading: "Cálculo do motor — um trabalhador, um mês",
       profile: "Supervisor de loja · salário mensal · residente",
-      hourlyRate: "Taxa horária",
+      hourlyRate: "Remuneração horária, arredondada ao cêntimo antes de ser aplicada",
       inssNote:
         "A base de INSS exclui as horas extra e o subsídio de alimentação",
       employerInss:
@@ -1174,15 +1174,17 @@ const messages = {
         "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
       labourSub: "Lei laboral",
       labour: {
-        hours: "Semana de 44 horas, dia de 8 horas",
-        ot: "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+        hours: "Período normal de trabalho limitado a 44 h por semana e 8 h por dia",
+        ot: "Horas extraordinárias ×1,5 · dia de descanso semanal e feriado ×2,0",
+        night: "Trabalho noturno das 21h00 às 06h00 com +25%",
         otCap:
           "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
         sick: "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
         cap: "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
-        thirteenth: "13.º mês, proporcional, a pagar até 20 de dezembro",
+        thirteenth:
+          "13.º mês: valor não inferior a 1 salário mensal base, proporcional, a pagar até 20 de dezembro",
         severance:
-          "Compensação: um mês por cada cinco anos completos de serviço",
+          "Compensação: pelo menos um mês por cada cinco anos completos de serviço — o mínimo legal",
       },
       taxSub: "Imposto sobre salários e retenções",
       tax: {
@@ -1190,15 +1192,16 @@ const messages = {
           "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
         nonResident: "Não residentes: 10% desde o primeiro dólar",
         periods: "Limiar ajustado aos períodos de pagamento reais do mês",
-        wht: "Retenção a fornecedores: nove categorias, da renda à construção",
+        wht: "Retenção a fornecedores: oito categorias, da renda à construção",
         refuse: "Folhas do regime petrolífero são recusadas, nunca adivinhadas",
       },
       inssSub: "Segurança social",
       inss: {
         rates: "4% trabalhador + 6% empregador, base sem teto",
         exclude:
-          "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
-        include: "A base inclui o 13.º mês",
+          "A base exclui horas extra, ajudas de custo, despesas de representação e subsídios de viagem, alimentação e alojamento",
+        include:
+          "A base INCLUI o 13.º mês e os suplementos de trabalho por turnos e noturno — nem todos os adicionais ficam de fora",
         bonus:
           "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha",
       },
@@ -8044,7 +8047,7 @@ const messages = {
       "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
     openInssFiling: "Abrir Declaração INSS",
     formC: {
-      title: "Imposto anual sobre o rendimento empresarial (TADR-IT 1)",
+      title: "Imposto anual sobre o rendimento empresarial (ATRD – IT 1)",
       savedTitle: "Preparação guardada",
       savedDescription:
         "A lista de preparação do imposto anual foi atualizada.",
@@ -8055,7 +8058,7 @@ const messages = {
       dialogDescription:
         "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
       externalWarning:
-        "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (TADR-IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (ATRD – IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
       checklist: {
         profitAndLoss: "Demonstração de resultados revista",
         balanceSheet: "Balanço revisto",
@@ -8067,7 +8070,7 @@ const messages = {
       workpaper: {
         pageTitle: "Preparação do imposto anual sobre o rendimento",
         pageSubtitle:
-          "Papel de trabalho alinhado ao formulário oficial TADR-IT 1 do imposto anual",
+          "Papel de trabalho alinhado ao formulário oficial ATRD – IT 1 do imposto anual",
         openWorkpaper: "Abrir papel de trabalho",
         taxYear: "Ano fiscal",
         entityType: "Tipo de empresa (Q.1 do formulário)",
@@ -8130,10 +8133,10 @@ const messages = {
         adjustmentNote: "Motivo (fica no papel de trabalho)",
         creditsTitle: "Prejuízos transitados, prestações e créditos",
         creditsDesc:
-          "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos TADR",
+          "Valores que o Xefe não consegue ler da contabilidade — introduza-os a partir dos seus registos ATRD",
         lossCarriedForward: "Prejuízo transitado (linha 145)",
         lossCarriedForwardHint:
-          "Só o valor verificado pela TADR é válido no formulário.",
+          "Só o valor verificado pela ATTL é válido no formulário.",
         installmentsPaid:
           "Prestações do imposto sobre o rendimento pagas (linha 175)",
         foreignTaxCredits: "Créditos de imposto estrangeiro (linha 170)",

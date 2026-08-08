@@ -979,7 +979,7 @@ const messages = {
         foodAllowance: "Subsidiu Ai-han",
         gross: "Total Brutu",
         wit: "WIT (10% liu $500)",
-        inss: "INSS (4%)",
+        inss: "INSS (4% husi saláriu báziku)",
         net: "Saláriu Liquidu",
         badge: "Auto-kalkuladu",
       },
@@ -1144,7 +1144,7 @@ const messages = {
     trace: {
       heading: "Kalkulasaun motór nian — trabalhador ida, fulan ida",
       profile: "Supervizór loja · saláriu mensál · rezidente",
-      hourlyRate: "Taxa oráriu",
+      hourlyRate: "Taxa oras nian, arredonda to'o sentavu molok aplika",
       inssNote: "Base INSS la inklui oras extra no subsídiu ai-han",
       employerInss:
         "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",
@@ -1162,16 +1162,17 @@ const messages = {
         "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
       labourSub: "Lei laboral",
       labour: {
-        hours: "Semana oras 44, loron oras 8",
-        ot: "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+        hours: "Oras servisu normál: máximu oras 44 kada semana no oras 8 kada loron",
+        ot: "Oras extraordináriu ×1.5 · loron deskansa semanál no feriadu ×2.0",
+        night: "Servisu kalan oras 21:00–06:00 ho +25%",
         otCap:
           "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
         sick: "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
         cap: "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
         thirteenth:
-          "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
+          "Subsídiu anuál (fulan-13): valór la menus husi saláriu báziku fulan ida, proporsionál, tenke selu to'o 20 Dezembru",
         severance:
-          "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak",
+          "Kompensasaun servisu: pelu menus fulan ida ba tinan 5 kompletu ida-idak — mínimu tuir lei",
       },
       taxSub: "Impostu saláriu no retensaun",
       tax: {
@@ -1179,15 +1180,16 @@ const messages = {
           "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
         nonResident: "La'ós rezidente: 10% husi dolar primeiru",
         periods: "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
-        wht: "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+        wht: "Retensaun ba fornesedór: kategoria walu, husi renda to'o konstrusaun",
         refuse: "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha",
       },
       inssSub: "Seguransa sosiál",
       inss: {
         rates: "4% trabalhador + 6% empregador, base la iha limite",
         exclude:
-          "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
-        include: "Base inklui subsídiu anuál (fulan-13)",
+          "Base la inklui oras extra, per diem, despeza reprezentasaun, no subsídiu viajen, ai-han no uma",
+        include:
+          "Base INKLUI subsídiu anuál (fulan-13) no suplementu servisu turnu no servisu kalan — la'ós adisional hotu mak sai husi base",
         bonus: "Bónus tenke klasifika uluk molok tama base — motór la adivinha",
       },
       configTitle: "Konfigurável, maibé nunka inventa",
@@ -2008,7 +2010,7 @@ const messages = {
         "Depois fila husi lisensa maternidade, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, atu fó susu to'o bebé halo fulan 6, no falta traballadora isin-rua nian ba konsulta médiku mós selu (Lei Trabálhu Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta. Laiha buat atu konfigura iha ne'e.",
       miscarriageLeave: "Lisensa interrupsaun gravidés (Art. 59.4)",
       miscarriageLeaveHint:
-        "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
+        "Pelu menus semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
       studyLeave: "Lisensa Estudu (Art. 76.3)",
       studyLeaveHint:
         "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
@@ -2046,7 +2048,8 @@ const messages = {
       maternityDaysHint: "Loron (12 semana = 84 loron)",
       annualLeaveHint:
         "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
-      maternityHint: "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
+      maternityHint:
+        "Durasaun legál: pelu menus semana 12 — Art. 59(1) fó \"períodu mínimu semana 12\", no 10 tenke goza depois partu. Kontratu bele fó liu tan.",
       paternityHint: "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 60).",
       sickPayBandsTitle: "Pagamentu lisensa doensa fixu tuir lei",
       sickPayBandsText:
@@ -2137,7 +2140,7 @@ const messages = {
           "21:00–06:00 — oras iha janela ne'e hetan prémiu kalan",
         sickBandsLabel: "Pagamentu lisensa doensa",
         sickBandsValue:
-          "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4)",
+          "To'o loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4). Empregadór bele fó liu tan.",
         severanceLabel: "Kompensasaun servisu iha terminasaun",
         severanceValue:
           "Saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu \u201cla haree ba motivu\u201d ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
@@ -2581,7 +2584,7 @@ const messages = {
         "Tinan 15-16 iha admisaun: servisu ki'ik de'it — máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu (Lei Trabálhu Art. 69).",
       probationEndDate: "Remata períodu esperiénsia",
       probationEndDateHelp:
-        "Art. 14: loron 8/15 ba kontratu ho prazu, loron 30-90 ba kontratu permanente.",
+        "Art. 14 limita períodu esperiénsia ba loron 8 ka 15 iha kontratu ho prazu, no loron 30 iha kontratu permanente — to'o 90 ba funsaun ho kompleksidade tékniku ka responsabilidade aas, ka pozisaun konfiansa nian.",
       firstName: "Naran *",
       lastName: "Apelidu *",
       email: "Email *",
@@ -3593,7 +3596,7 @@ const messages = {
           unjustified: "La mai servisu",
         },
         help: {
-          sick: "Lei Trabálhu selu: loron 6 primeiru kada tinan ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
+          sick: "Lei Trabálhu selu, to'o loron 12 kada tinan: loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu (Art. 33.4).",
           special: "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 33.3).",
           unpaid: "La selu. Sura ba loron 30 laiha pagamentu kada tinan ne'ebé Xefe permite.",
           unjustified: "La selu, no rejista hasoru traballadór.",
@@ -3702,7 +3705,7 @@ const messages = {
       },
       toast: {
         breakEntitlement:
-          "Art. 25(2): traballadór iha direitu ba intervalu oras 1 hafoin servisu oras 5 tuir malu.",
+          "Art. 25(2): hafoin servisu oras 5 tuir malu, traballadór iha direitu ba intervalu deskansu ho durasaun pelu menus oras 1.",
         errorTitle: "Erru",
         loadFailed: "Falha karrega dadus prezensa.",
         validationTitle: "Erru validasaun",
@@ -7893,7 +7896,7 @@ const messages = {
       "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
     openInssFiling: "Loke Submisaun INSS",
     formC: {
-      title: "Impostu rendimentu negósiu anual (TADR-IT 1)",
+      title: "Impostu rendimentu negósiu anual (ATRD – IT 1)",
       savedTitle: "Preparasaun rai ona",
       savedDescription:
         "Lista preparasaun impostu rendimentu anual atualiza ona.",
@@ -7904,7 +7907,7 @@ const messages = {
       dialogDescription:
         "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
       externalWarning:
-        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (TADR-IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (ATRD – IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
       checklist: {
         profitAndLoss: "Lucro no prejuízu reviza ona",
         balanceSheet: "Balansu reviza ona",
@@ -7917,7 +7920,7 @@ const messages = {
       workpaper: {
         pageTitle: "Preparasaun impostu rendimentu anual",
         pageSubtitle:
-          "Papel servisu tuir formuláriu ofisiál TADR-IT 1 impostu rendimentu anual",
+          "Papel servisu tuir formuláriu ofisiál ATRD – IT 1 impostu rendimentu anual",
         openWorkpaper: "Loke papel servisu",
         taxYear: "Tinan fiskál",
         entityType: "Tipu empreza (Q.1 iha formuláriu)",
@@ -7980,10 +7983,10 @@ const messages = {
         adjustmentNote: "Razaun (rai iha papel servisu)",
         creditsTitle: "Prejuízu transita, prestasaun no créditu",
         creditsDesc:
-          "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu TADR",
+          "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu ATRD",
         lossCarriedForward: "Prejuízu transita (liña 145)",
         lossCarriedForwardHint:
-          "Valor ne'ebé TADR verifika ona de'it mak válidu iha formuláriu.",
+          "Valor ne'ebé ATTL verifika ona de'it mak válidu iha formuláriu.",
         installmentsPaid:
           "Prestasaun impostu rendimentu ne'ebé selu ona (liña 175)",
         foreignTaxCredits: "Créditu impostu rai-li'ur (liña 170)",

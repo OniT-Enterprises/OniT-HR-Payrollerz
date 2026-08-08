@@ -65,7 +65,7 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payment", text: "Payment" },
       {
         type: "prose",
-        body: "Once a run is approved, mark it as paid. Xefe asks for the payment date and a bank reference — both are required, and once attached to the run, that evidence can't be changed; a mistake gets fixed with a reversing entry, never by rewriting the record.\n\nMarking a run paid also generates your salary bank pack. For BNU, that's the emailed Excel transfer list and signed payment order the bank actually expects — the same style pack is available for BNCTL as a best-effort layout, worth confirming with your branch.",
+        body: "Once a run is approved, mark it as paid. Xefe asks for the payment date and a bank reference — both are required, and once attached to the run, that evidence can't be changed; a mistake gets fixed with a reversing entry, never by rewriting the record.\n\nIf you pay by bank transfer, marking a run paid also generates your salary bank pack. (Paying in cash is a first-class path in Xefe — it posts against cash on hand instead, and there is no pack to send.) For BNU, that's the emailed Excel transfer list and signed payment order the bank actually expects — the same style pack is available for BNCTL as a best-effort layout, worth confirming with your branch.",
       },
       {
         type: "ledger",
@@ -144,7 +144,7 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payment", text: "Pagamento" },
       {
         type: "prose",
-        body: "Depois de aprovado, marque o processamento como pago. O Xefe pede a data do pagamento e uma referência bancária — ambas obrigatórias — e, uma vez associada ao processamento, essa evidência não pode ser alterada; um erro corrige-se com um lançamento de estorno, nunca reescrevendo o registo.\n\nMarcar como pago também gera o seu pacote bancário de salários. Para o BNU, é a lista de transferências em Excel enviada por email e a ordem de pagamento assinada, no formato que o banco realmente espera — o mesmo tipo de pacote está disponível para o BNCTL como modelo best-effort, a confirmar com a sua agência.",
+        body: "Depois de aprovado, marque o processamento como pago. O Xefe pede a data do pagamento e uma referência bancária — ambas obrigatórias — e, uma vez associada ao processamento, essa evidência não pode ser alterada; um erro corrige-se com um lançamento de estorno, nunca reescrevendo o registo.\n\nSe pagar por transferência bancária, marcar como pago gera também o seu pacote bancário de salários. (Pagar em numerário é um caminho de pleno direito no Xefe — lança contra caixa e não há pacote para enviar.) Para o BNU, é a lista de transferências em Excel enviada por email e a ordem de pagamento assinada, no formato que o banco realmente espera — o mesmo tipo de pacote está disponível para o BNCTL como modelo best-effort, a confirmar com a sua agência.",
       },
       {
         type: "ledger",
@@ -223,7 +223,7 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payment", text: "Pagamentu" },
       {
         type: "prose",
-        body: "Depois aprovadu ona, marka prosesamentu hanesan selu ona. Xefe husu data pagamentu no referénsia banku — rua-rua obrigatóriu — no bainhira liga tiha ona ba prosesamentu, evidénsia ne'e nunka bele muda; sala hadi'a ho lansamentu estornu, nunka hakerek fila fali rejistu.\n\nMarka hanesan selu ona mós kria ita-nia pakote banku saláriu nian. Ba BNU, ne'e mak lista transferénsia Excel haruka liuhusi email no orden pagamentu asinadu, iha formatu ne'ebé banku hakarak duni — pakote hanesan mós disponível ba BNCTL nu'udar modelu best-effort, diak liu konfirma ho ita-nia agénsia.",
+        body: "Depois aprovadu ona, marka prosesamentu hanesan selu ona. Xefe husu data pagamentu no referénsia banku — rua-rua obrigatóriu — no bainhira liga tiha ona ba prosesamentu, evidénsia ne'e nunka bele muda; sala hadi'a ho lansamentu estornu, nunka hakerek fila fali rejistu.\n\nSe ita selu liuhosi transferénsia banku, marka hanesan selu ona kria mós ita-nia pakote banku saláriu nian. (Selu ho osan iha liman mak dalan kompletu ida iha Xefe — nia lansa hasoru kaixa, no laiha pakote atu haruka.) Ba BNU, ne'e mak lista transferénsia Excel haruka liuhusi email no orden pagamentu asinadu, iha formatu ne'ebé banku hakarak duni — pakote hanesan mós disponível ba BNCTL nu'udar modelu best-effort, diak liu konfirma ho ita-nia agénsia.",
       },
       {
         type: "ledger",

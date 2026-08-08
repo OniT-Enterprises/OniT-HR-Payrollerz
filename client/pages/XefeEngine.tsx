@@ -98,8 +98,14 @@ export default function XefeEngine() {
       items: [
         { key: "enginePage.law.labour.hours", art: "Art. 25" },
         { key: "enginePage.law.labour.ot", art: "Art. 27" },
-        { key: "enginePage.law.labour.otCap", art: "Art. 27" },
-        { key: "enginePage.law.labour.sick", art: "Art. 42" },
+        // Night work is its own article — Art. 28 "Trabalho noturno", 21:00 to
+        // 06:00 at +25%. It used to ride in the Art. 27 row, which has six
+        // paragraphs and no night provision.
+        { key: "enginePage.law.labour.night", art: "Art. 28" },
+        { key: "enginePage.law.labour.otCap", art: "Art. 27(4)" },
+        // Art. 42 is "Descontos na remuneração" — wage deductions, correctly
+        // cited one row BELOW for the 30% ceiling. Sick pay is Art. 33(4).
+        { key: "enginePage.law.labour.sick", art: "Art. 33(4)" },
         { key: "enginePage.law.labour.cap", art: "Art. 42(3)" },
         { key: "enginePage.law.labour.thirteenth", art: "Art. 44" },
         { key: "enginePage.law.labour.severance", art: "Art. 56" },
@@ -109,8 +115,11 @@ export default function XefeEngine() {
       title: "Lei Tributária — Lei 8/2008",
       subKey: "enginePage.law.taxSub",
       items: [
-        { key: "enginePage.law.tax.resident", art: "Anexo V" },
-        { key: "enginePage.law.tax.nonResident", art: "Art. 20–22" },
+        // The RATES live in Schedule V, not in the sections that delegate to
+        // it: Secs. 20 and 22 both defer, and para 1(b) is where the
+        // non-resident figure is actually printed.
+        { key: "enginePage.law.tax.resident", art: "Anexo V(1)(a)" },
+        { key: "enginePage.law.tax.nonResident", art: "Anexo V(1)(b)" },
         { key: "enginePage.law.tax.periods", art: "" },
         { key: "enginePage.law.tax.wht", art: "Art. 53–60" },
         { key: "enginePage.law.tax.refuse", art: "" },
@@ -366,7 +375,7 @@ export default function XefeEngine() {
                     <p
                       className={cn(
                         "font-mono text-[11px] font-bold uppercase tracking-[0.2em]",
-                        tier.top ? "text-amber-300" : "text-zinc-500",
+                        tier.top ? "text-amber-300" : "text-zinc-400",
                       )}
                     >
                       {t("enginePage.proof.tierLabel")} {index + 1}
@@ -409,7 +418,7 @@ export default function XefeEngine() {
                               "inline-block whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                               row.confirmed
                                 ? "border-lime-400/30 text-lime-300"
-                                : "border-white/15 text-zinc-500",
+                                : "border-white/15 text-zinc-400",
                             )}
                           >
                             {t(
