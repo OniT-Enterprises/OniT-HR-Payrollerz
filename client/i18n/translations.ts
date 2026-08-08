@@ -6283,6 +6283,7 @@ export const translations = {
         "multipleDocuments": "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately.",
         "vendorOnFile": "On the document: {{name}} — not in your vendor list yet.",
         "addVendor": "Add \"{{name}}\"",
+        "vendorMaybeExisting": "Already on file under a different spelling?",
         "vendorAdded": "Vendor \"{{name}}\" added",
         "vendorAddFailed": "Could not add the vendor"
       },
@@ -14167,6 +14168,7 @@ export const translations = {
         "multipleDocuments": "Fixeiru ne’e iha fatura liu husi ida. Hatama montante no númeru husi ida ne’ebé Ita aumenta hela, no hatama seluk sira ketak-ketak.",
         "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
         "addVendor": "Aumenta \"{{name}}\"",
+        "vendorMaybeExisting": "Iha ona iha lista ho hakerek seluk?",
         "vendorAdded": "Fornesedor \"{{name}}\" aumenta ona",
         "vendorAddFailed": "La konsege aumenta fornesedor"
       },
@@ -22051,6 +22053,7 @@ export const translations = {
         "multipleDocuments": "Este ficheiro contém mais do que uma fatura. Introduza o valor e o número da que está a adicionar e carregue as outras separadamente.",
         "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
         "addVendor": "Adicionar \"{{name}}\"",
+        "vendorMaybeExisting": "Já está na lista com outra grafia?",
         "vendorAdded": "Fornecedor \"{{name}}\" adicionado",
         "vendorAddFailed": "Não foi possível adicionar o fornecedor"
       },

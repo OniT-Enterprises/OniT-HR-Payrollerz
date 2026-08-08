@@ -6883,6 +6883,7 @@ const messages = {
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',
+      vendorMaybeExisting: "Já está na lista com outra grafia?",
       vendorAdded: 'Fornecedor "{{name}}" adicionado',
       vendorAddFailed: "Não foi possível adicionar o fornecedor",
     },

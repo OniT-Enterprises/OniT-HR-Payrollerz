@@ -9,7 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { doc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
-import { matchVendorByName } from "@/lib/money/vendor-match";
+import {
+  findSimilarVendors,
+  matchVendorByName,
+  matchVendorByTaxId,
+} from "@/lib/money/vendor-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -305,17 +309,31 @@ export default function QuickBillDialog({
     }
   };
 
-  // Match the extracted vendor name against the vendor list once both exist.
-  // Only auto-select on an exact normalized match — anything weaker is left for
-  // the user to confirm via the "add / pick vendor" prompt below.
+  // Match the extracted vendor against the list once both exist. The tax number
+  // wins when the document carries one: it identifies the legal entity however
+  // the name is spelled on that particular invoice. Otherwise only an exact
+  // normalized name match auto-selects — anything weaker is offered below rather
+  // than chosen, so a different spelling does not become a second vendor.
   useEffect(() => {
-    if (!aiVendorName || vendorId || vendors.length === 0) return;
+    if (vendorId || vendors.length === 0) return;
+    const byTaxId = matchVendorByTaxId(vendors, aiVendorTaxId);
+    if (byTaxId) {
+      setVendorId(byTaxId.id);
+      setAiVendorName(null);
+      return;
+    }
+    if (!aiVendorName) return;
     const match = matchVendorByName(vendors, aiVendorName);
     if (match) {
       setVendorId(match.id);
       setAiVendorName(null);
     }
-  }, [aiVendorName, vendors, vendorId]);
+  }, [aiVendorName, aiVendorTaxId, vendors, vendorId]);
+
+  // Same supplier, different spelling — offered, never auto-selected.
+  const similarVendors = aiVendorName && !vendorId
+    ? findSimilarVendors(vendors, aiVendorName).slice(0, 3)
+    : [];
 
   // A recognised payment slip: offer the open bill it settles, so evidence of
   // payment does not dead-end at "this is a bank slip".
@@ -666,6 +684,31 @@ export default function QuickBillDialog({
                     aiVendorName,
                   )}
                 </Button>
+                {similarVendors.length > 0 && (
+                  <div className="w-full space-y-1 border-t border-border pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {t("money.ai.vendorMaybeExisting") ||
+                        "Already on file under a different spelling?"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {similarVendors.map((vendor) => (
+                        <Button
+                          key={vendor.id}
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={saving || addingVendor}
+                          onClick={() => {
+                            setVendorId(vendor.id);
+                            setAiVendorName(null);
+                          }}
+                        >
+                          {vendor.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -6761,6 +6761,7 @@ const messages = {
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',
+      vendorMaybeExisting: "Iha ona iha lista ho hakerek seluk?",
       vendorAdded: 'Fornesedor "{{name}}" aumenta ona',
       vendorAddFailed: "La konsege aumenta fornesedor",
     },

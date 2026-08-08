@@ -6782,6 +6782,7 @@ const messages = {
         "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
+      vendorMaybeExisting: "Already on file under a different spelling?",
       vendorAdded: 'Vendor "{{name}}" added',
       vendorAddFailed: "Could not add the vendor",
     },
