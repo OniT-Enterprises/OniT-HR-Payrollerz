@@ -62,6 +62,8 @@ const Landing = lazyWithRetry(() => import("@/pages/Landing"));
 const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
 const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
+const HelpCenter = lazyWithRetry(() => import("@/pages/help/HelpCenter"));
+const HelpArticle = lazyWithRetry(() => import("@/pages/help/HelpArticle"));
 const CompanySettings = lazyWithRetry(() => import("@/pages/settings/CompanySettings"));
 const TeamAccessSettings = lazyWithRetry(() => import("@/pages/settings/TeamAccessSettings"));
 const PaymentsSettings = lazyWithRetry(() => import("@/pages/settings/PaymentsSettings"));
@@ -257,6 +259,25 @@ export const authRoutes = (
       element={
         <FeatureRoute requireManage>
           <Settings />
+        </FeatureRoute>
+      }
+    />
+    {/* Help is deliberately ungated: it is where someone lands when something
+        has gone wrong, so a permission check here would lock the door people
+        knock on. (/docs is the public marketing section and lives elsewhere.) */}
+    <Route
+      path="/help"
+      element={
+        <FeatureRoute>
+          <HelpCenter />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/help/:slug"
+      element={
+        <FeatureRoute>
+          <HelpArticle />
         </FeatureRoute>
       }
     />

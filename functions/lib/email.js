@@ -61,8 +61,12 @@ exports.sendQueuedEmail = (0, firestore_1.onDocumentCreated)({ document: "mail/{
         await snap.ref.update({ status: "ERROR", error: "No html or text body", attemptedAt: firestore_2.FieldValue.serverTimestamp() });
         return;
     }
+    // The sender is ALWAYS derived server-side. A client-supplied `from` is
+    // ignored: honoring it let any tenant manager send DKIM-signed mail from an
+    // arbitrary @xefe.tl address (spoofing/phishing). Branding still works via
+    // the sanitized fromName ("{Business} via Xefe <invoices@xefe.tl>").
     const payload = {
-        from: data.from || businessFrom(data.fromName) || DEFAULT_FROM,
+        from: businessFrom(data.fromName) || DEFAULT_FROM,
         to,
         subject: data.subject || "(no subject)",
     };
@@ -72,8 +76,8 @@ exports.sendQueuedEmail = (0, firestore_1.onDocumentCreated)({ document: "mail/{
         payload.text = text;
     if (typeof data.replyTo === "string")
         payload.reply_to = data.replyTo;
-    if (typeof data.cc !== "undefined")
-        payload.cc = data.cc;
+    // `cc` is intentionally not forwarded from the doc — no sanctioned caller
+    // sets it, and honoring it added an unbounded extra recipient list.
     // Attachments: {filename, url|content} → Resend {filename, path|content}.
     // (Previously ignored — payslip PDFs never actually rode along.)
     if (Array.isArray(data.attachments)) {

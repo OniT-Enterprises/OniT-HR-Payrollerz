@@ -249,8 +249,15 @@ exports.requestPasswordReset = (0, https_1.onCall)(async (request) => {
     var _a;
     const raw = ((_a = request.data) !== null && _a !== void 0 ? _a : {});
     const email = (raw.email || "").trim().toLowerCase();
+    // Length cap BEFORE the regex. This callable is unauthenticated, and the
+    // pattern below backtracks super-linearly on a long crafted non-match, so
+    // an uncapped input is a CPU-exhaustion (ReDoS) lever. RFC 5321 caps a real
+    // address at 254 chars; anything longer is rejected without running the regex.
+    if (!email || email.length > 254) {
+        throw new https_1.HttpsError("invalid-argument", "A valid email is required");
+    }
     // Basic shape check — real validation happens against the auth backend.
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new https_1.HttpsError("invalid-argument", "A valid email is required");
     }
     const db = (0, firestore_1.getFirestore)();

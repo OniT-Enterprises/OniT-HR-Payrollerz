@@ -180,6 +180,7 @@ export interface TimeOffPolicies {
    * avaliação" (paid, exams only; proof may be requested per Art. 76(5)).
    */
   studyLeave: LeaveTypeConfig;
+  childcareLeave: LeaveTypeConfig;
   customLeaveTypes: LeaveTypeConfig[];
   holidayCarryOver: boolean;
   maxCarryOverDays: number;
@@ -500,6 +501,25 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     isPaid: true,
     paidPercentage: 100,
     requiresCertificate: false,
+    carryOverAllowed: false,
+    isActive: true,
+  },
+  childcareLeave: {
+    // Lei 4/2012 Art. 64(1): a worker with a child under 10 may be absent up
+    // to 5 days a year to give "assistência, inadiável e imprescindível" when
+    // that child is ill or has had an accident, "devendo apresentar
+    // justificação". The 5 days are the STATUTORY MAXIMUM, not a default an
+    // employer is free to raise — the settings row says so.
+    // Art. 64(2): the absence "determina apenas a perda de remuneração
+    // relativa aos dias em causa" — unpaid, and that is the whole cost. It
+    // does not come out of annual leave and is never an unjustified absence.
+    id: 'childcare',
+    name: 'Childcare Leave (Art. 64)',
+    code: 'CCL',
+    daysPerYear: 5,
+    isPaid: false,
+    paidPercentage: 0,
+    requiresCertificate: true,
     carryOverAllowed: false,
     isActive: true,
   },

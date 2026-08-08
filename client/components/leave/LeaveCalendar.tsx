@@ -31,6 +31,8 @@ const LEAVE_TYPE_COLORS: Record<LeaveType | string, { bg: string; text: string; 
   special: { bg: "bg-teal-500/20", text: "text-teal-700 dark:text-teal-300", border: "border-teal-500/40" },
   unpaid: { bg: "bg-orange-500/20", text: "text-orange-700 dark:text-orange-300", border: "border-orange-500/40" },
   study: { bg: "bg-violet-500/20", text: "text-violet-700 dark:text-violet-300", border: "border-violet-500/40" },
+  // Caring for a sick child under 10 (Lei 4/2012 Art. 64).
+  childcare: { bg: "bg-amber-500/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-500/40" },
   custom: { bg: "bg-gray-400/20", text: "text-gray-600 dark:text-gray-400", border: "border-gray-400/40" },
   // Legacy render-only: existing bereavement/marriage requests keep their colors.
   bereavement: { bg: "bg-gray-500/20", text: "text-gray-700 dark:text-gray-300", border: "border-gray-500/40" },
@@ -176,6 +178,7 @@ const LEGEND_ITEMS = [
   { type: "miscarriage", label: "Miscarriage" },
   { type: "special", label: "Special" },
   { type: "study", label: "Study" },
+  { type: "childcare", label: "Childcare" },
   { type: "unpaid", label: "Unpaid" },
 ] as const;
 

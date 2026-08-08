@@ -50,6 +50,7 @@ const findConfigured = (policies, id) =>
     policies.specialLeave,
     policies.unpaidLeave,
     policies.studyLeave,
+    policies.childcareLeave,
     ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
   ].find((policy) => policy && policy.id === id);
 

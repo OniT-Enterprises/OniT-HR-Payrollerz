@@ -44,7 +44,6 @@ import {
   PanelLeftClose,
   MessageCircle,
 } from "lucide-react";
-import { SUPPORT_WHATSAPP_URL } from "@/lib/support";
 import type { ComponentType } from "react";
 import type { ModulePermission } from "@/types/tenant";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
@@ -573,27 +572,45 @@ interface SidebarFooterProps {
 
 /**
  * Always-available rescue path. Our users are first-time software users on a
- * phone; when they get stuck, a human on WhatsApp is the fastest way out. This
- * is an external link, not a route, so it never depends on app state.
+ * phone; when they get stuck, a human on WhatsApp is the fastest way out.
+ *
+ * This used to open WhatsApp directly, on the reasoning that an external link
+ * never depends on app state. It now opens /help — which leads with that same
+ * WhatsApp link as its first and largest element, so the human is one tap
+ * further away and the written answers become reachable at all. The state
+ * argument survives the change: rendering this sidebar already proves routing
+ * works, so a route here fails in no case the old link would have survived.
  */
-function HelpLink({ collapsed, t }: { collapsed: boolean; t: (key: string) => string }) {
+function HelpLink({
+  collapsed,
+  onNavigate,
+  pathname,
+  t,
+}: {
+  collapsed: boolean;
+  onNavigate: (path: string) => void;
+  pathname: string;
+  t: (key: string) => string;
+}) {
   const label = t("common.getHelp") || "Get help";
-  const base =
-    "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all";
+  const active = pathname === "/help" || pathname.startsWith("/help/");
+  const base = active
+    ? "bg-sidebar-accent text-sidebar-foreground"
+    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all";
 
   if (collapsed) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <a
-            href={SUPPORT_WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => onNavigate("/help")}
             aria-label={label}
+            aria-current={active ? "page" : undefined}
             className={`flex h-11 w-full items-center justify-center rounded-lg md:h-10 ${base}`}
           >
             <MessageCircle className="h-5 w-5" />
-          </a>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={8}>
           {label}
@@ -603,15 +620,15 @@ function HelpLink({ collapsed, t }: { collapsed: boolean; t: (key: string) => st
   }
 
   return (
-    <a
-      href={SUPPORT_WHATSAPP_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
+      onClick={() => onNavigate("/help")}
+      aria-current={active ? "page" : undefined}
       className={`relative flex h-11 w-full items-center gap-3 rounded-lg pl-3 pr-3 text-sm md:h-9 ${base}`}
     >
       <MessageCircle className="h-5 w-5 shrink-0" />
       <span className="truncate">{label}</span>
-    </a>
+    </button>
   );
 }
 
@@ -619,7 +636,12 @@ function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pat
   return (
     <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
       <div className="mb-1">
-        <HelpLink collapsed={collapsed} t={t} />
+        <HelpLink
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+          pathname={pathname}
+          t={t}
+        />
       </div>
       <div className="flex items-center gap-1">
         {showSettings && (

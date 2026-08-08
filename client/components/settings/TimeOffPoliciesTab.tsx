@@ -20,6 +20,7 @@ import {
   Trash2,
   Heart,
   GraduationCap,
+  Baby,
   Plus,
   ChevronDown,
 } from "lucide-react";
@@ -78,8 +79,15 @@ function leaveSliceIsValid(leave: LeaveTypeConfig): boolean {
   );
 }
 
-/** Art. 32 floor — the one number on this page the law puts a minimum under. */
+/** Art. 32 floor — annual leave may be granted above this, never below. */
 const ANNUAL_LEAVE_MINIMUM_DAYS = 12;
+
+/**
+ * Art. 64(1) floor. "Até ao limite máximo de 5 dias por ano" caps the WORKER'S
+ * RIGHT, so it is a minimum on the employer: 5 is the least you may offer, and
+ * being more generous is a lawful contractual choice.
+ */
+const CHILDCARE_LEAVE_MINIMUM_DAYS = 5;
 
 // ── Small presentational helpers ────────────────────────────────────
 
@@ -279,6 +287,7 @@ export function TimeOffPoliciesTab({
       ["miscarriage", leaveSliceIsValid(timeOffPolicies.miscarriageLeave)],
       ["special", leaveSliceIsValid(timeOffPolicies.specialLeave)],
       ["study", leaveSliceIsValid(timeOffPolicies.studyLeave)],
+      ["childcare", leaveSliceIsValid(timeOffPolicies.childcareLeave)],
       ["unpaid", leaveSliceIsValid(timeOffPolicies.unpaidLeave)],
       ["custom", timeOffPolicies.customLeaveTypes.every(leaveSliceIsValid)],
     ];
@@ -322,6 +331,7 @@ export function TimeOffPoliciesTab({
     "special",
     "unpaid",
     "study",
+    "childcare",
     "custom",
     "bereavement",
     "marriage",
@@ -589,6 +599,7 @@ export function TimeOffPoliciesTab({
         "miscarriage",
         "special",
         "study",
+        "childcare",
         "unpaid",
         "custom",
       ].find((id) => invalidRows.has(id));
@@ -1996,6 +2007,74 @@ export function TimeOffPoliciesTab({
             <LawNote title={t("settings.timeOff.whatTheLawSays")}>
               <p className="text-xs text-muted-foreground">
                 {t("settings.timeOff.studyLeaveHint")}
+              </p>
+            </LawNote>
+          </PolicyRow>
+
+          {/* Caring for a sick child (Art. 64) — the mirror image of study
+              leave: the DAYS are fixed by statute and the PAY is not the
+              company's to give away. 5 days is a floor here, not a ceiling,
+              because "limite máximo" caps what the worker may claim. */}
+          <PolicyRow
+            id="childcare"
+            icon={Baby}
+            iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+            title={t("settings.timeOff.rows.childcare.title")}
+            summary={t("settings.timeOff.rows.childcare.summary", {
+              days: timeOffPolicies.childcareLeave.daysPerYear,
+            })}
+            badges={notSavedBadge(sliceIsDirty((p) => p.childcareLeave))}
+            open={openRow === "childcare"}
+            onToggle={() => toggleRow("childcare")}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="childcare-days">
+                {t("settings.timeOff.rows.childcare.daysLabel")}
+              </Label>
+              <Input
+                id="childcare-days"
+                type="number"
+                min={0}
+                value={timeOffPolicies.childcareLeave.daysPerYear}
+                onChange={(e) =>
+                  setTimeOffPolicies({
+                    ...timeOffPolicies,
+                    childcareLeave: {
+                      ...timeOffPolicies.childcareLeave,
+                      daysPerYear: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+              />
+            </div>
+
+            {timeOffPolicies.childcareLeave.daysPerYear <
+              CHILDCARE_LEAVE_MINIMUM_DAYS && (
+              <AmberNote>
+                <p>{t("settings.timeOff.rows.childcare.belowMinimum")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      childcareLeave: {
+                        ...timeOffPolicies.childcareLeave,
+                        daysPerYear: CHILDCARE_LEAVE_MINIMUM_DAYS,
+                      },
+                    })
+                  }
+                >
+                  {t("settings.timeOff.rows.childcare.setMinimum")}
+                </Button>
+              </AmberNote>
+            )}
+            {invalidNote("childcare")}
+
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.timeOff.childcareLeaveHint")}
               </p>
             </LawNote>
           </PolicyRow>

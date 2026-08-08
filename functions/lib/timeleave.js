@@ -25,6 +25,9 @@ const COPY_LOCK_TTL_MS = 5 * 60 * 1000;
 // after a pregnancy interruption (4 calendar weeks ≈ 20 working days).
 // study — Lei 4/2012 Art. 76(3): worker-student exam absence "sem perda da
 // remuneração"; 3 working days/year is Xefe's configurable default.
+// childcare — Lei 4/2012 Art. 64(1): 5 days/year, statutory cap not a default,
+// for a parent of a child under 10 giving "assistência, inadiável e
+// imprescindível" during that child's illness or accident.
 const DEFAULT_ENTITLEMENTS = {
     annual: 12,
     sick: 12,
@@ -34,6 +37,7 @@ const DEFAULT_ENTITLEMENTS = {
     unpaid: 30,
     special: 3,
     study: 3,
+    childcare: 5,
     custom: 0,
 };
 const ANNOUNCED_VARIABLE_HOLIDAYS = {
@@ -110,11 +114,36 @@ async function getLeaveHolidayDates(tenantId, startDate, endDate) {
     }
     return dates;
 }
-function calculateWorkingDays(startDate, endDate, holidays) {
+/**
+ * Which weekdays this tenant works. 0 = Sunday … 6 = Saturday.
+ *
+ * The old behaviour — skip Saturday AND Sunday for everyone — is preserved as
+ * the default so no tenant's leave durations move without someone choosing it.
+ * It is NOT the statutory norm: Art. 25 fixes the week at 44 hours, which is
+ * not 5 x 8, and Art. 30(2) makes Sunday only the DEFAULT rest day, departable
+ * where the service cannot be interrupted. Most Timor-Leste businesses work six
+ * days. See docs/NICO_OPEN_QUESTIONS.md A6.
+ */
+const DEFAULT_WORKING_WEEKDAYS = new Set([1, 2, 3, 4, 5]);
+async function getWorkingWeekdays(tenantId) {
+    var _a;
+    const snapshot = await db.doc(`tenants/${tenantId}/settings/config`).get();
+    const policies = (_a = snapshot.data()) === null || _a === void 0 ? void 0 : _a.timeOffPolicies;
+    const configured = policies === null || policies === void 0 ? void 0 : policies.workingDays;
+    if (Array.isArray(configured)) {
+        const days = new Set(configured.filter((day) => typeof day === "number" && day >= 0 && day <= 6));
+        // An empty or all-invalid array would make every leave request zero-length,
+        // so fall back rather than trust it.
+        if (days.size > 0)
+            return days;
+    }
+    return DEFAULT_WORKING_WEEKDAYS;
+}
+function calculateWorkingDays(startDate, endDate, holidays, workingWeekdays = DEFAULT_WORKING_WEEKDAYS) {
     let count = 0;
     for (let date = startDate; date <= endDate; date = addDaysISO(date, 1)) {
         const weekday = parseDateISO(date).getUTCDay();
-        if (weekday !== 0 && weekday !== 6 && !holidays.has(date))
+        if (workingWeekdays.has(weekday) && !holidays.has(date))
             count += 1;
     }
     return count;
@@ -129,14 +158,19 @@ async function calculateCanonicalLeaveDuration(tenantId, data) {
     if (calendarDays <= 0 || calendarDays > 366) {
         throw new https_1.HttpsError("invalid-argument", "Leave must be between 1 and 366 calendar days");
     }
-    const holidays = await getLeaveHolidayDates(tenantId, data.startDate, data.endDate);
+    const [holidays, workingWeekdays] = await Promise.all([
+        getLeaveHolidayDates(tenantId, data.startDate, data.endDate),
+        getWorkingWeekdays(tenantId),
+    ]);
     if (data.halfDay === true) {
         if (data.startDate !== data.endDate) {
             throw new https_1.HttpsError("invalid-argument", "Half-day leave must use one date");
         }
-        return calculateWorkingDays(data.startDate, data.endDate, holidays) === 1 ? 0.5 : 0;
+        return calculateWorkingDays(data.startDate, data.endDate, holidays, workingWeekdays) === 1
+            ? 0.5
+            : 0;
     }
-    return calculateWorkingDays(data.startDate, data.endDate, holidays);
+    return calculateWorkingDays(data.startDate, data.endDate, holidays, workingWeekdays);
 }
 function getTodayTL() {
     return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -245,6 +279,7 @@ function entitlementsFromConfig(configData) {
         "specialLeave",
         "unpaidLeave",
         "studyLeave",
+        "childcareLeave",
     ];
     for (const key of policyKeys) {
         const policy = policies[key];
@@ -418,6 +453,7 @@ function leavePayFraction(leaveType, config) {
             policies.specialLeave,
             policies.unpaidLeave,
             policies.studyLeave,
+            policies.childcareLeave,
             ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
         ]
             .map((policy) => policy)
@@ -437,10 +473,16 @@ function leavePayFraction(leaveType, config) {
     // salary. A tenant that explicitly configures a paid percentage for these
     // types keeps it (deliberate employer-paid option, above). Study leave
     // (Art. 76(3) "sem perda da remuneração") falls through to paid.
+    // Childcare is unpaid by statute — Art. 64(2) is explicit that the absence
+    // "determina apenas a perda de remuneração relativa aos dias em causa". The
+    // "apenas" is the protection: the day costs its own pay and NOTHING else,
+    // so it must never be quietly taken out of annual leave or treated as
+    // unjustified. An employer may still choose to pay it (configured, above).
     return leaveType === "unpaid"
         || leaveType === "maternity"
         || leaveType === "paternity"
         || leaveType === "miscarriage"
+        || leaveType === "childcare"
         ? 0
         : 1;
 }
@@ -912,6 +954,7 @@ exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
             policies.specialLeave,
             policies.unpaidLeave,
             policies.studyLeave,
+            policies.childcareLeave,
             ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
         ].map((policy) => policy)
         : [];
@@ -954,7 +997,8 @@ exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
     const entitlements = entitlementsFromConfig(configSnapshot.data());
     // Probation gate (tenant policy): annual leave cannot start before hire date
     // + probationMonthsBeforeLeave. Statutorily protected absences (sick,
-    // maternity, miscarriage, special, study) are never blocked by probation,
+    // maternity, miscarriage, special, study, childcare) are never blocked by
+    // probation,
     // and owners/HR admins may knowingly override, same as the balance override.
     if (leaveType === "annual" && !overrideBalance) {
         const eligibleFrom = (0, leave_logic_1.probationEligibleFromDate)(typeof (jobDetails === null || jobDetails === void 0 ? void 0 : jobDetails.hireDate) === "string" ? jobDetails.hireDate : undefined, Number((_e = policies === null || policies === void 0 ? void 0 : policies.probationMonthsBeforeLeave) !== null && _e !== void 0 ? _e : 0));

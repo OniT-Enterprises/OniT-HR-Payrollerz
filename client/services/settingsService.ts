@@ -178,6 +178,10 @@ function normalizeTenantSettings(
         ...defaults.timeOffPolicies.studyLeave,
         ...(data.timeOffPolicies?.studyLeave || {}),
       },
+      childcareLeave: {
+        ...defaults.timeOffPolicies.childcareLeave,
+        ...(data.timeOffPolicies?.childcareLeave || {}),
+      },
       customLeaveTypes: data.timeOffPolicies?.customLeaveTypes || defaults.timeOffPolicies.customLeaveTypes,
     },
     payrollConfig: {

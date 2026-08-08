@@ -48,6 +48,31 @@ export const translations = {
         "s8Body": "suporte@onit.tl"
       }
     },
+    "help": {
+      "title": "Help & documentation",
+      "subtitle": "How Xefe works, and how it reads Timor-Leste law.",
+      "talkToUsTitle": "Talk to a person on WhatsApp",
+      "talkToUsBody": "Stuck on something? This is usually the fastest way out.",
+      "searchPlaceholder": "Search — try “severance”, “INSS”, “sick leave”",
+      "searchLabel": "Search the documentation",
+      "resultCount": "{{count}} matching section(s)",
+      "noResults": "Nothing found for “{{query}}”.",
+      "noResultsHint": "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp above and we will answer directly.",
+      "articlesHeading": "Documents",
+      "updated": "Updated {{date}}",
+      "contentsHeading": "On this page",
+      "backToHelp": "Back to help",
+      "notFound": "That document does not exist.",
+      "todayLabel": "What Xefe does today",
+      "impactLabel": "What it is worth:",
+      "openLabel": "Still being confirmed",
+      "englishOnly": "This document is only available in English for now. It quotes labour and tax law closely, and we would rather wait for a proper translation than publish a machine-made one nobody has checked.",
+      "status": {
+        "confirming": "Confirming",
+        "settled": "Settled",
+        "asks-you": "Xefe asks you"
+      }
+    },
     "common": {
       "weekdaysShort": {
         "0": "Sun",
@@ -1749,6 +1774,13 @@ export const translations = {
             "summary": "{{days}} paid days a year for exams. The law sets no limit — this number is yours.",
             "daysLabel": "Exam days your company allows each year"
           },
+          "childcare": {
+            "title": "Caring for a sick child",
+            "summary": "{{days}} unpaid days a year, for a child under 10 who is ill or hurt.",
+            "daysLabel": "Days a year for caring for a sick child",
+            "belowMinimum": "The law gives every parent of a child under 10 at least 5 of these days a year (Art. 64.1). Fewer than 5 is below the legal minimum.",
+            "setMinimum": "Set to 5 days"
+          },
           "unpaid": {
             "title": "Unpaid time off",
             "summary": "Up to {{days}} days a year.",
@@ -1778,6 +1810,8 @@ export const translations = {
         "miscarriageLeaveHint": "4 weeks after a pregnancy interruption (Labour Law Art. 59.4), as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate.",
         "studyLeave": "Study Leave (Art. 76.3)",
         "studyLeaveHint": "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment.",
+        "childcareLeave": "Childcare Leave (Art. 64)",
+        "childcareLeaveHint": "Up to 5 days a year for a worker with a child under 10, to give care that cannot wait when that child is ill or has had an accident (Labour Law Art. 64.1). The worker must give a justification. The days are unpaid — and Art. 64.2 says that is the whole of the consequence: the absence costs that day's pay and nothing else. It does not come out of annual leave, and it is never treated as an unjustified absence.",
         "parentalInssExplainer": "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave.",
         "parentalPaidWarning": "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy.",
         "title": "Time Off Policies",
@@ -3079,6 +3113,7 @@ export const translations = {
           "submit": "Submit Request"
         },
         "dialog": {
+          "childcareLeaveHint": "Up to 5 days a year to care for your own child under 10 when the child is ill or has had an accident and the care cannot wait (Labour Law Art. 64.1). Justification is required. These days are unpaid — and that is the only consequence: they do not come out of your annual leave and are not an unjustified absence (Art. 64.2).",
           "studyLeaveHint": "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
           "miscarriageInssHint": "After a pregnancy interruption the worker is entitled to a 4-week license (Labour Law Art. 59.4). It is unpaid by the employer by default: the worker claims the INSS parental subsidy directly (within 6 months of the first day of the leave) when they have 6 months of contributions in the last 12 (DL 18/2017).",
           "breastfeedingNote": "After returning, the worker is entitled to two 1-hour paid breaks per day until the child is 6 months old (Art. 62) — record these in attendance as worked time, do not dock them.",
@@ -3172,6 +3207,7 @@ export const translations = {
           "unpaid": "Unpaid Leave",
           "marriage": "Marriage Leave",
           "study": "Study Leave",
+          "childcare": "Childcare Leave",
           "custom": "Custom Leave"
         },
         "certificates": {
@@ -7959,6 +7995,31 @@ export const translations = {
         "s8Body": "suporte@onit.tl"
       }
     },
+    "help": {
+      "title": "Ajuda no dokumentasaun",
+      "subtitle": "Oinsá Xefe servisu, no oinsá nia lee lei Timor-Leste nian.",
+      "talkToUsTitle": "Koalia ho ema iha WhatsApp",
+      "talkToUsBody": "Pega iha buat ruma? Baibain ne'e dalan lalais liu.",
+      "searchPlaceholder": "Buka — koko “kompensasaun”, “INSS”, “lisensa doensa”",
+      "searchLabel": "Buka iha dokumentasaun",
+      "resultCount": "Seksaun {{count}} ne'ebé hanesan",
+      "noResults": "La hetan buat ida ba “{{query}}”.",
+      "noResultsHint": "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
+      "articlesHeading": "Dokumentu",
+      "updated": "Atualiza iha {{date}}",
+      "contentsHeading": "Iha pájina ne'e",
+      "backToHelp": "Fila ba ajuda",
+      "notFound": "Dokumentu ne'e la iha.",
+      "todayLabel": "Saida mak Xefe halo ohin loron",
+      "impactLabel": "Nia folin:",
+      "openLabel": "Seidauk konfirma",
+      "englishOnly": "Dokumentu ne'e iha de'it iha lian Inglés ba oras ne'e. Nia sita besik lei traballu no fiskál, no ami prefere hein tradusaun ne'ebé di'ak duke publika tradusaun makina nian ne'ebé ema ida seidauk verifika.",
+      "status": {
+        "confirming": "Seidauk konfirma",
+        "settled": "Rezolve tiha",
+        "asks-you": "Xefe husu ba ita"
+      }
+    },
     "common": {
       "weekdaysShort": {
         "0": "Dom",
@@ -9660,6 +9721,13 @@ export const translations = {
             "summary": "Loron {{days}} ho pagamentu kada tinan ba prova. Lei la tau limite — númeru ne'e ita-nia.",
             "daysLabel": "Loron prova ne'ebé ita-nia empreza fó kada tinan"
           },
+          "childcare": {
+            "title": "Kuidadu ba oan moras",
+            "summary": "Loron {{days}} laiha pagamentu kada tinan, ba oan ki'ik liu tinan 10 ne'ebé moras ka kanek.",
+            "daysLabel": "Loron kada tinan ba kuidadu oan moras",
+            "belowMinimum": "Lei fó ba inan-aman hotu ne'ebé iha oan ki'ik liu tinan 10 pelu menus loron 5 husi loron sira-ne'e kada tinan (Art. 64.1). Menus husi 5 tun husi mínimu legál.",
+            "setMinimum": "Tau loron 5"
+          },
           "unpaid": {
             "title": "Lisensa laiha pagamentu",
             "summary": "To'o loron {{days}} kada tinan.",
@@ -9689,6 +9757,8 @@ export const translations = {
         "miscarriageLeaveHint": "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
         "studyLeave": "Lisensa Estudu (Art. 76.3)",
         "studyLeaveHint": "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
+        "childcareLeave": "Falta ba Asisténsia Oan (Art. 64)",
+        "childcareLeaveHint": "To'o loron 5 kada tinan ba traballadór ne'ebé iha oan ki'ik liu tinan 10, atu fó asisténsia ne'ebé la bele hein bainhira oan ne'e moras ka hetan asidente (Lei Trabálhu Art. 64.1). Traballadór tenke aprezenta justifikasaun. Loron sira-ne'e laiha pagamentu — no Art. 64.2 dehan katak ne'e mak konsekuénsia tomak: falta ne'e lakon de'it saláriu loron ne'e nian, laiha buat seluk. La deskonta husi lisensa anual, no nunka konsidera nu'udar falta injustifikadu.",
         "parentalInssExplainer": "INSS selu 100% diretamente ba traballadór bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017) — baibain empregadór la selu buat ida durante lisensa.",
         "parentalPaidWarning": "INSS la selu subsídiu ba loron sira ne'ebé traballadór simu saláriu (DL 18/2017 Art. 21(3)) — maternidade/paternidade ne'ebé empregadór selu troka subsídiu INSS, la aumenta ba nia.",
         "title": "Politika Lisensa",
@@ -10990,6 +11060,7 @@ export const translations = {
           "submit": "Submete Pedido"
         },
         "dialog": {
+          "childcareLeaveHint": "To'o loron 5 kada tinan atu kuida ita-nia oan rasik ne'ebé ki'ik liu tinan 10 bainhira nia moras ka hetan asidente no kuidadu ne'e la bele hein (Lei Trabálhu Art. 64.1). Presiza aprezenta justifikasaun. Loron sira-ne'e laiha pagamentu — no ne'e mak konsekuénsia ida de'it: la deskonta husi ita-nia lisensa anual no la konsidera nu'udar falta injustifikadu (Art. 64.2).",
           "studyLeaveHint": "Falta ho pagamentu ba prova avaliasaun de'it — traballadór-estudante sira kontinua simu saláriu iha loron avaliasaun nian (Lei Trabálhu Art. 76.3). Empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5).",
           "miscarriageInssHint": "Depois interrupsaun gravidés, traballadora iha direitu ba lisensa semana 4 (Lei Trabálhu Art. 59.4). Baibain empregadór la selu: traballadora husu subsídiu INSS diretamente (iha fulan 6 nia laran husi loron primeiru lisensa nian) bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
           "breastfeedingNote": "Depois fila mai, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, to'o bebé halo fulan 6 (Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta.",
@@ -11083,6 +11154,7 @@ export const translations = {
           "unpaid": "Lisensa la selu",
           "marriage": "Lisensa casamento",
           "study": "Lisensa estuda",
+          "childcare": "Asisténsia oan",
           "custom": "Lisensa personalizada"
         },
         "certificates": {
@@ -15870,6 +15942,31 @@ export const translations = {
         "s8Body": "suporte@onit.tl"
       }
     },
+    "help": {
+      "title": "Ajuda e documentação",
+      "subtitle": "Como o Xefe funciona e como interpreta a lei timorense.",
+      "talkToUsTitle": "Fale com uma pessoa no WhatsApp",
+      "talkToUsBody": "Preso nalguma coisa? Costuma ser a saída mais rápida.",
+      "searchPlaceholder": "Pesquisar — experimente “compensação”, “INSS”, “licença por doença”",
+      "searchLabel": "Pesquisar na documentação",
+      "resultCount": "{{count}} secção(ões) correspondente(s)",
+      "noResults": "Nada encontrado para “{{query}}”.",
+      "noResultsHint": "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp acima e respondemos diretamente.",
+      "articlesHeading": "Documentos",
+      "updated": "Atualizado a {{date}}",
+      "contentsHeading": "Nesta página",
+      "backToHelp": "Voltar à ajuda",
+      "notFound": "Esse documento não existe.",
+      "todayLabel": "O que o Xefe faz hoje",
+      "impactLabel": "Quanto vale:",
+      "openLabel": "Ainda por confirmar",
+      "englishOnly": "Este documento só está disponível em inglês para já. Cita de perto a legislação laboral e fiscal, e preferimos esperar por uma tradução adequada a publicar uma tradução automática que ninguém verificou.",
+      "status": {
+        "confirming": "Por confirmar",
+        "settled": "Resolvido",
+        "asks-you": "O Xefe pergunta-lhe"
+      }
+    },
     "common": {
       "weekdaysShort": {
         "0": "Dom",
@@ -17571,6 +17668,13 @@ export const translations = {
             "summary": "{{days}} dias pagos por ano para exames. A lei não fixa limite — este número é seu.",
             "daysLabel": "Dias de exame que a sua empresa concede por ano"
           },
+          "childcare": {
+            "title": "Assistência a filho doente",
+            "summary": "{{days}} dias por ano, sem vencimento, para filho menor de 10 anos doente ou acidentado.",
+            "daysLabel": "Dias por ano para assistência a filho doente",
+            "belowMinimum": "A lei dá a qualquer trabalhador com filho menor de 10 anos pelo menos 5 destes dias por ano (Art. 64.1). Menos de 5 fica abaixo do mínimo legal.",
+            "setMinimum": "Definir 5 dias"
+          },
           "unpaid": {
             "title": "Licença sem vencimento",
             "summary": "Até {{days}} dias por ano.",
@@ -17600,6 +17704,8 @@ export const translations = {
         "miscarriageLeaveHint": "4 semanas após uma interrupção da gravidez (Lei do Trabalho, art. 59.º(4)), em dias úteis. A licença por risco clínico ANTES do parto (art. 59.º(3)) não tem duração fixa — registe-a como licença por doença com certificado médico.",
         "studyLeave": "Licença de Estudo (art. 76.º(3))",
         "studyLeaveHint": "Ausência paga para os trabalhadores-estudantes realizarem provas de avaliação, sem perda de remuneração (Lei do Trabalho, art. 76.º(3)). Apenas para provas — o empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)). A lei não fixa um limite anual; os dias por ano aqui são a alocação da empresa.",
+        "childcareLeave": "Falta para Assistência a Filhos (art. 64.º)",
+        "childcareLeaveHint": "Até 5 dias por ano para o trabalhador com filho menor de 10 anos prestar assistência inadiável e imprescindível em caso de doença ou acidente desse filho (Lei do Trabalho, art. 64.º(1)). O trabalhador deve apresentar justificação. Os dias não são pagos — e o art. 64.º(2) diz que essa é toda a consequência: a falta determina apenas a perda da remuneração desses dias. Não é descontada nas férias nem tratada como falta injustificada.",
         "parentalInssExplainer": "Pago a 100% pelo INSS diretamente ao trabalhador quando este tem 6 meses de contribuições nos últimos 12 (DL 18/2017) — normalmente o empregador não paga nada durante a licença.",
         "parentalPaidWarning": "O INSS não paga o subsídio nos dias em que o trabalhador recebe salário (DL 18/2017, art. 21.º(3)) — a maternidade/paternidade paga pelo empregador substitui o subsídio do INSS, não acresce a ele.",
         "title": "Políticas de Licenças",
@@ -18901,6 +19007,7 @@ export const translations = {
           "submit": "Submeter Pedido"
         },
         "dialog": {
+          "childcareLeaveHint": "Até 5 dias por ano para prestar assistência ao seu filho menor de 10 anos quando este está doente ou sofreu um acidente e a assistência é inadiável (Lei do Trabalho, art. 64.º(1)). É necessário apresentar justificação. Estes dias não são pagos — e essa é a única consequência: não são descontados nas suas férias nem tratados como falta injustificada (art. 64.º(2)).",
           "studyLeaveHint": "Ausência paga apenas para provas de avaliação — os trabalhadores-estudantes mantêm a remuneração nos dias de avaliação (Lei do Trabalho, art. 76.º(3)). O empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)).",
           "miscarriageInssHint": "Após uma interrupção da gravidez, a trabalhadora tem direito a uma licença de 4 semanas (Lei do Trabalho, art. 59.º(4)). Por defeito, não é paga pelo empregador: a trabalhadora pede o subsídio parental diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença) quando tem 6 meses de contribuições nos últimos 12 (DL n.º 18/2017).",
           "breastfeedingNote": "Depois de regressar, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora até o bebé completar 6 meses (art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte.",
@@ -18994,6 +19101,7 @@ export const translations = {
           "unpaid": "Licença sem Vencimento",
           "marriage": "Licença por Casamento",
           "study": "Licença de Estudo",
+          "childcare": "Assistência a Filhos",
           "custom": "Licença Personalizada"
         },
         "certificates": {

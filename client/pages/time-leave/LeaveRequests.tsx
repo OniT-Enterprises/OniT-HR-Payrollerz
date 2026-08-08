@@ -93,6 +93,8 @@ const KNOWN_LEAVE_TYPES = new Set([
   "unpaid",
   // Lei 4/2012 Art. 76(3): paid worker-student exam absence.
   "study",
+  // Lei 4/2012 Art. 64: unpaid assistance to a sick child under 10.
+  "childcare",
   "custom",
   // Legacy render-only: no longer requestable (pooled into "special" per
   // Lei 4/2012 Art. 33(3)); kept so existing requests keep their labels.
@@ -110,6 +112,7 @@ function policyOptions(policies: TimeOffPolicies): LeaveTypeConfig[] {
     policies.specialLeave,
     policies.unpaidLeave,
     policies.studyLeave,
+    policies.childcareLeave,
     ...policies.customLeaveTypes,
   ].filter((policy) => policy.isActive);
 }
@@ -1084,6 +1087,12 @@ export default function LeaveRequests() {
                   <p className="mt-1 text-muted-foreground">
                     {t("timeLeave.leaveRequests.dialog.studyLeaveHint") ||
                       "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5)."}
+                  </p>
+                )}
+                {form.leaveType === "childcare" && (
+                  <p className="mt-1 text-muted-foreground">
+                    {t("timeLeave.leaveRequests.dialog.childcareLeaveHint") ||
+                      "Up to 5 days a year to care for your own child under 10 when the child is ill or has had an accident and the care cannot wait (Labour Law Art. 64.1). Justification is required. These days are unpaid — and that is the only consequence: they do not come out of your annual leave and are not an unjustified absence (Art. 64.2)."}
                   </p>
                 )}
                 {/* Miscarriage (Art. 59(4), 4-week license) rides the same

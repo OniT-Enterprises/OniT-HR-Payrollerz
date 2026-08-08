@@ -57,6 +57,34 @@ const messages = {
       s8Body: "suporte@onit.tl",
     },
   },
+  help: {
+    title: "Ajuda no dokumentasaun",
+    subtitle: "Oinsá Xefe servisu, no oinsá nia lee lei Timor-Leste nian.",
+    talkToUsTitle: "Koalia ho ema iha WhatsApp",
+    talkToUsBody: "Pega iha buat ruma? Baibain ne'e dalan lalais liu.",
+    searchPlaceholder:
+      "Buka — koko “kompensasaun”, “INSS”, “lisensa doensa”",
+    searchLabel: "Buka iha dokumentasaun",
+    resultCount: "Seksaun {{count}} ne'ebé hanesan",
+    noResults: "La hetan buat ida ba “{{query}}”.",
+    noResultsHint:
+      "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
+    articlesHeading: "Dokumentu",
+    updated: "Atualiza iha {{date}}",
+    contentsHeading: "Iha pájina ne'e",
+    backToHelp: "Fila ba ajuda",
+    notFound: "Dokumentu ne'e la iha.",
+    todayLabel: "Saida mak Xefe halo ohin loron",
+    impactLabel: "Nia folin:",
+    openLabel: "Seidauk konfirma",
+    englishOnly:
+      "Dokumentu ne'e iha de'it iha lian Inglés ba oras ne'e. Nia sita besik lei traballu no fiskál, no ami prefere hein tradusaun ne'ebé di'ak duke publika tradusaun makina nian ne'ebé ema ida seidauk verifika.",
+    status: {
+      confirming: "Seidauk konfirma",
+      settled: "Rezolve tiha",
+      "asks-you": "Xefe husu ba ita",
+    },
+  },
   common: {
     weekdaysShort: {
       "0": "Dom",
@@ -1940,6 +1968,15 @@ const messages = {
             "Loron {{days}} ho pagamentu kada tinan ba prova. Lei la tau limite — númeru ne'e ita-nia.",
           daysLabel: "Loron prova ne'ebé ita-nia empreza fó kada tinan",
         },
+        childcare: {
+          title: "Kuidadu ba oan moras",
+          summary:
+            "Loron {{days}} laiha pagamentu kada tinan, ba oan ki'ik liu tinan 10 ne'ebé moras ka kanek.",
+          daysLabel: "Loron kada tinan ba kuidadu oan moras",
+          belowMinimum:
+            "Lei fó ba inan-aman hotu ne'ebé iha oan ki'ik liu tinan 10 pelu menus loron 5 husi loron sira-ne'e kada tinan (Art. 64.1). Menus husi 5 tun husi mínimu legál.",
+          setMinimum: "Tau loron 5",
+        },
         unpaid: {
           title: "Lisensa laiha pagamentu",
           summary: "To'o loron {{days}} kada tinan.",
@@ -1974,6 +2011,9 @@ const messages = {
       studyLeave: "Lisensa Estudu (Art. 76.3)",
       studyLeaveHint:
         "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
+      childcareLeave: "Falta ba Asisténsia Oan (Art. 64)",
+      childcareLeaveHint:
+        "To'o loron 5 kada tinan ba traballadór ne'ebé iha oan ki'ik liu tinan 10, atu fó asisténsia ne'ebé la bele hein bainhira oan ne'e moras ka hetan asidente (Lei Trabálhu Art. 64.1). Traballadór tenke aprezenta justifikasaun. Loron sira-ne'e laiha pagamentu — no Art. 64.2 dehan katak ne'e mak konsekuénsia tomak: falta ne'e lakon de'it saláriu loron ne'e nian, laiha buat seluk. La deskonta husi lisensa anual, no nunka konsidera nu'udar falta injustifikadu.",
       parentalInssExplainer:
         "INSS selu 100% diretamente ba traballadór bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017) — baibain empregadór la selu buat ida durante lisensa.",
       parentalPaidWarning:
@@ -3374,6 +3414,8 @@ const messages = {
         submit: "Submete Pedido",
       },
       dialog: {
+        childcareLeaveHint:
+          "To'o loron 5 kada tinan atu kuida ita-nia oan rasik ne'ebé ki'ik liu tinan 10 bainhira nia moras ka hetan asidente no kuidadu ne'e la bele hein (Lei Trabálhu Art. 64.1). Presiza aprezenta justifikasaun. Loron sira-ne'e laiha pagamentu — no ne'e mak konsekuénsia ida de'it: la deskonta husi ita-nia lisensa anual no la konsidera nu'udar falta injustifikadu (Art. 64.2).",
         studyLeaveHint:
           "Falta ho pagamentu ba prova avaliasaun de'it — traballadór-estudante sira kontinua simu saláriu iha loron avaliasaun nian (Lei Trabálhu Art. 76.3). Empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5).",
         miscarriageInssHint:
@@ -3477,6 +3519,7 @@ const messages = {
         unpaid: "Lisensa la selu",
         marriage: "Lisensa casamento",
         study: "Lisensa estuda",
+        childcare: "Asisténsia oan",
         custom: "Lisensa personalizada",
       },
       certificates: {

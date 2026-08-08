@@ -1047,6 +1047,7 @@ export function usePayrollCalculator({
                 timeOffPolicies.specialLeave,
                 timeOffPolicies.unpaidLeave,
                 timeOffPolicies.studyLeave,
+                timeOffPolicies.childcareLeave,
                 ...(timeOffPolicies.customLeaveTypes ?? []),
               ]
             : [];

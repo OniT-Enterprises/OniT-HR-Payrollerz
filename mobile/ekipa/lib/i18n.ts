@@ -150,6 +150,9 @@ const translations: Record<string, Record<Language, string>> = {
   'leave.special': { tet: 'Lisensa Espesiál', en: 'Special leave', pt: 'Licença especial', id: 'Cuti khusus' },
   // Worker-student exam leave — Lei 4/2012 Art. 76(3), paid.
   'leave.study': { tet: 'Lisensa estudu', en: 'Study leave', pt: 'Licença de estudo', id: 'Cuti belajar' },
+  // Lei 4/2012 Art. 64 — caring for one's own child under 10 during that
+  // child's illness or accident. Unpaid, 5 days a year.
+  'leave.childcare': { tet: 'Asisténsia oan', en: 'Childcare leave', pt: 'Assistência a filhos', id: 'Cuti merawat anak' },
   // Legacy render-only labels: existing bereavement/marriage requests still display.
   'leave.bereavement': { tet: 'Lisensa luto', en: 'Bereavement leave', pt: 'Licença por luto', id: 'Cuti berkabung' },
   'leave.marriage': { tet: 'Lisensa kazamentu', en: 'Marriage leave', pt: 'Licença por casamento', id: 'Cuti menikah' },
