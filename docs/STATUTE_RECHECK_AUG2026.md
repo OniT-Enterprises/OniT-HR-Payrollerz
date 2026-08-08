@@ -217,3 +217,66 @@ between code and its own expectations.
 The productive move each time was the same: **quote the article in full, then
 read the code that claims to implement it.** Reading the code first found
 nothing; the code was internally consistent every time.
+
+
+---
+
+## 6. Tax Act §§36.1–36.11 — discharged from the official copy (2026-08-08)
+
+The last "could not verify" on the tax side. Both local sources were truncated —
+`tda2008.txt` jumps from Sec. 35 straight to 36.12, and
+`Lei_Tributaria_2008_Salarios.pdf` is only pp. 2414–15 — so the July §7 caveat
+had stood since then.
+
+They are published. **Source:** the Government's own copy,
+`timor-leste.gov.tl/wp-content/uploads/2010/03/Law_2008_8_Taxes_and_Duties_.pdf`,
+saved as `~/Sites/m365-mail-export/laws/tda2008_official_gov.pdf` (+ `.txt`).
+Complete, all ten Schedules.
+
+### What they say
+
+| | |
+|---|---|
+| **36.3–36.4** | Business buildings depreciate **individually, straight-line**, at the Schedule VII rate. Cost **excludes the land** |
+| **36.5** | Other depreciable assets: individually straight-line **or** pooled on declining balance |
+| **36.6** | **One method for ALL** of a taxpayer's depreciable assets |
+| **36.7** | Changing method needs the Tax Administration's **written permission** |
+| **36.8** | Pool classification and rates are in Schedule VII |
+| **36.9–36.10** | Deduction = rate × written-down value at year END; WDV = prior WDV **+ additions − disposals** (including compensation for involuntary loss) |
+| **36.11** | A **negative** WDV is **included in income**, and the pool resets to zero |
+
+And Schedule VII, verbatim:
+
+> The depreciation rate for the purposes of Section 36 and the amortisation rate
+> for the purposes of Section 37 **is 100%**. If pooling applies under Section 36,
+> **all depreciable assets shall be included in a single pool**.
+
+So `36.8`'s "classification of assets into pools" is trivial — one pool — and at a
+100% rate `36.9`/`36.10` collapse to **full expensing of additions less
+disposals**. The mechanics the sweep could not read are real but nearly vacuous
+under this Schedule.
+
+### Xefe against it
+
+- **Land does not depreciate** — `depreciation.ts` has
+  `{ key: 'land', … defaultLifeMonths: 0 }`, commented `0 = does not depreciate`.
+  ✅ Matches 36.4.
+- **Form C offers both treatments** — `FormCTaxDepreciationMethod =
+  'useful_life' | 'full_expensing'`, the latter documented as "Schedule VII,
+  observed filed practice". ✅ Right to offer both while the open question is what
+  ATTL *accepts*; the statute itself is unambiguous.
+- The fixed-asset register's straight-line schedules are **book** depreciation, a
+  different thing from the Sec. 36 tax deduction. No conflict.
+
+**Newly open, small:** under full expensing WDV is always zero, so `36.11` makes
+disposal proceeds taxable income in the year. Whether Form C's `full_expensing`
+path nets disposals is unverified.
+
+### Schedule VII is headed "Other Than Contractors"
+
+There is a separate **Schedule X — Depreciation and Amortisation for
+Contractors**, with its own Section A for business buildings. So a petroleum
+Contractor differs from the domestic regime on **depreciation as well as wage
+tax** (Schedule IX — `TIME_LEAVE_BACKLOG.md` §3b.1). That widens the case for
+payroll refusing a petroleum run rather than guessing: it is a parallel regime,
+not a rate tweak.
