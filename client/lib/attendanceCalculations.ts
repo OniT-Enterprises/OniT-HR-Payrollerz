@@ -244,13 +244,32 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
  *
  * 1. HOLIDAY (Art. 27(2)): all hours worked on a public-holiday date are 2×
  *    time — reclassified out of regular AND overtime into `holidayHours`.
- * 2. REST DAY (Arts. 30(2), 27(2)): Sunday is the default weekly rest day;
- *    all hours worked on a non-holiday Sunday are 2× time — reclassified into
- *    `restDayHours`. A Sunday that IS a public holiday counts as holiday only
- *    (holiday wins; the pay rate is the same 2× and hours are never counted
- *    twice). Per-employee NON-Sunday rest days (a tenant whose rest day is,
- *    e.g., Friday for some staff) are deliberately out of scope — deferred;
- *    those hours stay regular and can be entered manually in the payroll row.
+ * 2. REST DAY (Arts. 30(1)-(2), 27(2)): all hours worked on the weekly rest
+ *    day are 2× time — reclassified into `restDayHours`. A rest day that IS a
+ *    public holiday counts as holiday only (holiday wins; the pay rate is the
+ *    same 2× and hours are never counted twice).
+ *
+ *    WHICH day that is comes from the tenant's working week, NOT from Sunday.
+ *    Art. 27(2) reads "O trabalho prestado em dia de DESCANSO SEMANAL ou em
+ *    dia de feriado obrigatório é remunerado com a remuneração horária normal
+ *    acrescida de 100 por cento" — the premium attaches to the weekly rest
+ *    day, and the word "domingo" does not appear in Art. 27 at all. Sunday is
+ *    only the DEFAULT under Art. 30(2), departable "quando o trabalhador
+ *    preste trabalhos indispensáveis à continuidade de serviços que não podem
+ *    ser interrompidos". Hardcoding Sunday therefore paid 2× for an ordinary
+ *    working day and 1× for the day that was actually the worker's rest day.
+ *
+ *    Art. 30(1) grants ONE rest period ("no mínimo, 24 horas consecutivas"),
+ *    so a five-day week has one rest day and one ordinary day off — they are
+ *    not the same thing and only the rest day carries the premium. Hence
+ *    `resolveRestWeekday` below rather than "every non-working day is a rest
+ *    day", which would have silently doubled Saturday pay for every Mon–Fri
+ *    tenant in the product.
+ *
+ *    Still out of scope: Art. 30(2) applies the test to "o trabalhador", so
+ *    two workers in one business can lawfully rest on different days. The
+ *    working week is a company-wide setting, so a per-employee rest day still
+ *    needs the payroll row entered by hand.
  * 3. WEEKLY 44h (Art. 25(1)): normal hours are capped at 8/day AND 44/week.
  *    The per-day split already moved >8h/day into overtime, so after step 1–2
  *    the week's `regularHours` contain only 1×-paid hours. Any of those beyond
@@ -276,10 +295,44 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
  *
  * Assumes at most one entry per date (the attendance summary dedups upstream).
  */
+/** Sunday, the Art. 30(2) default. */
+const SUNDAY = 0;
+
+/**
+ * Which weekday carries the Art. 27(2) rest-day premium, given the days the
+ * company works. `null` means "cannot be determined — do not pay a premium
+ * automatically", which is the safe answer: it leaves the hours at 1× and
+ * visible for manual entry rather than inventing a doubled day.
+ *
+ * The three cases, in order:
+ *
+ *   1. Sunday is not worked → Sunday. The Art. 30(2) default, and the case
+ *      that covers almost every tenant. Behaviour is IDENTICAL to the old
+ *      Sunday hardcode, so no existing company's pay moves.
+ *   2. Sunday is worked and exactly one other weekday is not → that day. The
+ *      hotel/clinic case Art. 30(2) exists for.
+ *   3. Sunday is worked and several other days are not → null. Art. 30(1)
+ *      grants ONE rest period and nothing here says which of them it is;
+ *      guessing would double a day's pay on no authority.
+ */
+export function resolveRestWeekday(
+  workingWeekdays: readonly number[] | undefined,
+): number | null {
+  if (!workingWeekdays || workingWeekdays.length === 0) return SUNDAY;
+  const works = new Set(workingWeekdays.filter((d) => d >= 0 && d <= 6));
+  if (works.size === 0) return SUNDAY;
+  if (!works.has(SUNDAY)) return SUNDAY;
+  const off = [0, 1, 2, 3, 4, 5, 6].filter((d) => !works.has(d));
+  return off.length === 1 ? off[0] : null;
+}
+
 export function classifyWorkedHours(
   days: WorkedDayHours[],
   holidayDates: ReadonlySet<string>,
+  /** The tenant's working week (0 = Sunday). Omitted → the Art. 30(2) default. */
+  workingWeekdays?: readonly number[],
 ): ClassifiedHoursTotals {
+  const restWeekday = resolveRestWeekday(workingWeekdays);
   let regularHours = 0;
   let overtimeHours = 0;
   let holidayHours = 0;
@@ -293,12 +346,12 @@ export function classifyWorkedHours(
   for (const day of days) {
     const worked = (day.regularHours || 0) + (day.overtimeHours || 0);
     if (holidayDates.has(day.date)) {
-      // Holiday wins over Sunday: same 2× rate, no double-count.
+      // Holiday wins over the rest day: same 2× rate, no double-count.
       holidayHours += worked;
       maxHolidayOrRestDayHours = Math.max(maxHolidayOrRestDayHours, worked);
       continue;
     }
-    if (weekdayOf(day.date) === 0) {
+    if (restWeekday !== null && weekdayOf(day.date) === restWeekday) {
       restDayHours += worked;
       maxHolidayOrRestDayHours = Math.max(maxHolidayOrRestDayHours, worked);
       continue;

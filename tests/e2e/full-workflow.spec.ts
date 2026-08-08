@@ -395,8 +395,13 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .click();
   await page.getByLabel(/why were they away/i).click();
   await page.getByRole("option", { name: "Sick", exact: true }).click();
-  // The statutory bands are stated before the day is recorded, not after.
-  await expect(page.getByText(/first 6 days a year at full pay/i)).toBeVisible();
+  // The statutory bands are stated before the day is recorded, not after —
+  // and the annual limit is stated as a CEILING ("up to 12"), because
+  // Art. 33(4) reads "até 12 dias por ano". A bare "12 days" invites an
+  // employer to read a floor into a cap, which is the error class the
+  // check:statutory guard now blocks.
+  await expect(page.getByText(/up to 12 days a year/i)).toBeVisible();
+  await expect(page.getByText(/first 6 at full pay/i)).toBeVisible();
   await page.getByRole("button", { name: /^record it$/i }).click();
   await expect(page.getByText(/recorded for/i).first()).toBeVisible({
     timeout: 20_000,

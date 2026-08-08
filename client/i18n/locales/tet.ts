@@ -2999,7 +2999,7 @@ const messages = {
           "Referénsia Art. 55 (tribunál mak fó se despedimentu sai ilegál)",
         month: "fulan",
         months: "fulan",
-        note: "La selu liu husi folla pagamentu — tribunál mak determina. Prosesu disiplinár hakerek tuir Art. 50(4) evita risku ida-ne'e.",
+        note: "Nunka selu liuhosi folla pagamentu. Iha dalan despedimentu ilísitu, tribunál mak determina (Art. 51/54), no prosesu disiplinár hakerek tuir Art. 50(4) evita risku ne'e. Maibé eskala Art. 55 nian hanesan mós tenke selu SEM desizaun tribunál nian iha situasaun haat seluk: sesasaun ne'ebé akorda depois suspensaun (Art. 15(9)), rezignasaun depois transferénsia ne'ebé prejudika traballadór (Art. 17(3)), despedimentu tanba motivu proibidu, ne'ebé nulu (Art. 45(3)), no rezignasaun ho justa causa, ne'ebé selu DALA RUA (Art. 49(5)). Konfirma valór ho ita-nia kontabilista.",
       },
       exitInterviews: {
         title: "Entrevista saida",
@@ -3012,11 +3012,11 @@ const messages = {
         recommendShort: "Sei rekomenda",
       },
       notice: {
-        required: "Avizu préviu ezijidu",
+        required: "Avizu préviu mínimu",
         days: "loron",
         given: "kumpre",
         notRecorded: "Data avizu préviu la rejista",
-        requiredForReason: "avizu préviu ezijidu ba motivu sai ida-ne'e mak",
+        requiredForReason: "avizu préviu mínimu ba motivu sai ida-ne'e mak",
         shortfallWorker: "Avizu préviu la to'o: traballadór selu ba empregadór",
         shortfallEmployer:
           "Avizu préviu la to'o: empregadór selu ba traballadór",

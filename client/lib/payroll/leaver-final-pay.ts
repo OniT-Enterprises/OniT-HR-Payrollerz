@@ -363,10 +363,41 @@ function addUtcMonthsClamped(t: number, months: number): number {
  * Lei 4/2012 Art. 55(3) unlawful-dismissal indemnity, in MONTHS of salary,
  * banded by CONTRACT DURATION (hire → contract end).
  *
- * This is COURT-AWARDED money, never a payroll earning: it exists only when a
- * court declares the dismissal unlawful (Art. 54(2)-(3), Art. 55(1)) AND
- * reinstatement is expressly declined by the worker or refused by the court.
- * Xefe surfaces it purely as a REFERENCE figure (exposure), never auto-pays it.
+ * Never a payroll earning. Xefe surfaces it purely as a REFERENCE figure
+ * (exposure) and never auto-pays it.
+ *
+ * The old wording here — "it exists ONLY when a court declares the dismissal
+ * unlawful" — was wrong, and wrong four times over. Two different things need
+ * separating:
+ *
+ *  - Art. 55's NATIVE pathway does involve a court: n.º 1 gives reinstatement
+ *    plus back pay once the rescission "seja declarada ilícita", and Art.
+ *    51(2) / Art. 54(2) supply the tribunal and the 60-day window. The n.º 3
+ *    scale then applies in lieu of reinstatement.
+ *
+ *  - Art. 55's QUANTUM is separately IMPORTED by four articles that mention
+ *    no court at all:
+ *      Art. 15(9)  cessation agreed after a suspension — "tendo o trabalhador
+ *                  direito ao pagamento da indemnização prevista no artigo 55.º"
+ *      Art. 17(3)  worker rescinds after a prejudicial transfer — "com direito
+ *                  a indemnização, nos termos previstos no artigo 55.º"
+ *      Art. 45(3)  dismissal on a prohibited ground is NULO (not "ilícito") —
+ *                  "conferindo ao trabalhador o direito a ser indemnizado nos
+ *                  termos do disposto no artigo 55.º"
+ *      Art. 49(5)  worker resigns for just cause — "tendo o trabalhador
+ *                  direito ao DOBRO dos valores indicados naquele artigo"
+ *
+ * Two cautions before anyone wires those up:
+ *
+ *  1. The Art. 49(5) doubling is CONTINGENT, not settled. Art. 49(6) lets the
+ *     employer challenge the resignation in court within 60 days, and Art.
+ *     49(7) gives the EMPLOYER an indemnity if the court finds the just cause
+ *     unfounded. It is exposure conditional on the worker's case standing up.
+ *  2. Only Art. 49(5) uses the unambiguous quantum formula ("é calculada nos
+ *     termos do disposto no artigo 55.º"). The other three say "a indemnização
+ *     prevista no artigo 55.º", and Art. 55(3)'s own chapeau is conditional on
+ *     reinstatement being declined or refused — so how much those three import
+ *     is an interpretive question, not a lookup.
  *
  * Statute, official Portuguese text (Lei n.º 4/2012, Artigo 55.º
  * "Reintegração e Indemnização", n.º 3):
@@ -432,6 +463,23 @@ export function art55Indemnity(
   monthlySalary: number,
   hireDate: string,
   endDate: string,
+  /**
+   * Art. 49(5) doubling. DELIBERATELY UNREACHED by app code: the only call
+   * site (Offboarding.tsx) passes three arguments, so this is exercised by
+   * tests alone.
+   *
+   * That is not an oversight to tidy away. Reaching it means showing the card
+   * for a RESIGNATION, and an ordinary resignation is owed nothing at all —
+   * Art. 49(8) carries no indemnity, and Art. 49(9) runs the money the other
+   * way (the worker owes the employer for unserved notice). Rendering a
+   * dollar figure captioned "indemnity" beside every resignation would invite
+   * a first-time employer to pay money that is not owed.
+   *
+   * Wiring it therefore needs the just-cause attestation to gate the card's
+   * VISIBILITY, not merely the ×2 — and a practitioner's sign-off first, given
+   * the Art. 49(6)-(7) contingency above. Keep the parameter: the doubling is
+   * real law and the arithmetic is tested.
+   */
   doubled = false,
 ): number {
   const months = art55IndemnityMonths(hireDate, endDate);

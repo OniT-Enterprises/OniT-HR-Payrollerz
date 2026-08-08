@@ -2041,7 +2041,7 @@ const messages = {
         "Depois de regressar da licença de maternidade, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora para amamentação até o bebé completar 6 meses, e as ausências da trabalhadora grávida para exames médicos também são pagas (Lei do Trabalho, art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte. Não há nada a configurar aqui.",
       miscarriageLeave: "Licença por Interrupção da Gravidez (art. 59.º(4))",
       miscarriageLeaveHint:
-        "4 semanas após uma interrupção da gravidez (Lei do Trabalho, art. 59.º(4)), em dias úteis. A licença por risco clínico ANTES do parto (art. 59.º(3)) não tem duração fixa — registe-a como licença por doença com certificado médico.",
+        "No mínimo 4 semanas após uma interrupção da gravidez (Lei do Trabalho, art. 59.º(4)), contadas em dias úteis. A licença por risco clínico ANTES do parto (art. 59.º(3)) não tem duração fixa — registe-a como licença por doença com certificado médico.",
       studyLeave: "Licença de Estudo (art. 76.º(3))",
       studyLeaveHint:
         "Ausência paga para os trabalhadores-estudantes realizarem provas de avaliação, sem perda de remuneração (Lei do Trabalho, art. 76.º(3)). Apenas para provas — o empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)). A lei não fixa um limite anual; os dias por ano aqui são a alocação da empresa.",
@@ -2081,11 +2081,11 @@ const messages = {
       maternityDaysHint: "Dias (12 semanas = 84 dias)",
       annualLeaveHint:
         "Mínimo legal: 12 dias úteis por ano (Lei do Trabalho, art. 32.º). Os limites de transição são política da sua empresa.",
-      maternityHint: "Duração legal: 12 semanas (Lei do Trabalho, art. 59.º).",
+      maternityHint: "Duração legal: no mínimo 12 semanas — o art. 59.º(1) fixa um \"período mínimo de 12 semanas\", devendo 10 ser gozadas após o parto. O contrato pode conceder mais.",
       paternityHint: "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 60.º).",
       sickPayBandsTitle: "O pagamento da licença por doença é fixado por lei",
       sickPayBandsText:
-        "A folha paga a licença por doença certificada conforme o Código do Trabalho (art. 33.º/4): 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
+        "A folha paga a licença por doença certificada conforme o Código do Trabalho (art. 33.º/4): até 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
       invalidValues:
         "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
       save: "Guardar definições de licenças",
@@ -2172,13 +2172,13 @@ const messages = {
           "O conjunto dos descontos está limitado a 30% do salário do mês (Lei do Trabalho, art. 42.º/3). O Xefe nunca reduz o imposto sobre salários, o INSS nem um desconto ordenado pelo tribunal — esses consomem o limite primeiro, e só os descontos discricionários são reduzidos.",
         workingHoursLabel: "Tempo de trabalho padrão",
         workingHoursValue:
-          "8 horas/dia, 44 horas/semana; horas extra limitadas a 4 h/dia e 16 h/semana (Lei do Trabalho, arts. 25.º–26.º)",
+          "O período normal não pode exceder 8 horas por dia nem 44 por semana (art. 25.º(1)); as horas extraordinárias estão limitadas a 4 por dia e 16 por semana (art. 27.º(4)). O art. 27.º(5) afasta esse limite em casos de força maior, ou de trabalho indispensável para prevenir prejuízos graves para a empresa.",
         nightWindowLabel: "Período de trabalho noturno",
         nightWindowValue:
           "21:00–06:00 — as horas neste período recebem o prémio noturno",
         sickBandsLabel: "Pagamento da licença por doença",
         sickBandsValue:
-          "12 dias certificados por ano: primeiros 6 dias a 100%, 6 seguintes a 50% (Lei do Trabalho, art. 33.º/4)",
+          "Até 12 dias certificados por ano: os primeiros 6 a 100% e os 6 seguintes a 50% (Lei do Trabalho, art. 33.º/4). O empregador pode ser mais generoso.",
         severanceLabel: "Compensação por antiguidade na cessação",
         severanceValue:
           "Um mês de salário por cada período completo de 5 anos de serviço (Lei do Trabalho, art. 56.º). O artigo diz que é devido \u201cindependentemente do motivo\u201d da cessação; estamos a confirmar com os nossos revisores de contabilidade se o despedimento com justa causa é uma exceção.",
@@ -2634,7 +2634,7 @@ const messages = {
         "Com 15-16 anos à admissão: apenas trabalho leve — máx. 5h/dia, 25h/semana, sem trabalho noturno nem horas extraordinárias (Lei do Trabalho, art. 69.º).",
       probationEndDate: "Fim do período experimental",
       probationEndDateHelp:
-        "Art. 14.º: 8/15 dias para contratos a termo, 30-90 dias para permanentes.",
+        "O art. 14.º limita o período experimental a 8 ou 15 dias nos contratos a termo e a 30 dias nos permanentes — até 90 para funções de elevada complexidade técnica ou responsabilidade, ou de confiança.",
       firstName: "Primeiro Nome *",
       lastName: "Apelido *",
       email: "Email *",
@@ -3158,7 +3158,7 @@ const messages = {
           "Referência art. 55.º (fixada pelo tribunal se o despedimento for julgado ilícito)",
         month: "mês",
         months: "meses",
-        note: "Não é pago pela folha de salários — é fixado pelo tribunal. O processo disciplinar escrito do art. 50.º(4) evita esta exposição.",
+        note: "Nunca é pago pela folha. Na via do despedimento ilícito é o tribunal que o fixa (arts. 51.º/54.º), e o processo disciplinar escrito do art. 50.º(4) evita essa exposição. Mas a mesma escala do art. 55.º é devida SEM qualquer decisão judicial noutras quatro situações: cessação acordada após uma suspensão (art. 15.º(9)), rescisão pelo trabalhador após transferência que lhe cause prejuízo (art. 17.º(3)), despedimento por motivo proibido, que é nulo (art. 45.º(3)), e rescisão com justa causa pelo trabalhador, caso em que é o DOBRO (art. 49.º(5)). Confirme os montantes com o seu contabilista.",
       },
       exitInterviews: {
         title: "Entrevistas de saída",
@@ -3176,7 +3176,7 @@ const messages = {
         given: "cumprido",
         notRecorded: "Data do aviso prévio não registada",
         requiredForReason:
-          "o aviso prévio exigido para este motivo de saída é de",
+          "o aviso prévio mínimo para este motivo de saída é de",
         shortfallWorker:
           "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
         shortfallEmployer:
@@ -3516,7 +3516,7 @@ const messages = {
           "{{remaining}} dias restantes ({{used}} usados, {{pending}} pendentes)",
         balanceUnavailable: "Saldo não disponível",
         specialLeaveHint:
-          "3 dias pagos por ano civil, partilhados entre casamento, falecimento de familiar e eventos comunitários ou religiosos (Lei do Trabalho, art. 33.º, n.º 3). Precisa de mais dias? Peça-os como férias anuais ou licença sem vencimento. O empregador pode pedir comprovativo.",
+          "Pelo menos 3 dias pagos por ano civil, partilhados entre casamento, falecimento de familiar e eventos comunitários ou religiosos (Lei do Trabalho, art. 33.º, n.º 3). Precisa de mais dias? Peça-os como férias anuais ou licença sem vencimento. O empregador pode pedir comprovativo.",
         startDate: "Data de Início *",
         endDate: "Data de Fim *",
         duration: "Duração",
@@ -3670,7 +3670,7 @@ const messages = {
           unjustified: "Não veio trabalhar",
         },
         help: {
-          sick: "Pago pela Lei do Trabalho: os primeiros 6 dias por ano por inteiro, os 6 seguintes a meio salário (art. 33.º/4).",
+          sick: "Pago pela Lei do Trabalho, até 12 dias por ano: os primeiros 6 por inteiro e os 6 seguintes a meio salário (art. 33.º/4).",
           special: "Pago por inteiro — a lei exige-o (Lei do Trabalho, art. 33.º/3).",
           unpaid: "Não pago. Conta para os 30 dias sem vencimento por ano que o Xefe permite.",
           unjustified: "Não pago, e registado contra o trabalhador.",
@@ -3781,7 +3781,7 @@ const messages = {
       },
       toast: {
         breakEntitlement:
-          "Art. 25.º(2): o trabalhador tem direito a uma pausa de 1 hora após 5 horas de trabalho contínuo.",
+          "Art. 25.º(2): após 5 horas de trabalho ininterrupto, o trabalhador tem direito a um intervalo de descanso de, pelo menos, 1 hora.",
         errorTitle: "Erro",
         loadFailed: "Falha ao carregar dados de assiduidade.",
         validationTitle: "Erro de Validação",

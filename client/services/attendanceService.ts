@@ -41,6 +41,7 @@ import {
 } from "@/lib/attendanceCalculations";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import { holidayService } from "@/services/holidayService";
+import { settingsService } from "@/services/settingsService";
 export {
   computeEntryHours,
   calculateHoursBetween,
@@ -190,11 +191,17 @@ export interface AttendanceEmployeeSummary {
    */
   holidayHours: number;
   /**
-   * Hours worked on the weekly rest day — Sunday by default (Art. 30(2)) —
-   * reclassified out of regular/overtime exactly like holidayHours so payroll
-   * pays the Art. 27(2) 2× rest-day rate. A Sunday that is also a public
-   * holiday counts as holiday only (never both). Per-employee non-Sunday rest
-   * days are out of scope (manual payroll-row entry covers them).
+   * Hours worked on the weekly rest day, reclassified out of regular/overtime
+   * exactly like holidayHours so payroll pays the Art. 27(2) 2× rate.
+   *
+   * WHICH day that is comes from the tenant's working week — Art. 27(2)
+   * attaches the premium to "dia de descanso semanal" and never says
+   * "domingo". Sunday is only the Art. 30(2) default, so it remains the answer
+   * for any company that does not work Sundays. A rest day that is also a
+   * public holiday counts as holiday only (never both). PER-EMPLOYEE rest days
+   * are still out of scope — Art. 30(2) applies the test to "o trabalhador",
+   * so two workers in one business can lawfully differ; manual payroll-row
+   * entry covers that.
    */
   restDayHours: number;
   /** Largest single-day overtime in the period — Art. 27(4) caps it at 4h. */
@@ -404,6 +411,23 @@ class AttendanceService {
       console.error("Failed to load tenant holiday overrides for attendance summary:", error);
     }
 
+    // The working week decides WHICH weekday carries the Art. 27(2) rest-day
+    // premium. Until now this never reached the classifier, so the setting
+    // moved leave duration while pay stayed hardcoded to Sunday — a worker
+    // resting on Wednesday was paid 1× for their rest day and 2× for an
+    // ordinary one. Degrade to undefined (the Art. 30(2) Sunday default)
+    // rather than failing the summary, matching the holiday fallback above.
+    let workingWeekdays: number[] | undefined;
+    try {
+      const settings = await settingsService.getSettings(tenantId);
+      const configured = settings?.timeOffPolicies?.workingDays;
+      if (Array.isArray(configured) && configured.length > 0) {
+        workingWeekdays = configured;
+      }
+    } catch (error) {
+      console.error("Failed to load the working week for attendance summary:", error);
+    }
+
     // First pass: per-employee day list plus the additive counters. The
     // per-day holiday/rest-day reclassification and the Art. 25(1) weekly
     // 44h overtime top-up live in the pure, unit-tested classifyWorkedHours
@@ -472,7 +496,11 @@ class AttendanceService {
     // run periods start at month boundaries — see classifyWorkedHours docs).
     return Array.from(byEmployee.values())
       .map((accumulator): AttendanceEmployeeSummary => {
-        const classified = classifyWorkedHours(accumulator.days, holidayDates);
+        const classified = classifyWorkedHours(
+          accumulator.days,
+          holidayDates,
+          workingWeekdays,
+        );
         return {
           employeeId: accumulator.employeeId,
           employeeName: accumulator.employeeName,
