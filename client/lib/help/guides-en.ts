@@ -109,8 +109,9 @@ export const MONTH_EN: HelpArticle = {
           id: "subsidio",
           heading: "The thirteenth month (subsídio anual)",
           body: [
-            "Every worker is owed one extra month of salary a year. Somebody who has been with you less than a full year gets a proportional share, not nothing.",
-            "It is a legal entitlement, not a bonus you choose to give.",
+            "Every worker is owed **at least** one extra month a year. Somebody who has been with you less than a full year gets a proportional share, not nothing.",
+            "The month is **base salary** — not overtime, not allowances, not other bonuses. Art. 39(4) keeps expense allowances, profit awards, overtime and other extraordinary benefits out of *remuneração*, and the subsidy is calculated on what is left.",
+            "It is a legal entitlement and a floor, not a bonus you choose to give. A contract may promise more.",
           ],
           when: "By 20 December (Labour Law, Art. 44).",
         },
@@ -178,6 +179,7 @@ export const LEAVER_EN: HelpArticle = {
           heading: "Service compensation, for longer service",
           body: [
             "One month of salary for every five years worked. This is usually the largest line on the final payslip.",
+            "**That is the legal minimum, not the answer.** Many Timor-Leste employers promise considerably more in the contract — accruing a month per *year* of service is common here, which is five times the statutory floor. Check what you actually agreed before paying the minimum; Xefe computes the floor and does not know your contract.",
             "Xefe counts complete five-year blocks, which is the smaller reading where the law is silent — seven years pays one month, not 1.4. That interpretation is set out in *Where Xefe takes a position on the law*, and it is worth a word with your accountant if the amount is large.",
           ],
         },
@@ -186,13 +188,15 @@ export const LEAVER_EN: HelpArticle = {
           heading: "A share of the thirteenth month",
           body: [
             "Somebody leaving in June has earned half a thirteenth month. It is paid out with the rest of the final pay rather than waiting for December.",
+            "Calculated on base salary, like the December one — overtime and allowances do not raise it.",
           ],
         },
         {
           id: "notice",
           heading: "Notice — worked or paid",
           body: [
-            "Either they work their notice period or you pay it instead. In a redundancy the worker is also owed paid time off during that notice to look for other work.",
+            "Either they work their notice period or you pay it instead. The length depends on service: **15 days up to two years, 30 days beyond that**.",
+            "In a redundancy the worker is also owed paid time off during that notice to look for other work — **two paid days a week** (Art. 53(4)). Xefe counts whole weeks and labels the figure as a minimum, because the statute does not say what a trailing part-week earns.",
           ],
         },
       ],

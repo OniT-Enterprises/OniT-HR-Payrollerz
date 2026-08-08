@@ -820,19 +820,46 @@ describe("validateTLPayrollInput", () => {
     expect(errors[0]).toContain("negative");
   });
 
-  it("warns about excessive overtime", () => {
-    // Max overtime = 16hrs/week * 4 = 64 per month
+  // These two used to assert ERRORS — which blocked the payroll wizard. Their
+  // own names said "warns", and the names were right: both confused a
+  // statutory limit on a WORKER'S ENTITLEMENT with a prohibition on the
+  // EMPLOYER PAYING. A worker ill for a 13th day could not be paid at all,
+  // and the overtime ceiling (16h/week × 4) sat BELOW the lawful maximum,
+  // because a month can span five ISO weeks — 80 lawful hours.
+  it("never BLOCKS payroll over high overtime", () => {
+    // 100h is genuinely a lot. It is still not a data error, and Art. 27(5)
+    // permits exceeding the cap for work indispensable to preventing serious
+    // harm to the business — an ordinary event in a small business.
     const errors = validateTLPayrollInput(makeBaseInput({ overtimeHours: 100 }));
-    expect(errors.length).toBeGreaterThan(0);
-    expect(errors[0]).toContain("exceed");
+    expect(errors).toEqual([]);
   });
 
-  it("warns about sick days exceeding annual limit", () => {
+  it("never BLOCKS payroll over sick days past the annual limit", () => {
+    // Art. 33(4) caps the PAID entitlement at 12 days and the engine already
+    // bands the pay correctly. Refusing to run payroll leaves a sick worker
+    // with nothing at all.
     const errors = validateTLPayrollInput(
       makeBaseInput({ sickDaysUsed: 5, ytdSickDaysUsed: 10 })
     );
-    expect(errors.length).toBeGreaterThan(0);
-    expect(errors[0]).toContain("sick days");
+    expect(errors).toEqual([]);
+  });
+
+  it("still tells the operator, through warnings rather than errors", () => {
+    const heavyOvertime = calculateTLPayroll(makeBaseInput({ overtimeHours: 100 }));
+    expect(
+      heavyOvertime.warnings.some((w) => w.includes("Art. 27(4)")),
+    ).toBe(true);
+    // The threshold must never fire on hours that were lawful: 16h/week
+    // across a five-ISO-week month is 80 hours.
+    const lawful = calculateTLPayroll(makeBaseInput({ overtimeHours: 80 }));
+    expect(lawful.warnings.some((w) => w.includes("Art. 27(4)"))).toBe(false);
+
+    const manySickDays = calculateTLPayroll(
+      makeBaseInput({ sickDaysUsed: 5, ytdSickDaysUsed: 10 }),
+    );
+    expect(
+      manySickDays.warnings.some((w) => w.toLowerCase().includes("sick days")),
+    ).toBe(true);
   });
 });
 

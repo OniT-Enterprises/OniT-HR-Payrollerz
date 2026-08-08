@@ -273,6 +273,87 @@ describe('the guides say the deadlines that cost money', () => {
     expect(leaver).toContain('10th of the month after');
   });
 
+  // Each of these was WRONG or vague in the first draft and was corrected
+  // against the mined corpus — real filed returns and a practitioner's written
+  // advisories, which outrank a careful reading of the statute.
+  it('says the thirteenth month is base salary, and a floor', () => {
+    // "One extra month of salary" reads as a month of TOTAL pay. Art. 39(4)
+    // keeps overtime and allowances out of remuneração, so an owner following
+    // the loose wording would overpay.
+    expect(monthText).toContain('base salary');
+    expect(monthText).toContain('at least');
+  });
+
+  it('says service compensation is the legal minimum, not the answer', () => {
+    // The mined corpus has a real employer accruing a month per YEAR — five
+    // times the statutory floor. Presenting the floor as the figure is how a
+    // reader underpays somebody whose contract promised more.
+    const leaver = JSON.stringify(getArticle('when-someone-leaves'));
+    expect(leaver).toContain('legal minimum, not the answer');
+    expect(leaver).toContain('does not know your contract');
+  });
+
+  it('gives the actual notice periods rather than gesturing at them', () => {
+    const leaver = JSON.stringify(getArticle('when-someone-leaves'));
+    expect(leaver).toContain('15 days up to two years');
+    expect(leaver).toContain('two paid days a week');
+  });
+
+  // From the 2026-08-08 statutory sweep. Each of these was a confident
+  // sentence that primary text does not support.
+  it('does not cite Art. 2(y) — Art. 2 has no lettered paragraphs at all', () => {
+    // Art. 2 is "Âmbito de aplicação", four numbered paragraphs about
+    // territorial scope. The trabalho extraordinário definition is Art. 5(y).
+    // A wrong pin is worse than no pin: it survives exactly until an
+    // accountant opens the statute, and then it discredits every other number
+    // on the page.
+    expect(allText).not.toContain('Art. 2(y)');
+    expect(allText).toContain('Art. 5(y)');
+  });
+
+  it('does not claim the INSS premium exclusion is the safe side', () => {
+    // It lowers this month's contribution. If the reading is wrong the
+    // employer owes the arrears — and carries the employee's 4% too, because
+    // it cannot be recovered from wages already paid.
+    const inss = JSON.stringify(
+      getArticle('how-xefe-reads-the-law')!
+        .groups.flatMap((g) => g.entries)
+        .find((e) => e.id === 'inss-premiums'),
+    );
+    expect(inss).not.toContain('conservative side');
+    expect(inss).toContain('not** the safe side');
+  });
+
+  it('never claims nothing here can cause under-remittance', () => {
+    // The intro used to promise exactly that, which the INSS premiums entry
+    // contradicts on the same page.
+    expect(allText).not.toContain('nothing on this page can be causing you');
+  });
+
+  it('does not state the minimum wage as a settled legal figure', () => {
+    // No Jornal da República instrument was found for $115 — only a
+    // government communique. Aggregator sites are not evidence.
+    const wage = JSON.stringify(
+      getArticle('how-xefe-reads-the-law')!
+        .groups.flatMap((g) => g.entries)
+        .find((e) => e.id === 'minimum-wage'),
+    );
+    expect(wage).toContain('cannot point you at a law');
+    expect(wage).toContain('SEFOPE');
+  });
+
+  it('admits the working week moves leave but not pay', () => {
+    // attendanceCalculations.ts hardcodes Sunday and never receives the
+    // tenant's workingDays setting. The entry used to be badged "settled" and
+    // written in the past tense about a bug that is still live.
+    const week = getArticle('how-xefe-reads-the-law')!
+      .groups.flatMap((g) => g.entries)
+      .find((e) => e.id === 'working-week')!;
+    expect(week.status).not.toBe('settled');
+    expect(week.today).toContain('LEAVE only');
+    expect(week.today).toContain('Pay has not moved');
+  });
+
   it('says plainly that a generated file is not a filed one', () => {
     // The single most expensive misunderstanding available: an INSS export
     // sitting in a downloads folder looks exactly like a submitted return.

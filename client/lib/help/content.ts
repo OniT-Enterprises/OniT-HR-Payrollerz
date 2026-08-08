@@ -120,8 +120,10 @@ const LAW_POSITIONS: HelpArticle = {
   intro: [
     "Software that computes wages cannot be undecided. Every payslip needs one number, so wherever the statute is genuinely open to more than one reading, Xefe has had to pick one to be able to ship at all.",
     "This page lists those choices. It exists because the honest thing to do with an interpretation is to name it, not to let it disappear into a total.",
-    "One rule governs all of them: **where the answer was uncertain, Xefe took the conservative side.** It over-withholds rather than under-withholds, discloses rather than silently infers, and never auto-pays a contested amount. So nothing on this page can be causing you to underpay a worker or under-remit to INSS or the tax authority. What the uncertainty costs is precision — and, in a few places, a judgement you are asked to make that the software could have made for you.",
-    "The statutory text quoted here was read from clean Jornal da República copies. Where a reading has been confirmed by an independent Timor-Leste practitioner, it says so.",
+    "The general rule is that **where the answer was uncertain, Xefe took the conservative side** — over-withholding rather than under-withholding, disclosing rather than silently inferring, never auto-paying a contested amount.",
+    "**But that is a tendency, not a guarantee, and one entry below is an exception worth your attention.** Excluding rest-day and holiday premiums from the social-security base lowers what you contribute, and if that reading is wrong the arrears are yours. Read that one properly rather than trusting the general rule.",
+    "Where a number here is a **statutory minimum**, it says so. That distinction matters more than any single figure on this page: the Labour Code is a floor throughout, a contract may promise more, and what your contract says beats what the minimum says.",
+    "The statutory text quoted here was read from clean Jornal da República copies. Where a reading has been confirmed by an independent Timor-Leste practitioner, it says so — and where it has not, the badge says \"confirming\" rather than \"settled\".",
   ],
   groups: [
     {
@@ -180,16 +182,17 @@ const LAW_POSITIONS: HelpArticle = {
           status: "confirming",
           body: [
             "This one moves for every business that opens on Sundays, so it matters most in hospitality.",
-            "Three provisions decide it. DL 20/2017 Art. 8(2)(c) expressly puts shift and night-work supplements **inside** the contribution base. Art. 9(c) expressly puts payments for *trabalho extraordinário* **outside** it. And Lei 4/2012 puts the rest-day and holiday double-pay rule inside Art. 27, an article headed \"Horas extraordinárias\", while Art. 2(y) defines trabalho extraordinário as work beyond the normal period — which a rest day is by definition.",
-            "So the doubled portion reads as overtime pay, and Art. 9(c) excludes it. The counter-argument is Art. 8(2)(f), a residual clause sweeping in \"outros subsídios\" — but a specific exclusion normally beats a residual inclusion.",
+            "Xefe currently excludes these premiums, reading the doubled portion as overtime pay under DL 20/2017 Art. 9(c). **On the text of the statutes that reading is weak, and we say so because it is your money.**",
+            "Art. 27 separates the two kinds of work rather than merging them: n.º 3 caps rest-day and holiday work at 8 hours a day, n.º 4 caps *trabalho extraordinário* at 4 hours a day and 16 a week, and n.º 5 refers to them as two distinct limits. If rest-day work simply *were* extraordinary work, the 8-hour allowance could never lawfully be used. The definition points the same way: Art. 5(y) defines *trabalho extraordinário* as work \"para além do período normal de trabalho\", which Art. 25(1) fixes at 8 hours a day and 44 a week — it turns on hours, not on which day of the week. And under Art. 30(2) your rest day may lawfully sit somewhere other than Sunday, so a worker can be on duty on a Sunday and still be well inside normal hours.",
+            "Nor is there a tie-break in our favour. Art. 8(2)(f) brings in other supplements \"quando previstos em **disposição legal**, contrato ou de acordo coletivo\" — and Lei 4/2012 Art. 27(2) is exactly such a provision. It is a conditional inclusion, not a residual one, so the usual \"specific beats residual\" argument has nothing to operate on.",
           ],
           synonyms: ["sunday pay", "holiday pay", "double pay", "overtime", "social security"],
           today:
-            "Premiums are excluded from the contribution base, which is the smaller base and therefore the conservative side for the employer's own cost — but it also means less is contributed on the worker's behalf.",
+            "Premiums are excluded from the contribution base, and this is the setting most likely to change. Excluding them lowers this month's cost, but it is **not** the safe side: if the reading is wrong you owe the arrears, and in practice you would carry both the 6% employer and the 4% employee share, because you cannot lawfully recover the employee half out of wages already paid. It also lowers your worker's contributory record, which is what their INSS benefits are calculated from.",
           impact:
             "4% employee plus 6% employer on every premium hour. Structural rather than marginal for a seven-day business.",
           open:
-            "Whether that is how it is actually declared on the monthly DR in practice.",
+            "Whether that is how it is actually declared on the monthly DR in practice. We are seeking written confirmation from INSS; until it arrives, treat the exclusion as provisional rather than settled.",
         },
         {
           id: "maternity-fallback",
@@ -210,6 +213,25 @@ const LAW_POSITIONS: HelpArticle = {
           impact: "Up to twelve weeks of salary for an affected worker.",
           open:
             "Whether employers in practice pay regardless. If they do, this is a money default Xefe has wrong.",
+        },
+        {
+          id: "working-week",
+          heading:
+            "Sunday is the default rest day — and the rest day itself is never optional",
+          status: "confirming",
+          quote:
+            "1. O trabalhador tem direito a um período de descanso semanal remunerado de, no mínimo, 24 horas consecutivas. 2. O dia de descanso semanal só pode deixar de ser ao domingo quando o trabalhador preste trabalhos indispensáveis à continuidade de serviços que não podem ser interrompidos ou que tenham, necessariamente, de ser prestados ao domingo.",
+          quoteCite: "Lei 4/2012, Art. 30(1)–(2)",
+          body: [
+            "Every worker is owed a paid weekly rest of at least 24 **consecutive** hours. Art. 30(2) lets you move which day that falls on, but only where the worker performs work indispensable to services that cannot be interrupted, or that must necessarily be done on a Sunday.",
+            "A clinic ward or a security post is the clear case. Where a business could simply close on Sunday the ground is weaker — the article says the day may \"only\" move. **The statute names no industries**, so if you are relying on this, take advice rather than our list.",
+            "Note also that Art. 30(2) attaches the test to **the worker**, not the business. Xefe's setting is company-wide, which is the coarser instrument.",
+          ],
+          synonyms: ["saturday", "sunday", "rest day", "working days", "six-day week"],
+          today:
+            "**Half-built — check these figures yourself.** The company working week in Settings changes **LEAVE only**. **Pay has not moved.** Xefe still pays the double rest-day rate for Sunday work and ordinary rate on every other day, so for someone who rests on, say, Wednesday you must enter their rest-day hours on the payroll row by hand — and enter them again if you re-sync attendance, which overwrites the field.",
+          open:
+            "Whether the rest-day premium follows the worker's actual rest day or attaches to Sunday regardless, and whether the working week is a fact about the company or about each employee. Until that is settled, the pay side stays manual.",
         },
         {
           id: "leave-year",
@@ -270,15 +292,18 @@ const LAW_POSITIONS: HelpArticle = {
         },
         {
           id: "minimum-wage",
-          heading: "Does the $115 minimum wage prorate for a part-timer?",
+          heading: "The $115 minimum wage — and whether it prorates",
           status: "asks-you",
           body: [
-            "Xefe enforces $115 a month as an absolute floor. That makes a genuinely part-time arrangement below the floor hard to process, even where the hourly rate is well above minimum.",
+            "**We cannot point you at a law for this figure.** US$115 a month is the amount in use, set by a government decision in 2012, but we have not found it published as an instrument in the Jornal da República — the only official record we can cite is a government communique. Lei 4/2012 Art. 38(2) delegates the amount to \"o valor mínimo definido por lei\" and Art. 100(c) gives the national labour council the job of proposing it.",
+            "Confirm the current figure with SEFOPE or your accountant before relying on it, particularly if you are close to the floor.",
+            "The second question is what the floor applies to. Xefe enforces $115 a **month** as an absolute amount, which makes a genuinely part-time arrangement hard to process even where the hourly rate is well above minimum. We do not know whether the minimum is expressed monthly or hourly, and that is exactly what decides it.",
           ],
-          synonyms: ["part time", "part-time", "wage floor"],
-          today: "Absolute monthly floor, regardless of contracted hours.",
+          synonyms: ["part time", "part-time", "wage floor", "SEFOPE"],
+          today:
+            "Absolute monthly floor, regardless of contracted hours. The figure is overridable in settings, which is the escape hatch if yours differs.",
           open:
-            "Does the minimum wage prorate by contracted hours, or is $115 absolute?",
+            "Whether $115 is current, whether it is expressed monthly or hourly, and therefore whether it prorates for a part-timer.",
         },
         {
           id: "small-employer-inss",
@@ -403,20 +428,6 @@ const LAW_POSITIONS: HelpArticle = {
           synonyms: ["rehire", "re-employment", "seniority"],
           today:
             "The original date is kept inside the window, and the payslip shows which rule was applied.",
-        },
-        {
-          id: "working-week",
-          heading: "Sunday is the default rest day, not a rule",
-          status: "settled",
-          quote:
-            "O dia de descanso semanal só pode deixar de ser ao domingo quando o trabalhador preste trabalhos indispensáveis à continuidade de serviços que não podem ser interrompidos ou que tenham, necessariamente, de ser prestados ao domingo.",
-          quoteCite: "Lei 4/2012, Art. 30(2)",
-          body: [
-            "A hotel, restaurant, clinic or security firm lawfully works Sundays, and those workers rest on another day. Xefe used to assume Monday to Friday for everybody, which was wrong in both directions at once: it paid a double premium for an ordinary working day, and single time for the day that was actually the worker's rest day. Leave duration was wrong the same way.",
-          ],
-          synonyms: ["saturday", "sunday", "rest day", "working days", "six-day week"],
-          today:
-            "The working week is a company setting. It still defaults to Monday–Friday, so no existing company's figures moved without someone choosing to move them.",
         },
         {
           id: "citations",

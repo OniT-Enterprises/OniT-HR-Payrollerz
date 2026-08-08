@@ -935,6 +935,29 @@ export function calculateTLPayroll(
       isTaxable: true,
       isINSSBase: false,
     });
+
+    // Art. 27(4) caps overtime at 4h/day and 16h/week. There is NO monthly
+    // cap in the statute, so this compares against the weekly cap across the
+    // ISO weeks the period actually spans rather than a made-up figure — and
+    // it WARNS. Art. 27(5) lifts the cap for force majeure OR for work
+    // indispensable to preventing or repairing serious harm to the business,
+    // which is an ordinary occurrence in a small business: a shipment before
+    // demurrage, a generator repair. So an over-cap month is a prompt to
+    // record WHICH limb applied, never a reason to stop paying people.
+    // The input carries no period dates, so the number of weeks cannot be
+    // derived here. Compare against FIVE weekly caps: a monthly period spans
+    // at most five ISO weeks, so this can never fire on hours that were
+    // lawful under Art. 27(4). Erring this way is deliberate — the deleted
+    // hard error used four weeks and therefore triggered on fully lawful
+    // hours, which is precisely what made it harmful.
+    const weeklyOvertimeCap =
+      config?.maxOvertimePerWeek ?? TL_WORKING_HOURS.maxOvertimePerWeek;
+    const MAX_ISO_WEEKS_IN_A_MONTH = 5;
+    if (input.overtimeHours > weeklyOvertimeCap * MAX_ISO_WEEKS_IN_A_MONTH) {
+      warnings.push(
+        `Overtime of ${input.overtimeHours}h exceeds the Art. 27(4) cap of ${weeklyOvertimeCap}h/week even across a five-week month. Art. 27(5) permits this where the work was force majeure, OR was indispensable to prevent or repair serious harm to the business — record which one applied.`,
+      );
+    }
   }
 
   if (input.nightShiftHours > 0) {
@@ -1756,14 +1779,28 @@ export function validateTLPayrollInput(
     }
   }
 
-  const maxOvertimePerWeek = config?.maxOvertimePerWeek ?? TL_WORKING_HOURS.maxOvertimePerWeek;
-  if (input.overtimeHours > maxOvertimePerWeek * 4) {
-    errors.push(`Overtime hours (${input.overtimeHours}) exceed maximum allowed per month.`);
-  }
-
-  if (input.sickDaysUsed > 0 && input.ytdSickDaysUsed + input.sickDaysUsed > TL_SICK_LEAVE.totalDays) {
-    errors.push(`Total sick days (${input.ytdSickDaysUsed + input.sickDaysUsed}) exceed annual limit (${TL_SICK_LEAVE.totalDays}).`);
-  }
+  // NOTE — two checks were DELETED here, deliberately. Both blocked the
+  // payroll wizard (RunPayrollWizard.onBeforeNext returns false on any error),
+  // and both mistook a statutory limit on a WORKER'S ENTITLEMENT for a
+  // prohibition on the EMPLOYER PAYING. They are opposite things.
+  //
+  //   overtimeHours > maxOvertimePerWeek * 4  — an invented 64h/month ceiling.
+  //     Art. 27(4) caps 4h/day and 16h/week; there is no monthly cap anywhere
+  //     in Lei 4/2012, and 16h across a five-ISO-week period is 80 lawful
+  //     hours, so this ceiling sat BELOW the lawful maximum. Art. 27(5) also
+  //     lifts the caps for work indispensable to preventing serious harm to
+  //     the business — an ordinary occurrence, not an exotic one.
+  //
+  //   ytdSickDaysUsed + sickDaysUsed > TL_SICK_LEAVE.totalDays — a worker
+  //     genuinely ill for a 13th day could not be PAID AT ALL. Art. 33(4)
+  //     caps the paid-sick entitlement; it does not forbid running payroll,
+  //     and the engine already bands the pay correctly on its own.
+  //
+  // Both facts still reach the operator: calculateTLPayroll pushes them onto
+  // `warnings`, which is the right channel — an unusual number is a flag for
+  // review, never proof of a breach. Because Art. 40(5) obliges payment by a
+  // fixed date, a non-statutory block here can push a compliant employer into
+  // an actual statutory breach. Do not reinstate either as an error.
 
   return errors;
 }

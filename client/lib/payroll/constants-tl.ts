@@ -250,8 +250,23 @@ export const TL_WORKING_HOURS = {
   standardWeeklyHours: 44,
   standardDailyHours: 8,
 
-  // Maximum overtime per day — Art. 27(4); exceeding it is lawful only for
-  // force majeure (Art. 27(5)), so payroll warns and never blocks.
+  // Maximum overtime per day — Art. 27(4).
+  //
+  // Art. 27(5) lifts BOTH this and the Art. 27(3) 8-hour rest-day cap in TWO
+  // cases, not one: "casos de força maior OU que sejam indispensáveis para
+  // prevenir ou reparar prejuízos graves para a empresa ou para a sua
+  // viabilidade". The second limb is broader, commoner, and is the employer's
+  // own judgement — a shipment before demurrage, a generator repair. So going
+  // over a cap is a flag for review, NEVER proof of a breach: payroll warns
+  // and must never block.
+  //
+  // There is NO statutory MONTHLY cap. Do not invent one — 16h/week across a
+  // five-ISO-week period is 80 fully lawful hours, so any monthly ceiling
+  // derived as `weekly * 4` sits BELOW the lawful maximum. A `> weekly * 4`
+  // hard error used to live in validateTLPayrollInput and blocked the wizard
+  // outright; because Art. 40(5) obliges payment by a fixed date, that
+  // non-statutory ceiling could push a compliant employer into a real
+  // statutory breach.
   maxOvertimePerDay: 4,
 
   // Maximum overtime per week — Art. 27(4)
