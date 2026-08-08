@@ -58,6 +58,15 @@ const messages = {
     },
   },
   common: {
+    weekdaysShort: {
+      "0": "Dom",
+      "1": "Seg",
+      "2": "Ters",
+      "3": "Kua",
+      "4": "Kin",
+      "5": "Sest",
+      "6": "Sab",
+    },
     reset: "Fila ba orijinál",
     needsReviewTitle: "Presiza revizaun molok deklara",
     needsReviewDesc:
@@ -1811,6 +1820,18 @@ const messages = {
         "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
       setPaidInFull: "Tau ba selu tomak",
       rows: {
+        workingDays: {
+          title: "Loron ne'ebé ita-nia empreza servisu",
+          summary: "Ita servisu {{days}}.",
+          summaryNone: "Seidauk hili loron servisu.",
+          label: "Hanehan loron ne'ebé ita loke",
+          help: "Sura lisensa iha loron sira-ne'e de'it. Loron moras iha loron ne'ebé ita la loke la kustu buat ida.",
+          pendingExplainer:
+            "Favor konfirma ida-ne'e. Xefe assume segunda to'o sesta ba ema hotu, no ba empreza barak iha Timor-Leste ne'e sala — tanba ne'e traballadór ne'ebé moras segunda to'o sábadu sura nu'udar loron 5, la'ós loron 6.",
+          noneWarning:
+            "Se laiha loron servisu, la bele rejista lisensa ida. Hili pelu menus ida.",
+          law: "Lei Trabálhu tau semana ho oras 44 (Art. 25) — barak liu duke loron lima ho oras 8 — no fó ba traballadór ida-idak pelu menus oras 24 tuir malu deskansa ho pagamentu (Art. 30(1)). Loron deskansa ne'e domingu, se servisu la bele para, hanesan hotél ka klínika (Art. 30(2)). Tanba ne'e empreza barak iha ne'e servisu loron neen.",
+        },
         attendanceMode: {
           title: "Oinsá Ita rejista prezensa",
           summaryExceptions: "Ita rejista falta no oras extra de'it.",

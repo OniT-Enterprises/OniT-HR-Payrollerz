@@ -261,10 +261,27 @@ export const TL_LEAVE_TYPES = [
  * tenant holiday dates supplied by the caller are excluded. UTC parsing keeps
  * the answer stable in Timor-Leste and for managers working abroad.
  */
+/**
+ * Which weekdays count as working. 0 = Sunday … 6 = Saturday.
+ *
+ * Mon–Fri is the DEFAULT, not the statutory norm — it preserves the behaviour
+ * every existing tenant already has, so nobody's leave durations move without
+ * someone choosing it. Art. 25 fixes the week at 44 hours (not 5 × 8) and
+ * Art. 30(2) makes Sunday only the default rest day, departable where the
+ * service cannot be interrupted, so most Timor-Leste businesses work six days.
+ * Settings → Time off asks the owner which it is.
+ *
+ * MUST stay identical to `DEFAULT_WORKING_WEEKDAYS` in functions/src/timeleave.ts:
+ * the server recomputes duration and is authoritative, so a divergence means the
+ * figure shown and the figure stored disagree.
+ */
+export const DEFAULT_WORKING_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5];
+
 export function calculateWorkingDays(
   startDate: string,
   endDate: string,
   holidayDates: readonly string[] = [],
+  workingWeekdays: readonly number[] = DEFAULT_WORKING_WEEKDAYS,
 ): number {
   const start = new Date(`${startDate}T00:00:00.000Z`);
   const end = new Date(`${endDate}T00:00:00.000Z`);
@@ -281,11 +298,15 @@ export function calculateWorkingDays(
   let workingDays = 0;
   const current = new Date(start);
   const holidays = new Set(holidayDates);
+  // An empty or all-invalid list would make every request zero-length, so fall
+  // back rather than trust it — same guard as the server.
+  const valid = workingWeekdays.filter((day) => day >= 0 && day <= 6);
+  const working = new Set(valid.length > 0 ? valid : DEFAULT_WORKING_WEEKDAYS);
 
   while (current <= end) {
     const dayOfWeek = current.getUTCDay();
     const date = current.toISOString().slice(0, 10);
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.has(date)) {
+    if (working.has(dayOfWeek) && !holidays.has(date)) {
       workingDays++;
     }
     current.setUTCDate(current.getUTCDate() + 1);

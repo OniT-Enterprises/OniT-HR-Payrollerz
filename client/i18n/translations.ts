@@ -49,6 +49,15 @@ export const translations = {
       }
     },
     "common": {
+      "weekdaysShort": {
+        "0": "Sun",
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat"
+      },
       "reset": "Reset",
       "needsReviewTitle": "Needs review before filing",
       "needsReviewDesc": "A payroll record is missing or has an invalid {{field}}. Fix or re-run that payroll — Xefe never guesses compliance values. Ask your accountant if you are unsure.",
@@ -1641,6 +1650,16 @@ export const translations = {
         "paidMismatch": "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
         "setPaidInFull": "Set to paid in full",
         "rows": {
+          "workingDays": {
+            "title": "Days your company works",
+            "summary": "You work {{days}}.",
+            "summaryNone": "No working days chosen.",
+            "label": "Tap the days you open",
+            "help": "Leave is counted over these days only. A sick day on a day you do not open costs nobody anything.",
+            "pendingExplainer": "Please check this one. Xefe has been assuming Monday to Friday for everybody, and for most Timor-Leste businesses that is wrong — it is why a worker off sick Monday to Saturday was counted as 5 days instead of 6.",
+            "noneWarning": "With no working days, no leave can ever be recorded. Choose at least one.",
+            "law": "The Labour Law sets the week at 44 hours (Art. 25) — which is more than five 8-hour days — and gives every worker at least 24 consecutive hours of paid rest (Art. 30(1)). That rest day is Sunday unless the work cannot be interrupted, such as a hotel or a clinic (Art. 30(2)). So most companies here work six days."
+          },
           "attendanceMode": {
             "title": "How you record attendance",
             "summaryExceptions": "You record absences and overtime only.",
@@ -7936,6 +7955,15 @@ export const translations = {
       }
     },
     "common": {
+      "weekdaysShort": {
+        "0": "Dom",
+        "1": "Seg",
+        "2": "Ters",
+        "3": "Kua",
+        "4": "Kin",
+        "5": "Sest",
+        "6": "Sab"
+      },
       "reset": "Fila ba orijinál",
       "needsReviewTitle": "Presiza revizaun molok deklara",
       "needsReviewDesc": "Rejistu folha-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folha ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
@@ -9528,6 +9556,16 @@ export const translations = {
         "paidMismatch": "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
         "setPaidInFull": "Tau ba selu tomak",
         "rows": {
+          "workingDays": {
+            "title": "Loron ne'ebé ita-nia empreza servisu",
+            "summary": "Ita servisu {{days}}.",
+            "summaryNone": "Seidauk hili loron servisu.",
+            "label": "Hanehan loron ne'ebé ita loke",
+            "help": "Sura lisensa iha loron sira-ne'e de'it. Loron moras iha loron ne'ebé ita la loke la kustu buat ida.",
+            "pendingExplainer": "Favor konfirma ida-ne'e. Xefe assume segunda to'o sesta ba ema hotu, no ba empreza barak iha Timor-Leste ne'e sala — tanba ne'e traballadór ne'ebé moras segunda to'o sábadu sura nu'udar loron 5, la'ós loron 6.",
+            "noneWarning": "Se laiha loron servisu, la bele rejista lisensa ida. Hili pelu menus ida.",
+            "law": "Lei Trabálhu tau semana ho oras 44 (Art. 25) — barak liu duke loron lima ho oras 8 — no fó ba traballadór ida-idak pelu menus oras 24 tuir malu deskansa ho pagamentu (Art. 30(1)). Loron deskansa ne'e domingu, se servisu la bele para, hanesan hotél ka klínika (Art. 30(2)). Tanba ne'e empreza barak iha ne'e servisu loron neen."
+          },
           "attendanceMode": {
             "title": "Oinsá Ita rejista prezensa",
             "summaryExceptions": "Ita rejista falta no oras extra de'it.",
@@ -15823,6 +15861,15 @@ export const translations = {
       }
     },
     "common": {
+      "weekdaysShort": {
+        "0": "Dom",
+        "1": "Seg",
+        "2": "Ter",
+        "3": "Qua",
+        "4": "Qui",
+        "5": "Sex",
+        "6": "Sáb"
+      },
       "reset": "Repor",
       "needsReviewTitle": "Precisa de revisão antes de declarar",
       "needsReviewDesc": "Um registo de folha de pagamento não tem {{field}} válido. Corrija ou reprocesse essa folha — o Xefe nunca adivinha valores de conformidade. Em caso de dúvida, fale com o seu contabilista.",
@@ -17415,6 +17462,16 @@ export const translations = {
         "paidMismatch": "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
         "setPaidInFull": "Definir como pago por inteiro",
         "rows": {
+          "workingDays": {
+            "title": "Dias em que a sua empresa trabalha",
+            "summary": "Trabalham {{days}}.",
+            "summaryNone": "Nenhum dia de trabalho escolhido.",
+            "label": "Toque nos dias em que abrem",
+            "help": "As licenças são contadas apenas nestes dias. Um dia de doença num dia em que não abrem não custa nada a ninguém.",
+            "pendingExplainer": "Confirme este. O Xefe assumia segunda a sexta para toda a gente e, para a maioria das empresas de Timor-Leste, isso está errado — é por isso que um trabalhador doente de segunda a sábado era contado como 5 dias em vez de 6.",
+            "noneWarning": "Sem dias de trabalho, nenhuma licença pode ser registada. Escolha pelo menos um.",
+            "law": "A Lei do Trabalho fixa a semana em 44 horas (art. 25.º) — mais do que cinco dias de 8 horas — e dá a cada trabalhador pelo menos 24 horas consecutivas de descanso pago (art. 30.º, n.º 1). Esse dia de descanso é domingo, salvo quando o serviço não pode ser interrompido, como num hotel ou numa clínica (art. 30.º, n.º 2). Por isso a maioria das empresas aqui trabalha seis dias."
+          },
           "attendanceMode": {
             "title": "Como regista a assiduidade",
             "summaryExceptions": "Regista apenas faltas e horas extra.",

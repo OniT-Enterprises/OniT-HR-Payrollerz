@@ -202,6 +202,24 @@ export interface TimeOffPolicies {
    * "types of time off".
    */
   attendanceMode: 'exceptions' | 'daily';
+  /**
+   * Which weekdays this company works. 0 = Sunday … 6 = Saturday.
+   *
+   * Defaults to Mon–Fri, which is what Xefe assumed for everyone before this
+   * field existed — so no tenant's leave durations move without someone
+   * choosing it. It is NOT the statutory norm: Art. 25 fixes the week at 44
+   * hours, which is not 5 × 8, and Art. 30(2) makes Sunday only the DEFAULT
+   * rest day, departable where the service cannot be interrupted (hotels,
+   * restaurants, clinics, security). Most Timor-Leste businesses work six days.
+   *
+   * Leave duration is counted over these days, on the client AND in
+   * functions/src/timeleave.ts, which recomputes it and is authoritative.
+   *
+   * Still to do: the Art. 27(2) 2x premium is paid for SUNDAY specifically
+   * rather than following the worker's actual rest day — tracked as L2 in
+   * docs/TL_LAW_GAP_MATRIX_JUL2026.md. See docs/NICO_OPEN_QUESTIONS.md A6.
+   */
+  workingDays: number[];
 }
 
 // ============================================
@@ -473,6 +491,9 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
   // Matches the statutory duty, and matches what payroll already does when
   // nobody presses "Sync from Attendance": everyone is paid in full.
   attendanceMode: 'exceptions',
+  // Mon–Fri: what Xefe did before the field existed. Deliberately not the
+  // statutory six-day week — changing it is the owner's call, not a migration.
+  workingDays: [1, 2, 3, 4, 5],
 };
 
 // Business sector presets for departments

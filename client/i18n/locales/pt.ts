@@ -58,6 +58,15 @@ const messages = {
     },
   },
   common: {
+    weekdaysShort: {
+      "0": "Dom",
+      "1": "Seg",
+      "2": "Ter",
+      "3": "Qua",
+      "4": "Qui",
+      "5": "Sex",
+      "6": "Sáb",
+    },
     reset: "Repor",
     needsReviewTitle: "Precisa de revisão antes de declarar",
     needsReviewDesc:
@@ -1839,6 +1848,18 @@ const messages = {
         "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
       setPaidInFull: "Definir como pago por inteiro",
       rows: {
+        workingDays: {
+          title: "Dias em que a sua empresa trabalha",
+          summary: "Trabalham {{days}}.",
+          summaryNone: "Nenhum dia de trabalho escolhido.",
+          label: "Toque nos dias em que abrem",
+          help: "As licenças são contadas apenas nestes dias. Um dia de doença num dia em que não abrem não custa nada a ninguém.",
+          pendingExplainer:
+            "Confirme este. O Xefe assumia segunda a sexta para toda a gente e, para a maioria das empresas de Timor-Leste, isso está errado — é por isso que um trabalhador doente de segunda a sábado era contado como 5 dias em vez de 6.",
+          noneWarning:
+            "Sem dias de trabalho, nenhuma licença pode ser registada. Escolha pelo menos um.",
+          law: "A Lei do Trabalho fixa a semana em 44 horas (art. 25.º) — mais do que cinco dias de 8 horas — e dá a cada trabalhador pelo menos 24 horas consecutivas de descanso pago (art. 30.º, n.º 1). Esse dia de descanso é domingo, salvo quando o serviço não pode ser interrompido, como num hotel ou numa clínica (art. 30.º, n.º 2). Por isso a maioria das empresas aqui trabalha seis dias.",
+        },
         attendanceMode: {
           title: "Como regista a assiduidade",
           summaryExceptions: "Regista apenas faltas e horas extra.",
