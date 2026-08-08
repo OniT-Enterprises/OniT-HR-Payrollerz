@@ -5,7 +5,22 @@
 name: Deploy Xefe API (manual)
 
 on:
+  # The API box used to deploy ONLY by hand, and it drifted: server-side fixes sat
+  # merged on main for two weeks while the client half shipped automatically —
+  # including a security control that was inactive in production the whole time.
+  # Path-filtered so unrelated merges do not restart the service.
+  push:
+    branches: [main]
+    paths:
+      - "server/xefe-api/**"
+      - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
+
+# A restart is the whole service in fork mode, so never run two at once. Not
+# cancel-in-progress: a half-finished rsync is worse than a queued deploy.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
 
 jobs:
   deploy-api:
@@ -37,6 +52,9 @@ jobs:
           SCRIPT_AFTER: |
             cd /opt/xefe-api
             npm ci --omit=dev
-            pm2 restart xefe-api
+            # startOrReload picks up ecosystem.config.js (kill_timeout), so PM2
+            # waits for index.js to drain in-flight uploads — an extraction can
+            # legitimately be 180s in — instead of cutting them off.
+            pm2 startOrReload ecosystem.config.js --update-env
             sleep 3
             curl -sf http://localhost:3201/api/health

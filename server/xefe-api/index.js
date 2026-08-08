@@ -5481,8 +5481,33 @@ app.use((err, req, res, _next) => {
 module.exports = { app };
 
 if (require.main === module) {
-  app.listen(PORT, '127.0.0.1', () => {
+  const server = app.listen(PORT, '127.0.0.1', () => {
     console.log(`[xefe-api] Listening on 127.0.0.1:${PORT}`);
     console.log(`[xefe-api] Health check: http://127.0.0.1:${PORT}/api/health`);
   });
+
+  // Drain before dying. This runs in PM2 fork mode with a single instance, so a
+  // restart is the whole service going away: without this, a deploy — or a
+  // max_memory_restart — cuts every in-flight request instantly, and a document
+  // extraction legitimately runs for up to TABLE_TIMEOUT_MS (180s). The user
+  // would see a 502 on an upload that was working.
+  //
+  // ecosystem.config.js sets kill_timeout above that ceiling, so PM2 waits for
+  // this drain instead of SIGKILLing through it.
+  let shuttingDown = false;
+  const shutdown = (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[xefe-api] ${signal} received — refusing new connections, finishing in-flight work`);
+    server.close((error) => {
+      if (error) {
+        console.error(`[xefe-api] shutdown error: ${error.message}`);
+        process.exit(1);
+      }
+      console.log('[xefe-api] all connections closed, exiting');
+      process.exit(0);
+    });
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }

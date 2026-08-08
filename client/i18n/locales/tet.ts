@@ -3645,6 +3645,8 @@ const messages = {
         saveFailed: "Falha marka prezensa. Koko fali.",
         exportTitle: "Exporta remata",
         exportDesc: "Ficheiru CSV download ona.",
+        importLegacyXls:
+          "Ne’e fixeiru .xls tuan. Loke iha Excel ka Google Sheets, grava nu'udar .xlsx ka CSV, no hatama ida ne'e.",
         importSelect: "Favor hili ficheiru atu importa.",
         importErrorTitle: "Erru importa",
         importEmpty: "Laiha rejistu validu.",
@@ -6748,9 +6750,22 @@ const messages = {
         "XefeBot lee ona fixeiru ne’e maibé la’ós fatura ka resibu — hatama dadus iha kraik.",
       pdfProtected:
         "PDF ne’e iha proteksaun senha, tan ne’e buat ida la bele lee. Grava kópia ida ne’ebé la iha proteksaun, ka hatama dadus iha kraik.",
+      slipSettlesBill:
+        "Komprovativu ne’e hanesan ho fatura {{count}} ne’ebé sei loke. Rejista pagamentu ba ida?",
+      recordPayment: "Rejista pagamentu",
+      paymentRecorded: "Pagamentu rejista ona ba fatura",
+      paymentRecordedNoFile:
+        "Pagamentu rejista ona, maibé la konsege anexa komprovativu — aumenta ba fatura ho ita-nia liman.",
+      paymentFromSlip: "Rejista husi komprovativu ne’ebé hatama",
+      paymentFailed: "La konsege rejista pagamentu",
+      looksLikeCreditMemo:
+        "Ne’e hanesan nota kréditu, ne’ebé hakotu osan ne’ebé Ita tenke selu, la’ós aumenta fatura foun. Rejista nia hasoru fatura orijinál.",
+      multipleDocuments:
+        "Fixeiru ne’e iha fatura liu husi ida. Hatama montante no númeru husi ida ne’ebé Ita aumenta hela, no hatama seluk sira ketak-ketak.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',
+      vendorMaybeExisting: "Iha ona iha lista ho hakerek seluk?",
       vendorAdded: 'Fornesedor "{{name}}" aumenta ona',
       vendorAddFailed: "La konsege aumenta fornesedor",
     },
@@ -6921,6 +6936,10 @@ const messages = {
         "Data ne'ebe fatura ida ne'e tenke selu atu evita multa ka interupsaun servisu.",
       uploadBill: "Upload Fatura",
       quickAddTitle: "Tau Fatura husi Fixeiru",
+      duplicateSameNumber:
+        'Fatura "{{number}}" husi fornesedor ne’e rejista ona ({{date}}, {{amount}}). Se grava, sei sai rua.',
+      duplicateSameAmount:
+        "Fatura husi fornesedor ne’e ho {{amount}} iha {{date}} rejista ona. Se grava, sei sai rua.",
       quickAddDescription:
         "Anexa fatura no hatama informasaun bázika — ita bele edita detallu sira depois.",
       saveBill: "Rai Fatura",

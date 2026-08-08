@@ -234,9 +234,11 @@ export default function Expenses() {
   const dropInputRef = useRef<HTMLInputElement>(null);
   const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed' | 'notABill'>('idle');
   // A bank slip or ATM receipt read fine but is not an expense document.
-  const [aiOtherKind, setAiOtherKind] = useState<'payment_proof' | 'other' | null>(null);
+  const [aiOtherKind, setAiOtherKind] = useState<'payment_proof' | 'credit_memo' | 'other' | null>(null);
   // A password-protected PDF cannot be read by anything — say so specifically.
   const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
+  // One file holding several receipts: the amount is ambiguous, so it is withheld.
+  const [aiMultipleDocuments, setAiMultipleDocuments] = useState(false);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Receipts priced in another currency: expenses are booked in USD only, so the
   // extracted amount is withheld rather than pre-filled (see extracted-currency).
@@ -276,6 +278,7 @@ export default function Expenses() {
       setAiSuspectDate(null);
       setAiOtherKind(null);
       setAiProtectedPdf(false);
+      setAiMultipleDocuments(false);
       return;
     }
     const run = ++aiRun.current;
@@ -285,12 +288,19 @@ export default function Expenses() {
     setAiSuspectDate(null);
     setAiOtherKind(null);
     setAiProtectedPdf(false);
+    setAiMultipleDocuments(false);
     extractDocument(file, tenantId, 'expense')
       .then(async (fields) => {
         if (aiRun.current !== run) return;
         // Read successfully but not an expense document: say which.
         if (fields.documentType === 'payment_proof') {
           setAiOtherKind('payment_proof');
+          setAiStatus('notABill');
+          return;
+        }
+        // A credit note reduces what is owed — it is not an expense.
+        if (fields.documentType === 'credit_memo') {
+          setAiOtherKind('credit_memo');
           setAiStatus('notABill');
           return;
         }
@@ -308,6 +318,8 @@ export default function Expenses() {
           setAiStatus('failed');
           return;
         }
+        const multiple = fields.containsMultipleDocuments === true;
+        setAiMultipleDocuments(multiple);
         const foreign = isForeignExtractedCurrency(fields.currency);
         setAiForeignCurrency(foreign ? foreignCurrencyLabel(fields.currency) : null);
         // A receipt cannot be dated in the future; that reading is a day/month swap.
@@ -318,7 +330,7 @@ export default function Expenses() {
           date: suspectDate ? prev.date : (fields.billDate || prev.date),
           description: fields.description || prev.description,
           // A foreign-currency total must not land in a USD field.
-          amount: foreign ? prev.amount : (fields.amount ?? prev.amount),
+          amount: foreign || multiple ? prev.amount : (fields.amount ?? prev.amount),
           category: (fields.category as ExpenseFormData['category']) || prev.category,
         }));
         if (fields.vendorName) setAiVendorName(fields.vendorName);
@@ -900,6 +912,7 @@ export default function Expenses() {
             setAiForeignCurrency(null);
             setAiSuspectDate(null);
             setAiOtherKind(null);
+            setAiMultipleDocuments(false);
           }
         }}
       >
@@ -938,14 +951,17 @@ export default function Expenses() {
             )}
             {!editingExpense && aiStatus === 'notABill' && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                {aiOtherKind === 'payment_proof'
+                {aiOtherKind === 'credit_memo'
+                  ? t('money.ai.looksLikeCreditMemo')
+                    || 'This looks like a credit note, which reduces what you owe rather than adding an expense. Record it against the original bill instead.'
+                  : aiOtherKind === 'payment_proof'
                   ? t('money.ai.looksLikePaymentProof')
                     || 'This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below.'
                   : t('money.ai.notABill')
                     || "XefeBot read this file but it isn't a bill or receipt \u2014 enter the details below."}
               </div>
             )}
-            {!editingExpense && aiStatus === 'done' && (aiForeignCurrency || aiSuspectDate) && (
+            {!editingExpense && aiStatus === 'done' && (aiForeignCurrency || aiSuspectDate || aiMultipleDocuments) && (
               <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
                 {aiForeignCurrency && (
                   <p>
@@ -953,6 +969,12 @@ export default function Expenses() {
                       t('money.ai.foreignCurrency')
                       || 'This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.'
                     ).replace('{{currency}}', aiForeignCurrency)}
+                  </p>
+                )}
+                {aiMultipleDocuments && (
+                  <p>
+                    {t('money.ai.multipleDocuments')
+                      || 'This file holds more than one receipt. Enter the amount for the one you are adding, then upload the others separately.'}
                   </p>
                 )}
                 {aiSuspectDate && (

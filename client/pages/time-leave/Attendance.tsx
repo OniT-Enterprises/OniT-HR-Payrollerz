@@ -103,6 +103,7 @@ import type { ExtractedAttendanceRow } from "@/lib/aiExtract";
 import {
   dedupeAttendanceRows,
   excelCellToText,
+  isLegacyXlsFile,
   pickWorksheetName,
   planExtraction,
   worksheetToTableText,
@@ -928,6 +929,20 @@ export default function Attendance() {
       toast({
         title: t("timeLeave.attendance.toast.errorTitle"),
         description: t("timeLeave.attendance.toast.importSelect"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Old-format .xls (fingerprint devices export it) cannot be read by exceljs,
+    // and the fallback turns the binary into garbage that wastes an extraction
+    // call and imports nothing. Say what to do instead of failing mutely.
+    if (await isLegacyXlsFile(importFile)) {
+      toast({
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description:
+          t("timeLeave.attendance.toast.importLegacyXls") ||
+          "This is an old .xls file. Open it in Excel or Google Sheets and save it as .xlsx or CSV, then import that.",
         variant: "destructive",
       });
       return;

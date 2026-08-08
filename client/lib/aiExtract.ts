@@ -28,7 +28,7 @@ export interface ExtractedDocumentFields {
    * 151 real TL documents showed these are a large share of what businesses
    * actually send, so they get their own answer instead of "couldn't read".
    */
-  documentType: "bill" | "receipt" | "payment_proof" | "other";
+  documentType: "bill" | "receipt" | "payment_proof" | "credit_memo" | "other";
   vendorName: string | null;
   /** Seller's tax number (NIF/TIN in TL, NPWP in ID) — needed for withholding. */
   vendorTaxId: string | null;
@@ -36,10 +36,23 @@ export interface ExtractedDocumentFields {
   billDate: string | null;
   dueDate: string | null;
   amount: number | null;
-  taxAmount: number | null;
+  /**
+   * NOT extracted. Timor-Leste has no VAT, and a document's tax line may be
+   * Indonesian PPN, Portuguese IVA, TL services tax or supplier withholding —
+   * four different treatments that cannot be told apart from the document, so
+   * mapping any of them to Bill.taxRate would misstate the tax. Decide the
+   * per-regime meaning before asking for it again.
+   */
   currency: string | null;
   description: string | null;
   category: string;
+  /**
+   * True when ONE uploaded file holds several invoices/receipts — a scan of a
+   * pile of bills, or two invoices in one PDF. The corpus contains both, and the
+   * form can only create one bill, so the amount and number are ambiguous and
+   * must not be pre-filled from a guess about which document was meant.
+   */
+  containsMultipleDocuments: boolean;
   confidence: number;
 }
 

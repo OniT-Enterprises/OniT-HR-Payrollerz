@@ -14,6 +14,7 @@ import {
   chunkTableText,
   dedupeAttendanceRows,
   excelCellToText,
+  looksLikeLegacyXls,
   looksLikeWideMatrix,
   pickWorksheetName,
   planExtraction,
@@ -254,5 +255,26 @@ describe('dedupeAttendanceRows', () => {
       { employee: 'Maria', date: '2026-07-01', clockIn: '13:00', clockOut: '17:00' },
     ];
     expect(dedupeAttendanceRows(rows)).toHaveLength(2);
+  });
+});
+
+describe('looksLikeLegacyXls', () => {
+  const ole2 = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00, 0x00]);
+  const zip = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x08, 0x00]);
+
+  it('recognises a legacy .xls by its OLE2 signature', () => {
+    // Ten of twenty-four real attendance exports are this format, straight off
+    // fingerprint devices, and exceljs cannot read any of them.
+    expect(looksLikeLegacyXls(ole2)).toBe(true);
+  });
+
+  it('does not flag a modern .xlsx, which is a ZIP', () => {
+    expect(looksLikeLegacyXls(zip)).toBe(false);
+  });
+
+  it('does not flag CSV or an empty/truncated file', () => {
+    expect(looksLikeLegacyXls(new TextEncoder().encode('Employee,Date,In\n'))).toBe(false);
+    expect(looksLikeLegacyXls(new Uint8Array())).toBe(false);
+    expect(looksLikeLegacyXls(new Uint8Array([0xd0, 0xcf]))).toBe(false);
   });
 });

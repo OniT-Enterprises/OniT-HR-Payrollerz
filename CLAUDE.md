@@ -13,6 +13,7 @@
 - **Invoicing / hosted invoice pages**: Read `docs/INVOICING.md` before touching invoice delivery, `/i/:token`, `invoice_links`, invoice PDFs/emails, or storage rules. Key invariants: public `get` must allow `resource == null`; no public `list`; the as-sent PDF is frozen at send; Storage cross-service IAM grant must exist or all uploads 403.
 - **Accountant vs simple flow**: Read `docs/AUDIENCE_SPLIT.md` before touching supplier withholding, tax filing screens, VAT, the `accountant` role, or `advancedTaxMode`. One primitive — `useAdvancedTax()` — gates all accountant-grade controls; the simple flow applies safe defaults that yield no withholding. `isTenantFinanceAdmin` in rules must stay in sync with the role.
 - **Time & Leave**: Read `docs/TIME_LEAVE.md` before touching attendance, leave, shifts, timesheets, holiday handling, or their role boundaries. Attendance is the single hours-entry workflow; balances and timesheets are Cloud Functions-owned projections.
+- **Uploaded documents (bills, receipts, timesheets)**: Read `docs/DOCUMENT_EXTRACTION.md` before touching `server/xefe-api/extract.js`, `client/lib/extracted-*.ts`, `client/lib/attendance/spreadsheet-text.ts`, or the upload paths in QuickBillDialog/Expenses/Attendance. The document is **attacker-controlled**, so one rule is absolute: **never add a bare `allowedTools: ['Read']`** to the extractor options — it auto-approves before the workspace check AND before `canUseTool`, which left an arbitrary-file-read open on the box holding `serviceAccountKey.json`. Four guards decide what reaches a money field (foreign currency, future date, multi-document file, protected PDF), a payslip is never a bill, and Excel time cells live on the 1899 epoch — rendering them as dates destroyed every clock time in real timesheets. `server/xefe-api/` deploys ONLY via `workflow_dispatch`, so the client and server halves ship apart unless you run it.
 - **Payroll money chain**: Read `docs/MONEY_CHAIN.md` (diagrams) before touching payroll run statuses, settlement, payroll/tax journals, leaver final pay, or rules around `payruns`/`taxFilings` — it maps run lifecycle → journals → statutory filings and lists the non-negotiable invariants. §4a carries the **scope contract** for a leaver's once-only Art. 56 severance / Art. 44 subsídio / Art. 32 untaken-leave payout: entitlement and the amount netted off it must ALWAYS be computed over the same scope, from equally-recorded data. Four separate money bugs in Jul 2026 were that one mistake — three of them inside the fix for the previous one — so treat any change on one side as requiring the other. Adding the Art. 32 payout in Aug 2026 immediately inherited the same hazard (two runs over one termination period would each pay it), which is the fifth instance: **any new final-pay earning needs its own once-only guard before it ships.**
 - **Bank payments**: Read `docs/BANK_PAYMENTS.md` before touching `client/lib/bank-transfers/*` or the Bank Transfers page. BNU/BNCTL take salary batches by emailed Excel pack + signed payment order (evidence-based), NOT CSV upload; bank-facing text stays Portuguese.
 - **Accounting automations**: Read `docs/ACCOUNTING_AUTOMATIONS.md` before touching fixed assets, depreciation, or recurring journals. Recurring journal templates (`tenants/{tid}/recurringJournals`) post nightly via the `processRecurringJournals` Cloud Function; fixed-asset depreciation and disposal each post through `createJournalEntry` in ONE atomic transaction, guarded by append-only per-period docs (`fixedAssetPostings/{YYYY-MM}`, `recurringJournalPostings/{templateId}_{YYYY-MM}`) that make posting exactly-once — reversal = manual journal, never delete a guard. Depreciation math is straight-line **cumulative-cap** (accumulated never exceeds cost−residual, never a negative charge) using decimal.js money helpers, pure/unit-tested in `client/lib/accounting/{recurring,depreciation}.ts` — keep the CF copies in sync and `templateIsDue` lives in the functions module (tested=running). Acquisition posts NO GL journal (register-only, to avoid double-booking bill-acquired assets) — an open decision. Statutory Excel exports mirror OFFICIAL templates only (INSS portal DR, ATTL form — compliance); everything else (fixed-asset register, resumo sheets) is Xefe's own layout, never a client/firm workbook's.
@@ -132,10 +133,22 @@ PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
 ```
 
 **Local Firestore emulator port.** 8081 is regularly held by another project on
-this machine (rezerva's Metro). Override it in `firebase.e2e.json` /
-`firebase.dev.json` **and** export `FIRESTORE_EMULATOR_HOST`, because
-`tests/e2e/helpers/admin.ts` hardcodes the port with `||=`. Revert the JSON
-before committing.
+this machine (rezerva's Metro). THREE things need the new port, and missing the
+third looks like a product bug, not a config one — the app renders, the form
+fills, and the create button sits on "Creating…" forever because the browser is
+talking to Metro:
+
+```bash
+# 1. firebase.e2e.json / firebase.dev.json — emulators.firestore.port
+# 2. FIRESTORE_EMULATOR_HOST=localhost:<port>   (tests/e2e/helpers/admin.ts uses ||=)
+# 3. VITE_FIREBASE_FIRESTORE_EMULATOR_PORT=<port>   (the BROWSER app; defaults to
+#    8081 in client/lib/firebase-core.ts)
+```
+
+Revert the JSON before committing. Also kill leftover emulators from a failed
+run before retrying — a stale `cloud-firestore-emulator` jar keeps the port and
+the next start dies with "port taken":
+`pgrep -fl cloud-firestore-emulator`.
 
 ### Verifying from a git worktree
 

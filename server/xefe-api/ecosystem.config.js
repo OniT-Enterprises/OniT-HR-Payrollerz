@@ -15,6 +15,10 @@ module.exports = {
       instances: 1,
       autorestart: true,
       max_memory_restart: "500M",
+      // Longer than the extraction ceiling (TABLE_TIMEOUT_MS, 180s) so PM2 waits
+      // for index.js to drain in-flight uploads instead of SIGKILLing through
+      // them. Without this a deploy 502s whoever was mid-upload.
+      kill_timeout: 200000,
       env: { NODE_ENV: "production" },
     },
   ],

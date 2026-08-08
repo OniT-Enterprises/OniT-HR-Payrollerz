@@ -3669,6 +3669,8 @@ const messages = {
         saveFailed: "Failed to mark attendance. Please try again.",
         exportTitle: "Export Complete",
         exportDesc: "CSV file has been downloaded.",
+        importLegacyXls:
+          "This is an old .xls file. Open it in Excel or Google Sheets and save it as .xlsx or CSV, then import that.",
         importSelect: "Please select a file to import.",
         importErrorTitle: "Import Error",
         importEmpty: "No valid records found in the file.",
@@ -6770,8 +6772,21 @@ const messages = {
         "XefeBot read this file but it isn't a bill or receipt — enter the details below.",
       pdfProtected:
         "This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.",
+      slipSettlesBill:
+        "This payment slip matches {{count}} open bill(s). Record the payment against one?",
+      recordPayment: "Record payment",
+      paymentRecorded: "Payment recorded against the bill",
+      paymentRecordedNoFile:
+        "Payment recorded, but the slip could not be attached — add it to the bill manually.",
+      paymentFromSlip: "Recorded from an uploaded payment slip",
+      paymentFailed: "Could not record the payment",
+      looksLikeCreditMemo:
+        "This looks like a credit note, which reduces what you owe rather than adding a bill. Record it against the original bill instead.",
+      multipleDocuments:
+        "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
+      vendorMaybeExisting: "Already on file under a different spelling?",
       vendorAdded: 'Vendor "{{name}}" added',
       vendorAddFailed: "Could not add the vendor",
     },
@@ -6943,6 +6958,10 @@ const messages = {
         "The date by which this bill should be paid to avoid late fees or service interruption.",
       uploadBill: "Upload Bill",
       quickAddTitle: "Add Bill from File",
+      duplicateSameNumber:
+        'Bill "{{number}}" from this vendor is already recorded ({{date}}, {{amount}}). Saving this adds a second one.',
+      duplicateSameAmount:
+        "A bill from this vendor for {{amount}} on {{date}} is already recorded. Saving this adds a second one.",
       quickAddDescription:
         "Attach the bill and enter the basics — you can edit the details later.",
       saveBill: "Save Bill",

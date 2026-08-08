@@ -3724,6 +3724,8 @@ const messages = {
         saveFailed: "Falha ao marcar assiduidade. Por favor tente novamente.",
         exportTitle: "Exportação Concluída",
         exportDesc: "Ficheiro CSV descarregado.",
+        importLegacyXls:
+          "Este é um ficheiro .xls antigo. Abra-o no Excel ou no Google Sheets, guarde como .xlsx ou CSV e importe esse.",
         importSelect: "Por favor selecione um ficheiro para importar.",
         importErrorTitle: "Erro de Importação",
         importEmpty: "Nenhum registo válido encontrado no ficheiro.",
@@ -6870,9 +6872,22 @@ const messages = {
         "O XefeBot leu este ficheiro, mas não é uma fatura nem um recibo — introduza os dados abaixo.",
       pdfProtected:
         "Este PDF está protegido por palavra-passe, por isso nada o consegue ler. Guarde uma cópia sem proteção ou introduza os dados abaixo.",
+      slipSettlesBill:
+        "Este comprovativo corresponde a {{count}} fatura(s) em aberto. Registar o pagamento numa delas?",
+      recordPayment: "Registar pagamento",
+      paymentRecorded: "Pagamento registado na fatura",
+      paymentRecordedNoFile:
+        "Pagamento registado, mas não foi possível anexar o comprovativo — adicione-o à fatura manualmente.",
+      paymentFromSlip: "Registado a partir de um comprovativo carregado",
+      paymentFailed: "Não foi possível registar o pagamento",
+      looksLikeCreditMemo:
+        "Isto parece uma nota de crédito, que reduz o que deve em vez de acrescentar uma fatura. Registe-a contra a fatura original.",
+      multipleDocuments:
+        "Este ficheiro contém mais do que uma fatura. Introduza o valor e o número da que está a adicionar e carregue as outras separadamente.",
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',
+      vendorMaybeExisting: "Já está na lista com outra grafia?",
       vendorAdded: 'Fornecedor "{{name}}" adicionado',
       vendorAddFailed: "Não foi possível adicionar o fornecedor",
     },
@@ -7045,6 +7060,10 @@ const messages = {
         "A data até à qual esta conta deve ser paga para evitar multas ou interrupção de serviço.",
       uploadBill: "Carregar Conta",
       quickAddTitle: "Adicionar Conta a partir de Ficheiro",
+      duplicateSameNumber:
+        'A fatura "{{number}}" deste fornecedor já está registada ({{date}}, {{amount}}). Se guardar, fica uma segunda.',
+      duplicateSameAmount:
+        "Já está registada uma fatura deste fornecedor de {{amount}} em {{date}}. Se guardar, fica uma segunda.",
       quickAddDescription:
         "Anexe a conta e introduza os dados básicos — pode editar os detalhes mais tarde.",
       saveBill: "Guardar Conta",

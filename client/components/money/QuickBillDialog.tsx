@@ -9,7 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { doc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
-import { matchVendorByName } from "@/lib/money/vendor-match";
+import {
+  findSimilarVendors,
+  matchVendorByName,
+  matchVendorByTaxId,
+} from "@/lib/money/vendor-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -35,7 +39,15 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useActiveVendors, vendorKeys } from "@/hooks/useVendors";
 import { vendorService } from "@/services/vendorService";
-import { useCreateBill } from "@/hooks/useBills";
+import {
+  useCreateBill,
+  useOpenBills,
+  useRecordBillPayment,
+  useUpdateBill,
+  useVendorBills,
+} from "@/hooks/useBills";
+import { findDuplicateBills } from "@/lib/money/duplicate-bill";
+import { findBillsSettledBy } from "@/lib/money/payment-match";
 import { fileUploadService } from "@/services/fileUploadService";
 import BillAttachmentsInput from "@/components/money/BillAttachmentsInput";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
@@ -116,6 +128,9 @@ export default function QuickBillDialog({
   const [saving, setSaving] = useState(false);
   const submitInFlight = useRef(false);
   const vendorsUnavailable = vendorsLoadError && vendors.length === 0;
+  // Bills already on file for the chosen vendor, to warn before the same invoice
+  // is entered twice — likeliest on this path, where a photo fills the form in.
+  const { data: vendorBills = [] } = useVendorBills(vendorId || undefined);
 
   // AI prefill: XefeBot reads the dropped file server-side and fills the form;
   // the user reviews and confirms — extraction never saves anything itself.
@@ -124,10 +139,17 @@ export default function QuickBillDialog({
   >("idle");
   // What the document turned out to be, when it is not a bill — a bank payment
   // slip is a large share of real uploads and deserves a truthful message.
-  const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "other" | null>(null);
+  const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "credit_memo" | "other" | null>(null);
   // A password-protected PDF cannot be read by anything; say that instead of
   // implying the file was unreadable for some unknown reason.
   const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
+  // Set when one file holds several invoices. The form makes ONE bill, so the
+  // amount and number are ambiguous — pre-filling either would create a bill for
+  // the wrong document and silently drop the rest.
+  const [aiMultipleDocuments, setAiMultipleDocuments] = useState(false);
+  // What a recognised payment slip said, so the bill it settles can be offered.
+  const [aiPayment, setAiPayment] = useState<{ amount: number; date: string; reference: string | null } | null>(null);
+  const [settlingBillId, setSettlingBillId] = useState<string | null>(null);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Set when the document is priced in a currency Xefe cannot book (bills are
   // USD-only). The amount is then left blank rather than pre-filled with a
@@ -167,6 +189,8 @@ export default function QuickBillDialog({
       setAiVendorTaxId(null);
       setAiOtherKind(null);
       setAiProtectedPdf(false);
+      setAiMultipleDocuments(false);
+      setAiPayment(null);
       return;
     }
     const file = initialFiles[0];
@@ -179,6 +203,8 @@ export default function QuickBillDialog({
     setAiVendorTaxId(null);
     setAiOtherKind(null);
     setAiProtectedPdf(false);
+    setAiMultipleDocuments(false);
+    setAiPayment(null);
     extractDocument(file, tenantId, "bill")
       .then(async (fields) => {
         if (aiRun.current !== run) return;
@@ -186,6 +212,22 @@ export default function QuickBillDialog({
         // claiming the file could not be read.
         if (fields.documentType === "payment_proof") {
           setAiOtherKind("payment_proof");
+          // A slip is only actionable if it says how much left the account and
+          // when; without both there is nothing to match a bill against.
+          if (fields.amount != null && fields.billDate) {
+            setAiPayment({
+              amount: fields.amount,
+              date: fields.billDate,
+              reference: fields.billNumber,
+            });
+          }
+          setAiStatus("notABill");
+          return;
+        }
+        // A credit note reduces what is owed; booking it as a bill would pay out
+        // money the business is owed back.
+        if (fields.documentType === "credit_memo") {
+          setAiOtherKind("credit_memo");
           setAiStatus("notABill");
           return;
         }
@@ -203,12 +245,15 @@ export default function QuickBillDialog({
           setAiStatus("failed");
           return;
         }
+        const multiple = fields.containsMultipleDocuments === true;
+        setAiMultipleDocuments(multiple);
+
         const foreign = isForeignExtractedCurrency(fields.currency);
         setAiForeignCurrency(
           foreign ? foreignCurrencyLabel(fields.currency) : null,
         );
         // A foreign-currency total must not land in a USD field.
-        if (fields.amount != null && !foreign) setAmount(String(fields.amount));
+        if (fields.amount != null && !foreign && !multiple) setAmount(String(fields.amount));
 
         // An already-issued bill cannot be dated in the future; that reading is
         // a day/month swap. Both dates come from the same misreading, so hold
@@ -219,7 +264,7 @@ export default function QuickBillDialog({
         if (fields.dueDate && !suspectDate) setDueDate(fields.dueDate);
         if (fields.description) setDescription(fields.description);
         if (fields.category) setCategory(fields.category as ExpenseCategory);
-        if (fields.billNumber) setBillNumber(fields.billNumber);
+        if (fields.billNumber && !multiple) setBillNumber(fields.billNumber);
         if (fields.vendorName) setAiVendorName(fields.vendorName);
         setAiVendorTaxId(fields.vendorTaxId);
         setAiStatus("done");
@@ -265,17 +310,113 @@ export default function QuickBillDialog({
     }
   };
 
-  // Match the extracted vendor name against the vendor list once both exist.
-  // Only auto-select on an exact normalized match — anything weaker is left for
-  // the user to confirm via the "add / pick vendor" prompt below.
+  // Match the extracted vendor against the list once both exist. The tax number
+  // wins when the document carries one: it identifies the legal entity however
+  // the name is spelled on that particular invoice. Otherwise only an exact
+  // normalized name match auto-selects — anything weaker is offered below rather
+  // than chosen, so a different spelling does not become a second vendor.
   useEffect(() => {
-    if (!aiVendorName || vendorId || vendors.length === 0) return;
+    if (vendorId || vendors.length === 0) return;
+    const byTaxId = matchVendorByTaxId(vendors, aiVendorTaxId);
+    if (byTaxId) {
+      setVendorId(byTaxId.id);
+      setAiVendorName(null);
+      return;
+    }
+    if (!aiVendorName) return;
     const match = matchVendorByName(vendors, aiVendorName);
     if (match) {
       setVendorId(match.id);
       setAiVendorName(null);
     }
-  }, [aiVendorName, vendors, vendorId]);
+  }, [aiVendorName, aiVendorTaxId, vendors, vendorId]);
+
+  // Same supplier, different spelling — offered, never auto-selected.
+  const similarVendors = aiVendorName && !vendorId
+    ? findSimilarVendors(vendors, aiVendorName).slice(0, 3)
+    : [];
+
+  // A recognised payment slip: offer the open bill it settles, so evidence of
+  // payment does not dead-end at "this is a bank slip".
+  const { data: openBills = [] } = useOpenBills(Boolean(aiPayment));
+  const recordPaymentMutation = useRecordBillPayment();
+  const updateBillMutation = useUpdateBill();
+  const settlementCandidates = aiPayment
+    ? findBillsSettledBy(openBills, { amount: aiPayment.amount, date: aiPayment.date }).slice(0, 3)
+    : [];
+
+  const handleSettleBill = async (billId: string) => {
+    if (!aiPayment || settlingBillId) return;
+    setSettlingBillId(billId);
+    try {
+      await recordPaymentMutation.mutateAsync({
+        billId,
+        payment: {
+          date: aiPayment.date,
+          amount: aiPayment.amount,
+          method: "bank_transfer",
+          reference: aiPayment.reference || "",
+          notes: t("money.ai.paymentFromSlip") || "Recorded from an uploaded payment slip",
+        },
+      });
+      // Keep the evidence with the bill. A TL business keeps the slip precisely
+      // so it can prove payment later, and this is the moment it is in hand.
+      // Best-effort and deliberately after the payment: losing the file is a
+      // nuisance, but failing to attach it must never undo a recorded payment.
+      let attachmentFailed = false;
+      const slip = files[0];
+      if (slip) {
+        try {
+          // From the full Bill, not the matcher's narrowed view of it.
+          const existing = openBills.find((b) => b.id === billId)?.attachmentUrls ?? [];
+          const url = await fileUploadService.uploadBillAttachment(
+            slip,
+            tenantId,
+            billId,
+            existing.length,
+          );
+          await updateBillMutation.mutateAsync({
+            id: billId,
+            data: { attachmentUrls: [...existing, url] },
+          });
+        } catch (attachError) {
+          console.error("Error attaching payment slip to bill:", attachError);
+          attachmentFailed = true;
+        }
+      }
+
+      toast({
+        title: t("common.success") || "Success",
+        description: attachmentFailed
+          ? t("money.ai.paymentRecordedNoFile")
+            || "Payment recorded, but the slip could not be attached — add it to the bill manually."
+          : t("money.ai.paymentRecorded") || "Payment recorded against the bill",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error recording payment from slip:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("money.ai.paymentFailed") || "Could not record the payment",
+        variant: "destructive",
+      });
+    } finally {
+      setSettlingBillId(null);
+    }
+  };
+
+  // Warn, never block: two invoices from one supplier on one day for one amount
+  // is a real thing, so the person decides — they can see the existing bill.
+  const parsedAmountForCheck = parseFloat(amount);
+  const duplicateMatches = vendorId && Number.isFinite(parsedAmountForCheck)
+    ? findDuplicateBills(vendorBills, {
+      vendorId,
+      billNumber: billNumber.trim() || null,
+      billDate,
+      amount: parsedAmountForCheck,
+    })
+    : [];
+  const duplicate = duplicateMatches[0];
 
   const reportInvalidFiles = (errors: string[]) => {
     toast({
@@ -417,16 +558,49 @@ export default function QuickBillDialog({
                   "XefeBot couldn't read this file — fill in the details manually."}
             </div>
           )}
+          {aiStatus === "notABill" && settlementCandidates.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm">
+              <p className="text-foreground/80">
+                {(
+                  t("money.ai.slipSettlesBill") ||
+                  "This payment slip matches {{count}} open bill(s). Record the payment against one?"
+                ).replace("{{count}}", String(settlementCandidates.length))}
+              </p>
+              {settlementCandidates.map(({ bill }) => (
+                <div key={bill.id} className="flex items-center justify-between gap-3">
+                  <span className="text-foreground/80">
+                    {bill.vendorName || t("money.bills.vendor") || "Vendor"}
+                    {bill.billNumber ? ` · ${bill.billNumber}` : ""} · {bill.billDate} ·{" "}
+                    ${(bill.balanceDue ?? bill.total ?? 0).toFixed(2)}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={Boolean(settlingBillId) || !canManage()}
+                    onClick={() => handleSettleBill(bill.id)}
+                  >
+                    {settlingBillId === bill.id
+                      ? t("common.saving") || "Saving..."
+                      : t("money.ai.recordPayment") || "Record payment"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           {aiStatus === "notABill" && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-              {aiOtherKind === "payment_proof"
+              {aiOtherKind === "credit_memo"
+                ? t("money.ai.looksLikeCreditMemo") ||
+                  "This looks like a credit note, which reduces what you owe rather than adding a bill. Record it against the original bill instead."
+                : aiOtherKind === "payment_proof"
                 ? t("money.ai.looksLikePaymentProof") ||
                   "This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below."
                 : t("money.ai.notABill") ||
                   "XefeBot read this file but it isn't a bill or receipt — enter the details below."}
             </div>
           )}
-          {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate) && (
+          {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate || aiMultipleDocuments) && (
             <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
               {aiForeignCurrency && (
                 <p>
@@ -434,6 +608,12 @@ export default function QuickBillDialog({
                     t("money.ai.foreignCurrency") ||
                     "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD."
                   ).replace("{{currency}}", aiForeignCurrency)}
+                </p>
+              )}
+              {aiMultipleDocuments && (
+                <p>
+                  {t("money.ai.multipleDocuments") ||
+                    "This file holds more than one invoice. Enter the amount and number for the one you are adding, then upload the others separately."}
                 </p>
               )}
               {aiSuspectDate && (
@@ -535,6 +715,31 @@ export default function QuickBillDialog({
                     aiVendorName,
                   )}
                 </Button>
+                {similarVendors.length > 0 && (
+                  <div className="w-full space-y-1 border-t border-border pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {t("money.ai.vendorMaybeExisting") ||
+                        "Already on file under a different spelling?"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {similarVendors.map((vendor) => (
+                        <Button
+                          key={vendor.id}
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={saving || addingVendor}
+                          onClick={() => {
+                            setVendorId(vendor.id);
+                            setAiVendorName(null);
+                          }}
+                        >
+                          {vendor.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -620,6 +825,25 @@ export default function QuickBillDialog({
               disabled={saving}
             />
           </div>
+
+          {duplicate && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+              <p>
+                {(duplicate.reason === "same_number"
+                  ? t("money.bills.duplicateSameNumber")
+                    || 'Bill "{{number}}" from this vendor is already recorded ({{date}}, {{amount}}). Saving this adds a second one.'
+                  : t("money.bills.duplicateSameAmount")
+                    || "A bill from this vendor for {{amount}} on {{date}} is already recorded. Saving this adds a second one."
+                )
+                  .replace("{{number}}", duplicate.bill.billNumber || "")
+                  .replace("{{date}}", duplicate.bill.billDate)
+                  .replace(
+                    "{{amount}}",
+                    `$${(duplicate.bill.total ?? duplicate.bill.amount ?? 0).toFixed(2)}`,
+                  )}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

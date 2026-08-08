@@ -50,7 +50,10 @@ function buildPrompt(filePath, kind, todayIso) {
     '',
     'Extract what the document actually shows and reply with ONLY this JSON object:',
     '{',
-    '  "documentType": "bill" | "receipt" | "payment_proof" | "other",',
+    '  "documentType": "bill" | "receipt" | "payment_proof" | "credit_memo" | "other",',
+    '                                        // credit_memo = a credit note / nota de crédito, which',
+    '                                        // REDUCES what is owed. Never a payable bill: booking one',
+    '                                        // as a bill would pay out money the business is owed back.',
     '                                        // A PAYSLIP is never a bill or receipt. Wages are',
     '                                        // owned by payroll, so a "Recibo de Vencimento",',
     '                                        // "Recibo de Salário", payslip or salary advice is',
@@ -66,10 +69,13 @@ function buildPrompt(filePath, kind, todayIso) {
     '  "billDate": "YYYY-MM-DD" | null,      // document/issue date',
     '  "dueDate": "YYYY-MM-DD" | null,       // payment due date if stated',
     `  "amount": number | null,              // grand total payable, including tax`,
-    '  "taxAmount": number | null,           // tax portion if itemized',
     '  "currency": string | null,            // e.g. "USD"',
     '  "description": string | null,         // one short line: what was purchased',
     `  "category": one of ${JSON.stringify(CATEGORIES)},`,
+    '  "containsMultipleDocuments": boolean, // TRUE if this ONE file holds more than one',
+    '                                        // invoice/receipt (a multi-page scan of several bills, or',
+    '                                        // two invoices in one PDF). Report the FIRST document in',
+    '                                        // the other fields; never total them together.',
     '  "confidence": number                  // 0..1 — how sure you are overall',
     '}',
     '',
@@ -139,16 +145,18 @@ function sanitizeFields(raw) {
     return /\d/.test(compact) ? compact : null;
   };
   return {
-    documentType: ['bill', 'receipt', 'payment_proof'].includes(raw.documentType)
+    documentType: ['bill', 'receipt', 'payment_proof', 'credit_memo'].includes(raw.documentType)
       ? raw.documentType
       : 'other',
+    // Only an explicit true counts: a missing or fuzzy value must not make every
+    // ordinary single-invoice upload look ambiguous.
+    containsMultipleDocuments: raw.containsMultipleDocuments === true,
     vendorName: str(raw.vendorName),
     vendorTaxId: taxId(raw.vendorTaxId),
     billNumber: str(raw.billNumber),
     billDate: date(raw.billDate),
     dueDate: date(raw.dueDate),
     amount: num(raw.amount),
-    taxAmount: num(raw.taxAmount),
     currency: str(raw.currency),
     description: str(raw.description),
     category: CATEGORIES.includes(raw.category) ? raw.category : 'other',
