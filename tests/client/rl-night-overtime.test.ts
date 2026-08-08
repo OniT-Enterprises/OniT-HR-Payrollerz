@@ -130,15 +130,22 @@ describe('rl-night-overtime: guard night differential + overtime caps', () => {
     expect(Math.abs(r.grossPay - 504.0)).toBeLessThanOrEqual(MONEY_TOLERANCE);
   });
 
-  it('accepts overtime within the monthly cap and rejects overtime above it', () => {
-    // Cap = maxOvertimePerWeek (16) * 4 = 64h/month. 10h is well within it.
+  it('never rejects a payroll run over the volume of overtime', () => {
+    // This test used to assert the OPPOSITE — that 70h was rejected against a
+    // "cap" of maxOvertimePerWeek (16) × 4 = 64h/month. Two things were wrong
+    // with that, and the test was pinning both:
+    //
+    //   1. There is no monthly overtime cap in Lei 4/2012. Art. 27(4) caps
+    //      4h/day and 16h/week, and a month spans up to five ISO weeks — so
+    //      70h is FULLY LAWFUL and was being refused.
+    //   2. Even genuinely excessive overtime is not a reason to refuse to pay
+    //      people. Art. 40(5) obliges payment by a fixed date, so blocking the
+    //      run pushes a compliant employer toward an actual statutory breach.
     expect(validateTLPayrollInput(guardInput({ overtimeHours: 10 }), HOURLY_CONFIG))
       .toEqual([]);
-
-    const errors = validateTLPayrollInput(
-      guardInput({ overtimeHours: 70 }),
-      HOURLY_CONFIG,
-    );
-    expect(errors.some((e) => /exceed maximum allowed per month/i.test(e))).toBe(true);
+    expect(validateTLPayrollInput(guardInput({ overtimeHours: 70 }), HOURLY_CONFIG))
+      .toEqual([]);
+    expect(validateTLPayrollInput(guardInput({ overtimeHours: 200 }), HOURLY_CONFIG))
+      .toEqual([]);
   });
 });
