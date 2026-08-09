@@ -2651,5 +2651,10 @@ export default function register(api: OpenclawPluginApi) {
     },
   });
 
-  console.log("[xefe-hr] Plugin loaded — 65 tools (32 read + 33 write/verify), 5 commands registered");
+  // Hand-maintained, and it had already drifted (claimed 65 while 70 registered)
+  // before the five legacy payroll writers were removed. The Dockerfile pins
+  // openclaw because an SDK bump silently drops registration to 0 tools, so this
+  // line is the diagnostic — keep the numbers honest when adding or removing one.
+  // Counted: `grep -c "api.registerTool({" index.ts`.
+  console.log("[xefe-hr] Plugin loaded — 65 tools (37 read + 28 write/verify), 5 commands registered");
 }
