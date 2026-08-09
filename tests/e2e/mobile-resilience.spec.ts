@@ -400,7 +400,22 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
   ).toBe(1);
 
   // ── Job recovery and one atomic public/private posting after retry ─────
-  await page.goto("/people/jobs/new");
+  await page.goto("/people/jobs");
+  await expectNoHorizontalScroll(page);
+  const firstJobHeading = page.getByRole("heading", {
+    name: "Create your first job",
+  });
+  await expect(firstJobHeading).toBeVisible();
+  const firstJobState = firstJobHeading.locator("..").locator("..");
+  const firstJobStateBox = await firstJobState.boundingBox();
+  expect(firstJobStateBox?.height).toBeLessThan(280);
+  const firstJobButton = page.getByRole("button", {
+    name: "New job",
+    exact: true,
+  });
+  await expect(firstJobButton).toHaveCount(1);
+  await firstJobButton.click();
+  await expect(page).toHaveURL(/\/people\/jobs\/new$/);
   await expectNoHorizontalScroll(page);
   await page.getByLabel(/job title/i).fill("Payroll Assistant");
   await page.getByLabel(/department/i).click();

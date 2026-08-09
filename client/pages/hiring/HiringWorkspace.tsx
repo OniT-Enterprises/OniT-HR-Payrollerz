@@ -678,117 +678,156 @@ export default function HiringWorkspace() {
           icon={Briefcase}
           iconColor="text-blue-600"
           actions={
-            <Button onClick={() => navigate("/people/jobs/new")} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              New job
-            </Button>
+            jobs.length > 0 ? (
+              loading ? (
+                <Skeleton className="h-10 w-28 rounded-md" />
+              ) : (
+                <Button onClick={() => navigate("/people/jobs/new")} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                  <Plus className="h-4 w-4" />
+                  New job
+                </Button>
+              )
+            ) : undefined
           }
         />
 
-        <Card
-          className={cn(
-            "mb-5",
-            pendingCount > 0
-              ? "bg-amber-50/60 dark:bg-amber-950/20"
-              : "bg-emerald-50/50 dark:bg-emerald-950/20",
-          )}
-        >
-          <CardContent className="flex items-center gap-3 p-4">
-            {pendingCount > 0 ? (
-              <Clock3 className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
-            ) : (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+        {loading ? (
+          <Card className="mb-5" aria-hidden="true">
+            <CardContent className="flex items-center gap-3 p-4">
+              <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1">
+                <Skeleton className="h-5 w-44 max-w-full" />
+                <Skeleton className="mt-2 h-4 w-24" />
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card
+            className={cn(
+              "mb-5",
+              pendingCount > 0
+                ? "bg-amber-50/60 dark:bg-amber-950/20"
+                : "bg-emerald-50/50 dark:bg-emerald-950/20",
             )}
-            <div className="min-w-0">
-              <p className="font-medium">
-                {pendingCount > 0
-                  ? `${pendingCount} ${pendingCount === 1 ? "application needs" : "applications need"} review`
-                  : "You’re all caught up"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {openJobsCount} open {openJobsCount === 1 ? "job" : "jobs"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          >
+            <CardContent className="flex items-center gap-3 p-4">
+              {pendingCount > 0 ? (
+                <Clock3 className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+              ) : (
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+              )}
+              <div className="min-w-0">
+                <p className="font-medium">
+                  {pendingCount > 0
+                    ? `${pendingCount} ${pendingCount === 1 ? "application needs" : "applications need"} review`
+                    : "You’re all caught up"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {openJobsCount} open {openJobsCount === 1 ? "job" : "jobs"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {loading ? (
-          <div className="grid items-start gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="mt-2 h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 p-2 pt-0 sm:p-3 sm:pt-0">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="rounded-lg border border-transparent px-3 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-5 w-6 shrink-0 rounded-full" />
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-3 w-12" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="border-b pb-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Skeleton className="h-5 w-40" />
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                    </div>
-                    <Skeleton className="mt-2 h-4 w-48" />
-                  </div>
-                  <Skeleton className="h-9 w-9 shrink-0 rounded-md" />
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
-                  <div>
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="mt-2 h-3 w-16" />
-                  </div>
-                </div>
-                <div className="divide-y">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="flex w-full items-center gap-3 px-4 py-4 sm:px-6">
-                      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Skeleton className="h-4 w-28" />
-                          <Skeleton className="h-5 w-20 rounded-full" />
-                        </div>
-                        <Skeleton className="mt-2 h-3 w-36" />
+          <div role="status" aria-label="Loading hiring workspace">
+            <span className="sr-only">Loading hiring workspace</span>
+            {jobs.length > 0 ? (
+              <div
+                className="grid items-start gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]"
+                aria-hidden="true"
+              >
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="mt-2 h-4 w-20" />
                       </div>
-                      <Skeleton className="hidden h-4 w-24 shrink-0 sm:block" />
+                      <Skeleton className="h-9 w-9 rounded-md" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardHeader>
+                  <CardContent className="space-y-2 p-2 pt-0 sm:p-3 sm:pt-0">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="rounded-lg border border-transparent px-3 py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-5 w-6 shrink-0 rounded-full" />
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="border-b pb-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Skeleton className="h-5 w-40" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+                        <Skeleton className="mt-2 h-4 w-48" />
+                      </div>
+                      <Skeleton className="h-9 w-9 shrink-0 rounded-md" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
+                      <div>
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="mt-2 h-3 w-16" />
+                      </div>
+                    </div>
+                    <div className="divide-y">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <div key={index} className="flex w-full items-center gap-3 px-4 py-4 sm:px-6">
+                          <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Skeleton className="h-4 w-28" />
+                              <Skeleton className="h-5 w-20 rounded-full" />
+                            </div>
+                            <Skeleton className="mt-2 h-3 w-36" />
+                          </div>
+                          <Skeleton className="hidden h-4 w-24 shrink-0 sm:block" />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card aria-hidden="true">
+                <CardContent className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+                  <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-5 w-44 max-w-full" />
+                    <Skeleton className="mt-2 h-4 w-80 max-w-full" />
+                  </div>
+                  <Skeleton className="h-10 w-28 shrink-0 rounded-md" />
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : jobs.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center px-6 py-14 text-center">
-              <div className="mb-4 rounded-2xl bg-blue-100 p-4 dark:bg-blue-950/60">
+          <Card>
+            <CardContent className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+              <div className="shrink-0 rounded-xl bg-blue-100 p-3 dark:bg-blue-950/60">
                 <Briefcase className="h-8 w-8 text-blue-700 dark:text-blue-300" />
               </div>
-              <h2 className="text-lg font-semibold">Create your first job</h2>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                Add the role once, then share one link and review every applicant here.
-              </p>
-              <Button onClick={() => navigate("/people/jobs/new")} className="mt-5 gap-2 bg-blue-600 text-white hover:bg-blue-700">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-semibold">Create your first job</h2>
+                <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                  Add the role once, then share one link and review every applicant here.
+                </p>
+              </div>
+              <Button onClick={() => navigate("/people/jobs/new")} className="w-full shrink-0 gap-2 bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">
                 <Plus className="h-4 w-4" />
                 New job
               </Button>
