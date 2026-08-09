@@ -100,6 +100,8 @@ const messages = {
     needsReviewTitle: "Presiza revizaun molok deklara",
     needsReviewDesc:
       "Rejistu folha-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folha ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
+    needsReviewEmployerDesc:
+      "Dadus kompañia ita-nia la iha {{field}} válidu. Hatama iha Konfigurasaun → Dadus kompañia, depois jera fila fali — Xefe nunka adivinha valór konformidade.",
     greetingMorning: "Bondia",
     greetingAfternoon: "Botardi",
     greetingEvening: "Bonite",

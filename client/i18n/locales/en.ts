@@ -99,6 +99,8 @@ const messages = {
     needsReviewTitle: "Needs review before filing",
     needsReviewDesc:
       "A payroll record is missing or has an invalid {{field}}. Fix or re-run that payroll — Xefe never guesses compliance values. Ask your accountant if you are unsure.",
+    needsReviewEmployerDesc:
+      "Your company details are missing or have an invalid {{field}}. Add it in Settings → Company details, then generate again — Xefe never guesses compliance values.",
     greetingMorning: "Good morning",
     greetingAfternoon: "Good afternoon",
     greetingEvening: "Good evening",

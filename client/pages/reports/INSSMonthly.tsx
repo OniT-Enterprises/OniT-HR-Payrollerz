@@ -260,14 +260,25 @@ export default function INSSMonthly() {
         }),
       });
     } catch (error) {
-      console.error("Failed to generate INSS return:", error);
+      // A missing employer/employee fact is data to complete, not an app fault.
+      // console.error is wired to Sentry, so logging it there raises a false alarm.
       const reviewFlag = getStatutoryReviewFlag(error);
+      if (reviewFlag) {
+        console.warn("Statutory filing needs review:", reviewFlag.field);
+      } else {
+        console.error("Failed to generate INSS return:", error);
+      }
       toast({
         title: reviewFlag
           ? t("common.needsReviewTitle")
           : t("reports.inssMonthly.toast.generateErrorTitle"),
         description: reviewFlag
-          ? t("common.needsReviewDesc", { field: reviewFlag.field })
+          ? t(
+              reviewFlag.source === "employer"
+                ? "common.needsReviewEmployerDesc"
+                : "common.needsReviewDesc",
+              { field: reviewFlag.field },
+            )
           : t("reports.inssMonthly.toast.generateErrorDescription"),
         variant: "destructive",
       });
@@ -358,14 +369,23 @@ export default function INSSMonthly() {
           "INSS DR Excel downloaded — matches the official portal template columns",
       });
     } catch (error) {
-      console.error("Error exporting INSS DR Excel:", error);
       const reviewFlag = getStatutoryReviewFlag(error);
+      if (reviewFlag) {
+        console.warn("Statutory DR export needs review:", reviewFlag.field);
+      } else {
+        console.error("Error exporting INSS DR Excel:", error);
+      }
       toast({
         title: reviewFlag
           ? t("common.needsReviewTitle")
           : t("common.error") || "Error",
         description: reviewFlag
-          ? t("common.needsReviewDesc", { field: reviewFlag.field })
+          ? t(
+              reviewFlag.source === "employer"
+                ? "common.needsReviewEmployerDesc"
+                : "common.needsReviewDesc",
+              { field: reviewFlag.field },
+            )
           : t("reports.inssMonthly.toast.drExportError") ||
             "Could not export the DR Excel file",
         variant: "destructive",

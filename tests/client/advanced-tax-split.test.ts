@@ -63,10 +63,12 @@ describe('advancedTaxOnly navigation gating', () => {
 
 describe('getStatutoryReviewFlag', () => {
   it('classifies both strict-reader error types by field', () => {
+    // source decides which screen the user is sent to: a payroll record is
+    // re-run, an employer fact is fixed in Settings → Company details.
     expect(getStatutoryReviewFlag(new MissingStatutoryPayrollDataError('wagesPaid')))
-      .toEqual({ field: 'wagesPaid' });
+      .toEqual({ field: 'wagesPaid', source: 'payroll' });
     expect(getStatutoryReviewFlag(new MissingStatutorySourceDataError('employer NIF/TIN')))
-      .toEqual({ field: 'employer NIF/TIN' });
+      .toEqual({ field: 'employer NIF/TIN', source: 'employer' });
   });
 
   it('classifies errors thrown by the readers themselves', () => {
@@ -76,7 +78,7 @@ describe('getStatutoryReviewFlag', () => {
     } catch (error) {
       thrown = error;
     }
-    expect(getStatutoryReviewFlag(thrown)).toEqual({ field: 'inssBase' });
+    expect(getStatutoryReviewFlag(thrown)).toEqual({ field: 'inssBase', source: 'payroll' });
   });
 
   it('returns null for anything else', () => {
