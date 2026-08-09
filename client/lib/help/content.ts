@@ -550,7 +550,7 @@ export interface HelpSearchHit {
 
 /** Everything about an entry that a reader might type words from. */
 function haystack(entry: HelpEntry): string {
-  return [
+  return normalizeHelpText([
     entry.heading,
     entry.body.join(" "),
     entry.today ?? "",
@@ -561,8 +561,22 @@ function haystack(entry: HelpEntry): string {
     entry.quoteCite ?? "",
     (entry.synonyms ?? []).join(" "),
   ]
-    .join(" ")
+    .join(" "));
+}
+
+/**
+ * Search is accent-insensitive because the same Timor-Leste term is often
+ * typed with or without Portuguese diacritics, especially on a phone.
+ */
+export function normalizeHelpText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
+}
+
+function searchTerms(query: string): string[] {
+  return normalizeHelpText(query).split(/\s+/).filter(Boolean);
 }
 
 /**
@@ -575,14 +589,14 @@ export function searchHelp(
   query: string,
   locale: ArticleLocale = "en",
 ): HelpSearchHit[] {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = searchTerms(query);
   if (terms.length === 0) return [];
 
   const hits: HelpSearchHit[] = [];
   for (const article of articlesFor(locale)) {
     for (const group of article.groups) {
       for (const entry of group.entries) {
-        const heading = entry.heading.toLowerCase();
+        const heading = normalizeHelpText(entry.heading);
         const all = haystack(entry);
         if (!terms.every((term) => all.includes(term))) continue;
         const inHeading = terms.filter((term) => heading.includes(term)).length;
@@ -591,4 +605,22 @@ export function searchHelp(
     }
   }
   return hits.sort((a, b) => a.rank - b.rank);
+}
+
+/** Article-level matches keep authored titles, summaries and keywords useful. */
+export function searchHelpArticles(
+  query: string,
+  locale: ArticleLocale = "en",
+): HelpArticle[] {
+  const terms = searchTerms(query);
+  if (terms.length === 0) return [];
+
+  return articlesFor(locale).filter((article) => {
+    const metadata = normalizeHelpText([
+      article.title,
+      article.summary,
+      article.keywords.join(" "),
+    ].join(" "));
+    return terms.every((term) => metadata.includes(term));
+  });
 }

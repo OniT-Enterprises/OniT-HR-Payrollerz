@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -902,6 +903,9 @@ export default function AddEmployee() {
       />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 -mt-6">
+        <div className="mb-2 flex justify-end">
+          <ContextualHelpLink slug="getting-started" anchor="add-your-team" />
+        </div>
         {/* Contract Generator Dialog — mounted only once opened so its chunk
             (and the PDF code it pulls) never loads for someone just adding a
             person. Bulk CSV import deliberately does NOT live on this page:

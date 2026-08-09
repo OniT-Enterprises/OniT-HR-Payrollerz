@@ -41,6 +41,7 @@ import { settingsKeys } from "@/hooks/useSettings";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import type {
   BusinessSector,
   CompanyDetails,
@@ -533,6 +534,10 @@ export default function SetupWizard() {
             </div>
           </div>
           <LocaleSwitcher className="shrink-0" />
+        </div>
+
+        <div className="-mt-3 mb-2 flex justify-end">
+          <ContextualHelpLink slug="getting-started" anchor="first-run-setup" />
         </div>
 
         {/* One progress signal is enough; the step card below names the task. */}

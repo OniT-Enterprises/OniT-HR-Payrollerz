@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import {
   Building,
@@ -772,6 +773,12 @@ export default function INSSMonthly() {
           subtitle={t("reports.inssMonthly.subtitle")}
           icon={Shield}
           iconColor="text-primary"
+          actions={
+            <ContextualHelpLink
+              slug="tax-and-filings"
+              anchor="return-vs-payment"
+            />
+          }
         />
 
         {(overdueFiling || upcomingDue) && (

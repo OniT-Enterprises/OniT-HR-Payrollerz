@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -1478,6 +1479,10 @@ export default function Attendance() {
             ) : undefined
           }
         />
+
+        <div className="-mt-2 mb-2 flex justify-end">
+          <ContextualHelpLink slug="time-and-leave" anchor="attendance" />
+        </div>
 
         {/* Import Dialog */}
         <Dialog

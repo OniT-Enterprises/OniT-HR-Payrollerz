@@ -887,6 +887,35 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   const whatsapp = page.getByRole("link", { name: /whatsapp/i });
   await expect(whatsapp).toHaveAttribute("href", /wa\.me/);
 
+  // The signed-in help center reuses the practical public guides instead of
+  // making a new customer discover a second, smaller documentation set.
+  const gettingStartedGuide = page.getByRole("link", {
+    name: /getting started/i,
+  });
+  await expect(gettingStartedGuide).toBeVisible();
+  await gettingStartedGuide.click();
+  await expect(page).toHaveURL(/\/help\/guide\/getting-started$/);
+  await expect(
+    page.getByRole("heading", { name: /add your team/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /continue setup/i }),
+  ).toBeVisible();
+
+  // Search includes the lazily loaded guide bodies and keeps the section
+  // anchor, so the answer opens at the useful paragraph rather than the top.
+  await page.goto("/help");
+  await page.getByRole("searchbox").fill("bank reconciliation");
+  const guideHit = page
+    .getByRole("link", { name: /bank reconciliation/i })
+    .first();
+  await expect(guideHit).toHaveAttribute(
+    "href",
+    "/help/guide/invoices-and-money#bank-reconciliation",
+  );
+
+  await page.goto("/help");
+
   // Search has to find an entry by the word a reader would type, not by the
   // words the statute uses. "Severance" appears nowhere in the article prose.
   await page.getByRole("searchbox").fill("severance");

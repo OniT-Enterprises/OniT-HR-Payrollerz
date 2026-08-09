@@ -69,6 +69,16 @@ const messages = {
     noResultsHint:
       "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp above and we will answer directly.",
     articlesHeading: "Documents",
+    commonTasksHeading: "Help with common tasks",
+    guideTag: "Guide",
+    referenceTag: "Reference",
+    referenceHeading: "Payroll and legal reference",
+    referenceSummary:
+      "{{count}} detailed documents, kept out of the way until you need them.",
+    searchingGuides: "Searching all guides…",
+    helpWithThisPage: "Help with this page",
+    guideLoadFailed:
+      "This guide could not be loaded. Go back to Help or message us.",
     updated: "Updated {{date}}",
     contentsHeading: "On this page",
     backToHelp: "Back to help",
@@ -79,6 +89,18 @@ const messages = {
     openLabel: "Still being confirmed",
     englishOnly:
       "This document is only available in English for now. It quotes labour and tax law closely, and we would rather wait for a proper translation than publish a machine-made one nobody has checked.",
+    stillStuckTitle: "Still stuck?",
+    stillStuckBody:
+      "Open the task when you are ready, or message us and talk to a person.",
+    talkToUsShort: "Message us on WhatsApp",
+    actions: {
+      continueSetup: "Continue setup",
+      openPayroll: "Open payroll",
+      openFilings: "Open tax and INSS",
+      openInvoices: "Open invoices",
+      openAttendance: "Open attendance",
+      openOffboarding: "Open offboarding",
+    },
     status: {
       confirming: "Confirming",
       settled: "Settled",

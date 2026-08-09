@@ -71,7 +71,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Add an employee",
-            body: "From People, add each person's basics — name, email, date of birth — plus job details (department, job title, start date, employment type) and monthly salary. For identification, Xefe asks Timorese staff for a Bilhete de Identidade and foreign staff for a passport. None of it blocks you: create the record now and fill in the ID and INSS numbers when you have them. The INSS number is the one to chase first, because the monthly INSS declaration cannot be filed without it — enrolment is due by the date you file the first declaration that includes that worker (DL 20/2017, Art. 3(2)), and Xefe names anyone still missing one before you file.",
+            body: "From People, enter the essentials: first and last name, start date, employment type and monthly salary. Email, date of birth, department and job title can wait. For identification, Xefe asks Timorese staff for a Bilhete de Identidade and foreign staff for a passport, but those numbers are also optional at first. None of it blocks you from saving the employee. The INSS number is the one to chase first, because the monthly INSS declaration cannot be filed without it — enrolment is due by the date you file the first declaration that includes that worker (DL 20/2017, Art. 3(2)), and Xefe names anyone still missing one before you file.",
           },
           {
             title: "Invite your teammates",
@@ -157,7 +157,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Adicionar um funcionário",
-            body: "Em Pessoas, adicione os dados básicos de cada pessoa — nome, email, data de nascimento — mais os dados da função (departamento, cargo, data de início, tipo de contrato) e o salário mensal. Para identificação, o Xefe pede o Bilhete de Identidade aos trabalhadores timorenses e o passaporte aos estrangeiros. Nada disto o bloqueia: crie o registo agora e preencha os números de identificação e do INSS quando os tiver. O número do INSS é o primeiro a tratar, porque a declaração mensal do INSS não pode ser entregue sem ele — a inscrição é devida até à data de entrega da primeira declaração de remunerações que inclua esse trabalhador (DL 20/2017, art. 3.º(2)), e o Xefe identifica quem ainda não o tem antes de entregar.",
+            body: "Em Pessoas, introduza o essencial: nome e apelido, data de início, tipo de contrato e salário mensal. O email, a data de nascimento, o departamento e o cargo podem esperar. Para identificação, o Xefe pede o Bilhete de Identidade aos trabalhadores timorenses e o passaporte aos estrangeiros, mas esses números também são opcionais no início. Nada disso o impede de guardar o funcionário. O número do INSS é o primeiro a tratar, porque a declaração mensal do INSS não pode ser entregue sem ele — a inscrição é devida até à data de entrega da primeira declaração de remunerações que inclua esse trabalhador (DL 20/2017, art. 3.º(2)), e o Xefe identifica quem ainda não o tem antes de entregar.",
           },
           {
             title: "Convide a sua equipa",
@@ -243,7 +243,7 @@ export const article: LocalizedDocArticle = {
         items: [
           {
             title: "Aumenta funsionáriu",
-            body: "Iha Pessoal, hatama detallu báziku ema ida-idak — naran, email, data moris — tan detallu servisu (departamentu, kargu, data hahú, tipu kontratu) no saláriu mensál. Ba identifikasaun, Xefe husu Bilhete de Identidade ba traballadór timoroan no pasaporte ba estranjeiru. Buat ida husi ne'e la bloka ita: kria rejistu agora no prenche númeru identifikasaun no INSS bainhira ita iha. Númeru INSS mak primeiru atu buka, tanba deklarasaun INSS mensál la bele entrega sem nia — inskrisaun tenke halo to'o data entrega deklarasaun remunerasaun primeiru ne'ebé inklui traballadór ne'e (DL 20/2017, Art. 3(2)), no Xefe fó sai naran ema ne'ebé seidauk iha molok ita entrega.",
+            body: "Iha Pessoal, hatama buat importante sira: naran no apelidu, data hahú, tipu kontratu no saláriu mensál. Email, data moris, departamentu no kargu bele hein. Ba identifikasaun, Xefe husu Bilhete de Identidade ba traballadór timoroan no pasaporte ba estranjeiru, maibé númeru sira-ne'e mós opsionál iha inísiu. Buat sira-ne'e la taka dalan atu rai funsionáriu. Númeru INSS mak primeiru atu buka, tanba deklarasaun INSS mensál la bele entrega sem nia — inskrisaun tenke halo to'o data entrega deklarasaun remunerasaun primeiru ne'ebé inklui traballadór ne'e (DL 20/2017, Art. 3(2)), no Xefe fó sai naran ema ne'ebé seidauk iha molok ita entrega.",
           },
           {
             title: "Konvida ita-nia kolega",

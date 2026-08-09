@@ -1,0 +1,79 @@
+import { describe, expect, it } from "vitest";
+import {
+  loadProductGuide,
+  productGuideMatchesMetadata,
+  productGuideSections,
+  productGuidesFor,
+  searchProductGuide,
+} from "../../client/lib/help/product-guides";
+
+describe("in-app product guides", () => {
+  const locales = ["en", "pt", "tet"] as const;
+
+  it("surfaces the same five practical guides in every language", () => {
+    const expected = productGuidesFor("en").map((guide) => guide.slug);
+    expect(expected).toEqual([
+      "getting-started",
+      "running-payroll",
+      "tax-and-filings",
+      "invoices-and-money",
+      "time-and-leave",
+    ]);
+
+    for (const locale of locales) {
+      const guides = productGuidesFor(locale);
+      expect(guides.map((guide) => guide.slug)).toEqual(expected);
+      for (const guide of guides) {
+        expect(guide.title.trim()).not.toBe("");
+        expect(guide.summary.trim()).not.toBe("");
+        expect(guide.action.to).toMatch(/^\//);
+      }
+    }
+  });
+
+  it("loads every guide and keeps section anchors stable across languages", async () => {
+    for (const guide of productGuidesFor("en")) {
+      const article = await loadProductGuide(guide.slug);
+      expect(article, guide.slug).toBeDefined();
+      if (!article) continue;
+
+      const englishIds = productGuideSections(guide, article.en).map(
+        (section) => section.id,
+      );
+      for (const locale of locales) {
+        const localizedGuide = productGuidesFor(locale).find(
+          (candidate) => candidate.slug === guide.slug,
+        )!;
+        expect(
+          productGuideSections(localizedGuide, article[locale]).map(
+            (section) => section.id,
+          ),
+          `${guide.slug}/${locale}`,
+        ).toEqual(englishIds);
+      }
+    }
+  });
+
+  it("finds practical answers inside a guide and links to their section", async () => {
+    const guide = productGuidesFor("pt").find(
+      (candidate) => candidate.slug === "invoices-and-money",
+    )!;
+    const article = await loadProductGuide(guide.slug);
+    expect(article).toBeDefined();
+
+    const results = searchProductGuide(
+      "reconciliacao bancaria",
+      guide,
+      article!.pt,
+    );
+    expect(results[0]?.id).toBe("bank-reconciliation");
+  });
+
+  it("matches useful metadata even before a guide body loads", () => {
+    const guide = productGuidesFor("en").find(
+      (candidate) => candidate.slug === "tax-and-filings",
+    )!;
+    expect(productGuideMatchesMetadata("tax deadlines", guide)).toBe(true);
+    expect(productGuideMatchesMetadata("banana", guide)).toBe(false);
+  });
+});

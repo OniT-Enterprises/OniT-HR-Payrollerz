@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import { ContextualHelpLink } from '@/components/help/ContextualHelpLink';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -432,6 +433,10 @@ export default function Invoices() {
             </>
           }
         />
+
+        <div className="-mt-2 mb-2 flex justify-end">
+          <ContextualHelpLink slug="invoices-and-money" anchor="invoices" />
+        </div>
 
         {/* Filters */}
         <div className="relative mb-4 max-w-md">

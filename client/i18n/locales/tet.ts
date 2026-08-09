@@ -70,6 +70,16 @@ const messages = {
     noResultsHint:
       "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
     articlesHeading: "Dokumentu",
+    commonTasksHeading: "Ajuda ba tarefa loron-loron",
+    guideTag: "Gia",
+    referenceTag: "Referénsia",
+    referenceHeading: "Referénsia folha pagamentu no lei",
+    referenceSummary:
+      "Dokumentu detallu {{count}}, subar nafatin to'o ita presiza.",
+    searchingGuides: "Buka iha gia hotu…",
+    helpWithThisPage: "Ajuda ba pájina ne'e",
+    guideLoadFailed:
+      "La konsege loke gia ne'e. Fila ba Ajuda ka haruka mensajen mai ami.",
     updated: "Atualiza iha {{date}}",
     contentsHeading: "Iha pájina ne'e",
     backToHelp: "Fila ba ajuda",
@@ -80,6 +90,18 @@ const messages = {
     openLabel: "Seidauk konfirma",
     englishOnly:
       "Dokumentu ne'e iha de'it iha lian Inglés ba oras ne'e. Nia sita besik lei traballu no fiskál, no ami prefere hein tradusaun ne'ebé di'ak duke publika tradusaun makina nian ne'ebé ema ida seidauk verifika.",
+    stillStuckTitle: "Seidauk konsege?",
+    stillStuckBody:
+      "Loke tarefa bainhira ita prontu, ka haruka mensajen no koalia ho ema.",
+    talkToUsShort: "Haruka mensajen iha WhatsApp",
+    actions: {
+      continueSetup: "Kontinua konfigurasaun",
+      openPayroll: "Loke folha pagamentu",
+      openFilings: "Loke impostu no INSS",
+      openInvoices: "Loke fatura",
+      openAttendance: "Loke prezensa",
+      openOffboarding: "Loke prosesu saída",
+    },
     status: {
       confirming: "Seidauk konfirma",
       settled: "Rezolve tiha",

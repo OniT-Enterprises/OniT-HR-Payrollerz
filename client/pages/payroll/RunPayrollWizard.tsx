@@ -43,6 +43,7 @@ import {
 } from "@/components/payroll/wizard";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { Button } from "@/components/ui/button";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -487,6 +488,9 @@ export default function RunPayrollWizard() {
           icon={Calculator}
           iconColor="text-primary"
         />
+        <div className="-mt-2 mb-2 flex justify-end">
+          <ContextualHelpLink slug="running-payroll" anchor="before-you-run" />
+        </div>
         {canManageTenant &&
           subscribed === false &&
           (currentStep === 0 || currentStep === wizardSteps.length - 1) && (

@@ -64,6 +64,7 @@ const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
 const HelpCenter = lazyWithRetry(() => import("@/pages/help/HelpCenter"));
 const HelpArticle = lazyWithRetry(() => import("@/pages/help/HelpArticle"));
+const HelpProductGuide = lazyWithRetry(() => import("@/pages/help/HelpProductGuide"));
 const CompanySettings = lazyWithRetry(() => import("@/pages/settings/CompanySettings"));
 const TeamAccessSettings = lazyWithRetry(() => import("@/pages/settings/TeamAccessSettings"));
 const PaymentsSettings = lazyWithRetry(() => import("@/pages/settings/PaymentsSettings"));
@@ -270,6 +271,14 @@ export const authRoutes = (
       element={
         <FeatureRoute>
           <HelpCenter />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/help/guide/:slug"
+      element={
+        <FeatureRoute>
+          <HelpProductGuide />
         </FeatureRoute>
       }
     />

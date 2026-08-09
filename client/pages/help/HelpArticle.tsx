@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, CalendarClock, Info } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
+import { HelpSupportCard } from "@/components/help/HelpSupportCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -30,8 +31,15 @@ const STATUS_STYLES: Record<PositionStatus, string> = {
     "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   settled:
     "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  "asks-you":
-    "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-400",
+  "asks-you": "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-400",
+};
+
+const ARTICLE_ACTIONS: Record<string, { to: string; labelKey: string }> = {
+  "your-month": { to: "/payroll/run", labelKey: "help.actions.openPayroll" },
+  "when-someone-leaves": {
+    to: "/people/offboarding",
+    labelKey: "help.actions.openOffboarding",
+  },
 };
 
 /**
@@ -56,7 +64,13 @@ function RichText({ text }: { text: string }) {
   );
 }
 
-function EntryCard({ entry, t }: { entry: HelpEntry; t: (k: string) => string }) {
+function EntryCard({
+  entry,
+  t,
+}: {
+  entry: HelpEntry;
+  t: (k: string) => string;
+}) {
   return (
     <Card id={entry.id} className="scroll-mt-20">
       <CardContent className="space-y-4 p-4 sm:p-5">
@@ -170,6 +184,8 @@ export default function HelpArticlePage() {
     );
   }
 
+  const articleAction = ARTICLE_ACTIONS[article.slug];
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
       <Link
@@ -226,6 +242,18 @@ export default function HelpArticlePage() {
               <span className="ml-1.5 text-xs text-muted-foreground">
                 ({group.entries.length})
               </span>
+              <ul className="ml-3 mt-1 border-l border-border/60 pl-3">
+                {group.entries.map((entry) => (
+                  <li key={entry.id}>
+                    <a
+                      href={`#${entry.id}`}
+                      className="inline-flex min-h-8 items-center text-xs text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      {entry.heading}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
@@ -246,6 +274,17 @@ export default function HelpArticlePage() {
           </section>
         ))}
       </div>
+
+      <HelpSupportCard
+        action={
+          articleAction
+            ? {
+                to: articleAction.to,
+                label: t(articleAction.labelKey),
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

@@ -56,6 +56,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import {
   FileText,
@@ -1104,6 +1105,9 @@ export default function ATTLMonthlyWIT() {
           subtitle={t("reports.attlMonthlyWit.subtitle")}
           icon={Landmark}
           iconColor="text-primary"
+          actions={
+            <ContextualHelpLink slug="tax-and-filings" anchor="calendar" />
+          }
         />
 
         {selectedPeriodDue && (

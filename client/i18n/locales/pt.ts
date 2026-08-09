@@ -70,6 +70,16 @@ const messages = {
     noResultsHint:
       "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp acima e respondemos diretamente.",
     articlesHeading: "Documentos",
+    commonTasksHeading: "Ajuda para tarefas comuns",
+    guideTag: "Guia",
+    referenceTag: "Referência",
+    referenceHeading: "Referência de folha e legislação",
+    referenceSummary:
+      "{{count}} documentos detalhados, fora do caminho até precisar deles.",
+    searchingGuides: "A pesquisar todos os guias…",
+    helpWithThisPage: "Ajuda com esta página",
+    guideLoadFailed:
+      "Não foi possível carregar este guia. Volte à Ajuda ou escreva-nos.",
     updated: "Atualizado a {{date}}",
     contentsHeading: "Nesta página",
     backToHelp: "Voltar à ajuda",
@@ -80,6 +90,18 @@ const messages = {
     openLabel: "Ainda por confirmar",
     englishOnly:
       "Este documento só está disponível em inglês para já. Cita de perto a legislação laboral e fiscal, e preferimos esperar por uma tradução adequada a publicar uma tradução automática que ninguém verificou.",
+    stillStuckTitle: "Ainda precisa de ajuda?",
+    stillStuckBody:
+      "Abra a tarefa quando estiver pronto, ou escreva-nos e fale com uma pessoa.",
+    talkToUsShort: "Escrever no WhatsApp",
+    actions: {
+      continueSetup: "Continuar configuração",
+      openPayroll: "Abrir folha",
+      openFilings: "Abrir impostos e INSS",
+      openInvoices: "Abrir faturas",
+      openAttendance: "Abrir assiduidade",
+      openOffboarding: "Abrir saída de funcionário",
+    },
     status: {
       confirming: "Por confirmar",
       settled: "Resolvido",

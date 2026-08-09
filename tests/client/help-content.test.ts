@@ -22,6 +22,7 @@ import {
   articlesFor,
   getArticle,
   searchHelp,
+  searchHelpArticles,
 } from '../../client/lib/help/content';
 
 /** Everything a reader can see, as one string. */
@@ -180,6 +181,15 @@ describe('searchHelp', () => {
 
   it('is case-insensitive', () => {
     expect(searchHelp('INSS').length).toBe(searchHelp('inss').length);
+  });
+
+  it('is accent-insensitive for phone keyboards', () => {
+    expect(searchHelp('compensacao', 'pt').length).toBeGreaterThan(0);
+  });
+
+  it('searches article titles, summaries and keywords', () => {
+    expect(searchHelpArticles('monthly cycle').map((article) => article.slug))
+      .toContain('your-month');
   });
 });
 
