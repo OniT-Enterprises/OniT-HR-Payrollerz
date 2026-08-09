@@ -108,6 +108,7 @@ import {
   getDaysUntilDueIso,
   resolveMonthlyWITTaskStatuses,
 } from "@/lib/tax/compliance";
+import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
 
 // ============================================
 // COMPONENT
@@ -316,10 +317,27 @@ export default function ATTLMonthlyWIT() {
         ),
       });
     } catch (error) {
-      console.error("Failed to generate return:", error);
+      // An incomplete employer/employee record is the tenant's data to fix, not
+      // a fault — say WHICH fact is missing and keep it out of the error tracker,
+      // or every blank registered address pages someone at 11pm.
+      const reviewFlag = getStatutoryReviewFlag(error);
+      if (reviewFlag) {
+        console.warn("Statutory filing needs review:", reviewFlag.field);
+      } else {
+        console.error("Failed to generate return:", error);
+      }
       toast({
-        title: t("reports.attlMonthlyWit.toast.errorTitle"),
-        description: t("reports.attlMonthlyWit.toast.generateErrorDescription"),
+        title: reviewFlag
+          ? t("common.needsReviewTitle")
+          : t("reports.attlMonthlyWit.toast.errorTitle"),
+        description: reviewFlag
+          ? t(
+              reviewFlag.source === "employer"
+                ? "common.needsReviewEmployerDesc"
+                : "common.needsReviewDesc",
+              { field: reviewFlag.field },
+            )
+          : t("reports.attlMonthlyWit.toast.generateErrorDescription"),
         variant: "destructive",
       });
     }
@@ -357,12 +375,29 @@ export default function ATTLMonthlyWIT() {
       });
       setSelectedReturn(returnData);
     } catch (error) {
-      console.error("Failed to rebuild return:", error);
+      // "No payroll data for that period" is the wrong thing to say when the
+      // real blocker is a missing employer fact — the period has data, the
+      // record does not.
+      const reviewFlag = getStatutoryReviewFlag(error);
+      if (reviewFlag) {
+        console.warn("Statutory filing needs review:", reviewFlag.field);
+      } else {
+        console.error("Failed to rebuild return:", error);
+      }
       toast({
-        title: t("reports.attlMonthlyWit.toast.noDataTitle"),
-        description: t("reports.attlMonthlyWit.toast.noDataDescription", {
-          period: formatPeriodLabel(filing.period),
-        }),
+        title: reviewFlag
+          ? t("common.needsReviewTitle")
+          : t("reports.attlMonthlyWit.toast.noDataTitle"),
+        description: reviewFlag
+          ? t(
+              reviewFlag.source === "employer"
+                ? "common.needsReviewEmployerDesc"
+                : "common.needsReviewDesc",
+              { field: reviewFlag.field },
+            )
+          : t("reports.attlMonthlyWit.toast.noDataDescription", {
+              period: formatPeriodLabel(filing.period),
+            }),
         variant: "destructive",
       });
     }

@@ -95,12 +95,17 @@ export class MissingStatutorySourceDataError extends Error {
  */
 export function getStatutoryReviewFlag(
   error: unknown,
-): { field: string } | null {
-  if (
-    error instanceof MissingStatutoryPayrollDataError ||
-    error instanceof MissingStatutorySourceDataError
-  ) {
-    return { field: error.field };
+): { field: string; source: "payroll" | "employer" } | null {
+  // The two cases are fixed in different places, so the caller has to be able
+  // to tell them apart: a payroll record is corrected by re-running that
+  // payroll, an employer fact by editing Settings → Company details. Saying
+  // "re-run that payroll" for a blank registered address sends people to the
+  // wrong screen entirely.
+  if (error instanceof MissingStatutorySourceDataError) {
+    return { field: error.field, source: "employer" };
+  }
+  if (error instanceof MissingStatutoryPayrollDataError) {
+    return { field: error.field, source: "payroll" };
   }
   return null;
 }

@@ -100,6 +100,8 @@ const messages = {
     needsReviewTitle: "Precisa de revisão antes de declarar",
     needsReviewDesc:
       "Um registo de folha de pagamento não tem {{field}} válido. Corrija ou reprocesse essa folha — o Xefe nunca adivinha valores de conformidade. Em caso de dúvida, fale com o seu contabilista.",
+    needsReviewEmployerDesc:
+      "Os dados da sua empresa não têm {{field}} válido. Preencha em Definições → Dados da empresa e gere novamente — o Xefe nunca adivinha valores de conformidade.",
     greetingMorning: "Bom dia",
     greetingAfternoon: "Boa tarde",
     greetingEvening: "Boa noite",
