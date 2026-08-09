@@ -67,7 +67,7 @@ const messages = {
     resultCount: "{{count}} matching section(s)",
     noResults: "Nothing found for “{{query}}”.",
     noResultsHint:
-      "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp above and we will answer directly.",
+      "Try a single word from your payslip or settings screen. If the answer is not written down yet, message us on WhatsApp and we will answer directly.",
     articlesHeading: "Documents",
     commonTasksHeading: "Help with common tasks",
     guideTag: "Guide",

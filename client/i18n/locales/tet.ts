@@ -68,7 +68,7 @@ const messages = {
     resultCount: "Seksaun {{count}} ne'ebé hanesan",
     noResults: "La hetan buat ida ba “{{query}}”.",
     noResultsHint:
-      "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp leten no ami responde diretamente.",
+      "Koko liafuan ida de'it husi ita-nia resibu ka ekrán konfigurasaun. Se resposta seidauk hakerek, haruka mensajen mai ami iha WhatsApp no ami responde diretamente.",
     articlesHeading: "Dokumentu",
     commonTasksHeading: "Ajuda ba tarefa loron-loron",
     guideTag: "Gia",

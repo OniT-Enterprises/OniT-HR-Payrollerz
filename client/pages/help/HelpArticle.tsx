@@ -11,8 +11,7 @@
  * and a reader in another language is told so rather than left to assume the
  * translation is missing by accident.
  */
-import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BookOpen,
@@ -29,6 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useHelpSearchTarget } from "@/hooks/useHelpSearchTarget";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   getArticle,
@@ -37,6 +37,8 @@ import {
   type HelpGroup,
   type PositionStatus,
 } from "@/lib/help/content";
+import { helpCenterPath, helpSearchQuery } from "@/lib/help/navigation";
+import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<PositionStatus, string> = {
   confirming:
@@ -78,13 +80,24 @@ function RichText({ text }: { text: string }) {
 
 function EntryCard({
   entry,
+  highlighted,
   t,
 }: {
   entry: HelpEntry;
+  highlighted: boolean;
   t: (k: string) => string;
 }) {
   return (
-    <Card id={entry.id} className="scroll-mt-20">
+    <Card
+      id={entry.id}
+      tabIndex={-1}
+      data-search-highlight={highlighted ? "true" : undefined}
+      className={cn(
+        "scroll-mt-20 transition-[background-color,box-shadow] duration-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        highlighted &&
+          "bg-primary/5 ring-2 ring-primary/30 ring-offset-4 ring-offset-background",
+      )}
+    >
       <CardContent className="space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="text-base font-semibold leading-snug">
@@ -202,23 +215,17 @@ function MobileContentsGroup({ group }: { group: HelpGroup }) {
 export default function HelpArticlePage() {
   const { t, locale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const article = slug ? getArticle(slug, locale as ArticleLocale) : undefined;
-
-  // Deep links from search carry #entry-id. React Router does not scroll to a
-  // fragment on its own, and the content mounts after the route does.
-  useEffect(() => {
-    if (!article) return;
-    const id = window.location.hash.slice(1);
-    if (!id) return;
-    document.getElementById(id)?.scrollIntoView({ block: "start" });
-  }, [article]);
+  const highlightedTarget = useHelpSearchTarget(Boolean(article));
+  const backToHelp = helpCenterPath(helpSearchQuery(location.search));
 
   if (!article) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <p className="text-sm text-muted-foreground">{t("help.notFound")}</p>
         <Link
-          to="/help"
+          to={backToHelp}
           className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -233,7 +240,7 @@ export default function HelpArticlePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
       <Link
-        to="/help"
+        to={backToHelp}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -318,7 +325,12 @@ export default function HelpArticlePage() {
             </p>
             <div className="space-y-4">
               {group.entries.map((entry) => (
-                <EntryCard key={entry.id} entry={entry} t={t} />
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  highlighted={entry.id === highlightedTarget}
+                  t={t}
+                />
               ))}
             </div>
           </section>

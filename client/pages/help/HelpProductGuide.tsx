@@ -5,10 +5,13 @@ import { HelpSupportCard } from "@/components/help/HelpSupportCard";
 import { InAppDocBlock } from "@/components/help/InAppDocBlocks";
 import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useHelpSearchTarget } from "@/hooks/useHelpSearchTarget";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { DocBlock, LocalizedDocArticle } from "@/lib/docs/types";
 import { loadProductGuide, productGuidesFor } from "@/lib/help/product-guides";
 import type { ArticleLocale } from "@/lib/help/content";
+import { helpCenterPath, helpSearchQuery } from "@/lib/help/navigation";
+import { cn } from "@/lib/utils";
 
 export default function HelpProductGuide() {
   const { t, locale } = useI18n();
@@ -23,6 +26,8 @@ export default function HelpProductGuide() {
   const [failedSlugs, setFailedSlugs] = useState<Set<string>>(new Set());
   const article = articles[slug];
   const content = article?.[locale as ArticleLocale] ?? article?.en;
+  const highlightedTarget = useHelpSearchTarget(Boolean(content));
+  const backToHelp = helpCenterPath(helpSearchQuery(location.search));
 
   useEffect(() => {
     if (!guide || article || failedSlugs.has(slug)) return;
@@ -43,15 +48,6 @@ export default function HelpProductGuide() {
     };
   }, [article, failedSlugs, guide, slug]);
 
-  useEffect(() => {
-    if (!content || !location.hash) return;
-    requestAnimationFrame(() => {
-      document
-        .getElementById(location.hash.slice(1))
-        ?.scrollIntoView({ block: "start" });
-    });
-  }, [content, location.hash]);
-
   if (!guide) return <Navigate to="/help" replace />;
 
   const headings =
@@ -63,14 +59,25 @@ export default function HelpProductGuide() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
       <Link
-        to="/help"
+        to={backToHelp}
         className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:min-h-0"
       >
         <ArrowLeft className="h-4 w-4" />
         {t("help.backToHelp")}
       </Link>
 
-      <div id="overview" className="scroll-mt-20">
+      <div
+        id="overview"
+        tabIndex={-1}
+        data-search-highlight={
+          highlightedTarget === "overview" ? "true" : undefined
+        }
+        className={cn(
+          "scroll-mt-20 rounded-xl transition-[background-color,box-shadow] duration-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          highlightedTarget === "overview" &&
+            "bg-primary/10 ring-2 ring-primary/30 ring-offset-4 ring-offset-background",
+        )}
+      >
         <PageHeader
           title={
             content ? `${content.titleTop} ${content.titleAccent}` : guide.title
@@ -121,7 +128,14 @@ export default function HelpProductGuide() {
 
           <article>
             {content.blocks.map((block, index) => (
-              <InAppDocBlock key={index} block={block} />
+              <InAppDocBlock
+                key={index}
+                block={block}
+                highlighted={
+                  block.type === "heading" &&
+                  block.id === highlightedTarget
+                }
+              />
             ))}
           </article>
 

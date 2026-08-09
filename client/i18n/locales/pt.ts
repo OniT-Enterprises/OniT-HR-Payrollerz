@@ -68,7 +68,7 @@ const messages = {
     resultCount: "{{count}} secção(ões) correspondente(s)",
     noResults: "Nada encontrado para “{{query}}”.",
     noResultsHint:
-      "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp acima e respondemos diretamente.",
+      "Experimente uma única palavra do seu recibo ou do ecrã de definições. Se a resposta ainda não estiver escrita, escreva-nos no WhatsApp e respondemos diretamente.",
     articlesHeading: "Documentos",
     commonTasksHeading: "Ajuda para tarefas comuns",
     guideTag: "Guia",

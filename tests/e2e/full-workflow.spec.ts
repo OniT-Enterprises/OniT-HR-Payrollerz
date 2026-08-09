@@ -934,7 +934,33 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .first();
   await expect(guideHit).toHaveAttribute(
     "href",
-    "/help/guide/invoices-and-money#bank-reconciliation",
+    "/help/guide/invoices-and-money?q=bank+reconciliation#bank-reconciliation",
+  );
+  await guideHit.click();
+  await expect(page).toHaveURL(
+    /\/help\/guide\/invoices-and-money\?q=bank\+reconciliation#bank-reconciliation$/,
+  );
+  await expect(page.locator('[data-search-highlight="true"]')).toContainText(
+    /bank reconciliation/i,
+  );
+
+  const searchBackLink = page.getByRole("link", { name: /back to help/i });
+  await expect(searchBackLink).toHaveAttribute(
+    "href",
+    "/help?q=bank+reconciliation",
+  );
+  await searchBackLink.click();
+  await expect(page.getByRole("searchbox")).toHaveValue("bank reconciliation");
+  await expect(guideHit).toBeVisible();
+
+  // A failed search keeps the user in context and puts the human escape hatch
+  // beside the empty result instead of making them scroll back to the top.
+  await page.getByRole("searchbox").fill("xefe-no-such-answer");
+  const noResults = page.getByTestId("help-no-results");
+  await expect(noResults).toBeVisible();
+  await expect(noResults.getByRole("link", { name: /whatsapp/i })).toHaveAttribute(
+    "href",
+    /wa\.me/,
   );
 
   await page.goto("/help");
@@ -945,7 +971,12 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   const hit = page.getByRole("link", { name: /service compensation/i }).first();
   await expect(hit).toBeVisible();
   await hit.click();
-  await expect(page).toHaveURL(/\/help\/how-xefe-reads-the-law/);
+  await expect(page).toHaveURL(
+    /\/help\/how-xefe-reads-the-law\?q=severance#severance-cause$/,
+  );
+  await expect(page.locator('[data-search-highlight="true"]')).toContainText(
+    /service compensation/i,
+  );
   // The position itself, not just the debate around it.
   await expect(page.getByText(/what xefe does today/i).first()).toBeVisible();
 

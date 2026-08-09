@@ -12,7 +12,7 @@
  * "INSS") rather than the name of the document that explains it.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   MessageCircle,
@@ -45,10 +45,12 @@ import {
   productGuidesFor,
   searchProductGuide,
 } from "@/lib/help/product-guides";
+import { helpResultPath } from "@/lib/help/navigation";
 
 export default function HelpCenter() {
   const { t, locale } = useI18n();
-  const [query, setQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("q") ?? "";
   const [referenceOpen, setReferenceOpen] = useState(false);
   const [loadedGuides, setLoadedGuides] = useState<
     Record<string, LocalizedDocArticle>
@@ -158,6 +160,13 @@ export default function HelpCenter() {
     entryResults.length +
     articleResults.length;
 
+  const updateQuery = (nextQuery: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextQuery) next.set("q", nextQuery);
+    else next.delete("q");
+    setSearchParams(next, { replace: true, preventScrollReset: true });
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
       <PageHeader
@@ -191,7 +200,7 @@ export default function HelpCenter() {
         <Input
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => updateQuery(e.target.value)}
           placeholder={t("help.searchPlaceholder")}
           aria-label={t("help.searchLabel")}
           className="h-12 pl-9"
@@ -212,7 +221,11 @@ export default function HelpCenter() {
             {productSectionResults.map(({ guide, section }) => (
               <Link
                 key={`${guide.slug}-${section.id}`}
-                to={`/help/guide/${guide.slug}#${section.id}`}
+                to={helpResultPath(
+                  `/help/guide/${guide.slug}`,
+                  trimmed,
+                  section.id,
+                )}
                 className="block rounded-xl border border-border/60 px-4 py-3 transition-colors hover:border-border hover:bg-muted/40"
               >
                 <p className="text-sm font-medium">{section.heading}</p>
@@ -227,7 +240,7 @@ export default function HelpCenter() {
             {productMetadataResults.map((guide) => (
               <Link
                 key={guide.slug}
-                to={`/help/guide/${guide.slug}`}
+                to={helpResultPath(`/help/guide/${guide.slug}`, trimmed)}
                 className="block rounded-xl border border-border/60 px-4 py-3 transition-colors hover:border-border hover:bg-muted/40"
               >
                 <p className="text-sm font-medium">{guide.title}</p>
@@ -242,7 +255,11 @@ export default function HelpCenter() {
             {entryResults.map((hit) => (
               <Link
                 key={`${hit.article.slug}-${hit.entry.id}`}
-                to={`/help/${hit.article.slug}#${hit.entry.id}`}
+                to={helpResultPath(
+                  `/help/${hit.article.slug}`,
+                  trimmed,
+                  hit.entry.id,
+                )}
                 className="block rounded-xl border border-border/60 px-4 py-3 transition-colors hover:border-border hover:bg-muted/40"
               >
                 <p className="text-sm font-medium">{hit.entry.heading}</p>
@@ -259,7 +276,7 @@ export default function HelpCenter() {
             {articleResults.map((article) => (
               <Link
                 key={article.slug}
-                to={`/help/${article.slug}`}
+                to={helpResultPath(`/help/${article.slug}`, trimmed)}
                 className="block rounded-xl border border-border/60 px-4 py-3 transition-colors hover:border-border hover:bg-muted/40"
               >
                 <p className="text-sm font-medium">{article.title}</p>
@@ -281,9 +298,24 @@ export default function HelpCenter() {
           )}
 
           {resultCount === 0 && !guideSearchLoading && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              {t("help.noResultsHint")}
-            </p>
+            <aside
+              className="mt-4 rounded-xl border border-border/70 bg-muted/20 p-4"
+              data-testid="help-no-results"
+            >
+              <p className="text-sm text-muted-foreground">
+                {t("help.noResultsHint")}
+              </p>
+              <a
+                href={SUPPORT_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {t("help.talkToUsShort")}
+                <ChevronRight className="h-4 w-4" />
+              </a>
+            </aside>
           )}
         </section>
       ) : (

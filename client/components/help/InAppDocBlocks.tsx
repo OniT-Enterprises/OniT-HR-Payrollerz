@@ -18,13 +18,25 @@ function Prose({ body }: { body: string }) {
 }
 
 /** App-shell renderer for the same typed content used by the public guides. */
-export function InAppDocBlock({ block }: { block: DocBlock }) {
+export function InAppDocBlock({
+  block,
+  highlighted = false,
+}: {
+  block: DocBlock;
+  highlighted?: boolean;
+}) {
   switch (block.type) {
     case "heading":
       return (
         <h2
           id={block.id}
-          className="mt-10 scroll-mt-20 text-xl font-bold tracking-tight sm:text-2xl"
+          tabIndex={-1}
+          data-search-highlight={highlighted ? "true" : undefined}
+          className={cn(
+            "mt-10 scroll-mt-20 rounded-sm text-xl font-bold tracking-tight transition-[background-color,box-shadow] duration-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:text-2xl",
+            highlighted &&
+              "bg-primary/10 ring-2 ring-primary/30 ring-offset-4 ring-offset-background",
+          )}
         >
           {block.text}
         </h2>
