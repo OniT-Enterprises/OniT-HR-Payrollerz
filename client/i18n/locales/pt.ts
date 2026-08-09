@@ -78,6 +78,8 @@ const messages = {
       "{{count}} documentos detalhados, fora do caminho até precisar deles.",
     searchingGuides: "A pesquisar todos os guias…",
     helpWithThisPage: "Ajuda com esta página",
+    howToFixThis: "Como corrigir",
+    howToAddTeam: "Como adicionar a sua equipa",
     guideLoadFailed:
       "Não foi possível carregar este guia. Volte à Ajuda ou escreva-nos.",
     updated: "Atualizado a {{date}}",

@@ -133,40 +133,77 @@ export function InAppDocBlock({ block }: { block: DocBlock }) {
       );
     case "table":
       return (
-        <div className="mt-5 overflow-x-auto rounded-xl border border-border/70">
-          <table className="w-full min-w-[560px] border-collapse text-sm">
-            <thead className="bg-muted/40">
-              <tr>
-                {block.headers.map((header, index) => (
-                  <th
-                    key={index}
-                    className="border-b border-border/70 px-3 py-2.5 text-left text-xs font-semibold"
+        <div className="mt-5">
+          {/* On a narrow phone, a horizontally scrolling table hides the most
+              useful columns. Repeat each row as a labelled card instead. */}
+          <div className="space-y-3 sm:hidden" data-testid="doc-table-cards">
+            {block.rows.map((row, rowIndex) => (
+              <dl
+                key={rowIndex}
+                className="rounded-xl border border-border/70 bg-card p-4"
+              >
+                {row.map((cell, cellIndex) => (
+                  <div
+                    key={cellIndex}
+                    className="border-b border-border/50 py-2.5 first:pt-0 last:border-b-0 last:pb-0"
                   >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {block.rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {row.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
+                    <dt className="text-xs font-semibold text-muted-foreground">
+                      {block.headers[cellIndex]}
+                    </dt>
+                    <dd
                       className={cn(
-                        "border-b border-border/50 px-3 py-2.5 align-top leading-6 last:border-b-0",
+                        "mt-1 text-sm leading-6",
                         cellIndex === 0
-                          ? "font-medium"
+                          ? "font-medium text-foreground"
                           : "text-muted-foreground",
                       )}
                     >
                       {cell}
-                    </td>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ))}
+          </div>
+
+          <div
+            className="hidden overflow-x-auto rounded-xl border border-border/70 sm:block"
+            data-testid="doc-table-desktop"
+          >
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  {block.headers.map((header, index) => (
+                    <th
+                      key={index}
+                      className="border-b border-border/70 px-3 py-2.5 text-left text-xs font-semibold"
+                    >
+                      {header}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {block.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        className={cn(
+                          "border-b border-border/50 px-3 py-2.5 align-top leading-6 last:border-b-0",
+                          cellIndex === 0
+                            ? "font-medium"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
   }

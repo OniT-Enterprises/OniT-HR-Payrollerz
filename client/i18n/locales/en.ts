@@ -77,6 +77,8 @@ const messages = {
       "{{count}} detailed documents, kept out of the way until you need them.",
     searchingGuides: "Searching all guides…",
     helpWithThisPage: "Help with this page",
+    howToFixThis: "How to fix this",
+    howToAddTeam: "How to add your team",
     guideLoadFailed:
       "This guide could not be loaded. Go back to Help or message us.",
     updated: "Updated {{date}}",

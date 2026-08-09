@@ -78,6 +78,8 @@ const messages = {
       "Dokumentu detallu {{count}}, subar nafatin to'o ita presiza.",
     searchingGuides: "Buka iha gia hotu…",
     helpWithThisPage: "Ajuda ba pájina ne'e",
+    howToFixThis: "Oinsá atu hadi'a",
+    howToAddTeam: "Oinsá atu aumenta ita-nia ekipa",
     guideLoadFailed:
       "La konsege loke gia ne'e. Fila ba Ajuda ka haruka mensajen mai ami.",
     updated: "Atualiza iha {{date}}",

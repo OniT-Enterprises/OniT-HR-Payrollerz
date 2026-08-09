@@ -6,6 +6,7 @@ import {
   productGuidesFor,
   searchProductGuide,
 } from "../../client/lib/help/product-guides";
+import { statutoryReviewHelpPath } from "../../client/lib/help/targets";
 
 describe("in-app product guides", () => {
   const locales = ["en", "pt", "tet"] as const;
@@ -75,5 +76,35 @@ describe("in-app product guides", () => {
     )!;
     expect(productGuideMatchesMetadata("tax deadlines", guide)).toBe(true);
     expect(productGuideMatchesMetadata("banana", guide)).toBe(false);
+  });
+
+  it("keeps blocker help links attached to real guide sections", async () => {
+    const paths = [
+      statutoryReviewHelpPath("employer"),
+      statutoryReviewHelpPath("payroll"),
+      "/help/guide/getting-started#add-your-team",
+    ];
+
+    for (const path of paths) {
+      const match = path.match(/^\/help\/guide\/([^#]+)#(.+)$/);
+      expect(match, path).not.toBeNull();
+      if (!match) continue;
+
+      const [, slug, anchor] = match;
+      const guide = productGuidesFor("en").find(
+        (candidate) => candidate.slug === slug,
+      );
+      expect(guide, path).toBeDefined();
+      if (!guide) continue;
+
+      const article = await loadProductGuide(slug);
+      expect(article, path).toBeDefined();
+      if (!article) continue;
+
+      expect(
+        productGuideSections(guide, article.en).map((section) => section.id),
+        path,
+      ).toContain(anchor);
+    }
   });
 });

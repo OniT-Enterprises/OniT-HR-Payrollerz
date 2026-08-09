@@ -902,6 +902,29 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     page.getByRole("link", { name: /continue setup/i }),
   ).toBeVisible();
 
+  // Dense documentation should reflow for the phones many customers use:
+  // tables become labelled cards, and long legal contents start collapsed.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/help/guide/tax-and-filings#return-vs-payment");
+  await expect(page.getByTestId("doc-table-cards")).toBeVisible();
+  await expect(page.getByTestId("doc-table-desktop")).toBeHidden();
+  await expect(
+    page.getByText("Return due", { exact: true }).first(),
+  ).toBeVisible();
+
+  await page.goto("/help/how-xefe-reads-the-law");
+  const mobileContentsGroup = page.getByRole("button", {
+    name: /questions that change what someone is paid/i,
+  });
+  const legalQuestion = page.getByRole("link", {
+    name: /does dismissal for cause remove the service compensation/i,
+  });
+  await expect(mobileContentsGroup).toBeVisible();
+  await expect(legalQuestion).toBeHidden();
+  await mobileContentsGroup.click();
+  await expect(legalQuestion).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
+
   // Search includes the lazily loaded guide bodies and keeps the section
   // anchor, so the answer opens at the useful paragraph rather than the top.
   await page.goto("/help");

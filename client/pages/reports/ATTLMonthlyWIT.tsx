@@ -9,8 +9,10 @@
  */
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
+import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ReportCardHeader } from "@/components/reports/ReportLayout";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +112,7 @@ import {
   resolveMonthlyWITTaskStatuses,
 } from "@/lib/tax/compliance";
 import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
+import { statutoryReviewHelpPath } from "@/lib/help/targets";
 
 // ============================================
 // COMPONENT
@@ -117,9 +120,20 @@ import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
 
 export default function ATTLMonthlyWIT() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { t } = useI18n();
+
+  const statutoryReviewAction = (source: "payroll" | "employer") => (
+    <ToastAction
+      altText={t("help.howToFixThis")}
+      className="h-11"
+      onClick={() => navigate(statutoryReviewHelpPath(source))}
+    >
+      {t("help.howToFixThis")}
+    </ToastAction>
+  );
 
   // React Query hooks
   const {
@@ -340,6 +354,9 @@ export default function ATTLMonthlyWIT() {
             )
           : t("reports.attlMonthlyWit.toast.generateErrorDescription"),
         variant: "destructive",
+        action: reviewFlag
+          ? statutoryReviewAction(reviewFlag.source)
+          : undefined,
       });
     }
   };
@@ -400,6 +417,9 @@ export default function ATTLMonthlyWIT() {
               period: formatPeriodLabel(filing.period),
             }),
         variant: "destructive",
+        action: reviewFlag
+          ? statutoryReviewAction(reviewFlag.source)
+          : undefined,
       });
     }
   };

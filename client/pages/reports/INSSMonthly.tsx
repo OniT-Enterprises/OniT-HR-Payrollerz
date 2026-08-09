@@ -7,7 +7,9 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ReportCardHeader } from "@/components/reports/ReportLayout";
 import { Badge } from "@/components/ui/badge";
@@ -84,12 +86,24 @@ import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { getTodayTL } from "@/lib/dateUtils";
+import { statutoryReviewHelpPath } from "@/lib/help/targets";
 
 export default function INSSMonthly() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { t } = useI18n();
+
+  const statutoryReviewAction = (source: "payroll" | "employer") => (
+    <ToastAction
+      altText={t("help.howToFixThis")}
+      className="h-11"
+      onClick={() => navigate(statutoryReviewHelpPath(source))}
+    >
+      {t("help.howToFixThis")}
+    </ToastAction>
+  );
 
   // React Query hooks
   const {
@@ -282,6 +296,9 @@ export default function INSSMonthly() {
             )
           : t("reports.inssMonthly.toast.generateErrorDescription"),
         variant: "destructive",
+        action: reviewFlag
+          ? statutoryReviewAction(reviewFlag.source)
+          : undefined,
       });
     }
   };
@@ -297,13 +314,31 @@ export default function INSSMonthly() {
         });
         setSelectedReturn(returnData);
         setSelectedFilingId(filing.id);
-      } catch {
+      } catch (error) {
+        const reviewFlag = getStatutoryReviewFlag(error);
+        if (reviewFlag) {
+          console.warn("Statutory filing needs review:", reviewFlag.field);
+        } else {
+          console.error("Failed to rebuild INSS return:", error);
+        }
         toast({
-          title: t("reports.inssMonthly.toast.noDataTitle"),
-          description: t("reports.inssMonthly.toast.noDataDescription", {
-            period: formatPeriodLabel(filing.period),
-          }),
+          title: reviewFlag
+            ? t("common.needsReviewTitle")
+            : t("reports.inssMonthly.toast.noDataTitle"),
+          description: reviewFlag
+            ? t(
+                reviewFlag.source === "employer"
+                  ? "common.needsReviewEmployerDesc"
+                  : "common.needsReviewDesc",
+                { field: reviewFlag.field },
+              )
+            : t("reports.inssMonthly.toast.noDataDescription", {
+                period: formatPeriodLabel(filing.period),
+              }),
           variant: "destructive",
+          action: reviewFlag
+            ? statutoryReviewAction(reviewFlag.source)
+            : undefined,
         });
       }
       return;
@@ -390,6 +425,9 @@ export default function INSSMonthly() {
           : t("reports.inssMonthly.toast.drExportError") ||
             "Could not export the DR Excel file",
         variant: "destructive",
+        action: reviewFlag
+          ? statutoryReviewAction(reviewFlag.source)
+          : undefined,
       });
     }
   };

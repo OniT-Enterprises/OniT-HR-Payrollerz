@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface ContextualHelpLinkProps {
   slug: string;
   anchor?: string;
+  label?: string;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ interface ContextualHelpLinkProps {
 export function ContextualHelpLink({
   slug,
   anchor,
+  label,
   className,
 }: ContextualHelpLinkProps) {
   const { t } = useI18n();
@@ -27,7 +29,7 @@ export function ContextualHelpLink({
       )}
     >
       <BookOpen className="h-4 w-4 text-primary" />
-      <span>{t("help.helpWithThisPage")}</span>
+      <span>{label ?? t("help.helpWithThisPage")}</span>
       <ChevronRight className="h-4 w-4" />
     </Link>
   );

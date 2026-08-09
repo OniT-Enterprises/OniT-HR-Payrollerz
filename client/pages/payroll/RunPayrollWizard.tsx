@@ -442,16 +442,23 @@ export default function RunPayrollWizard() {
                 ? t("employees.empty.noEmployeesStart")
                 : t("runPayroll.noEmployeesAdminHelp")}
             </p>
-            {canAddEmployees ? (
-              <Button className="mt-5" onClick={() => navigate("/people/add")}>
-                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                {t("employees.buttons.addFirstEmployee")}
-              </Button>
-            ) : (
-              <Button className="mt-5" variant="outline" onClick={() => navigate("/payroll")}>
-                {t("common.back")}
-              </Button>
-            )}
+            <div className="mt-5 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              {canAddEmployees ? (
+                <Button onClick={() => navigate("/people/add")}>
+                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {t("employees.buttons.addFirstEmployee")}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => navigate("/payroll")}>
+                  {t("common.back")}
+                </Button>
+              )}
+              <ContextualHelpLink
+                slug="getting-started"
+                anchor="add-your-team"
+                label={t("help.howToAddTeam")}
+              />
+            </div>
           </section>
         </div>
       </div>

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageHeader from "@/components/layout/PageHeader";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useSmartEmployees, employeeKeys } from "@/hooks/useEmployees";
 import { useQueryClient } from "@tanstack/react-query";
@@ -561,6 +562,13 @@ export default function AllEmployees() {
     minSalary,
     maxSalary,
   ]);
+
+  const complianceHelpTarget =
+    complianceFilter === "missing-inss"
+      ? { slug: "getting-started", anchor: "add-your-team" }
+      : complianceFilter === "blocking-issues"
+        ? { slug: "running-payroll", anchor: "before-you-run" }
+        : null;
 
   // Column sorting (asc → desc → off). Empty/missing values sort last.
   const { sorted: sortedEmployees, sort, toggleSort } = useTableSort<Employee, EmployeeSortKey>(
@@ -1185,7 +1193,7 @@ export default function AllEmployees() {
 
         {/* Compliance Filter Alert - Shows when filtering by compliance issues */}
         {complianceFilter !== "all" && (
-          <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -1197,18 +1205,28 @@ export default function AllEmployees() {
               </span>
               <Badge variant="secondary" className="text-xs">{filteredEmployees.length}</Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setComplianceFilter("all");
-                setSearchParams({});
-              }}
-              className="text-amber-700 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
-            >
-              <X className="h-3.5 w-3.5 mr-1" />
-              {t("employees.compliance.clearFilter")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+              {complianceHelpTarget && (
+                <ContextualHelpLink
+                  slug={complianceHelpTarget.slug}
+                  anchor={complianceHelpTarget.anchor}
+                  label={t("help.howToFixThis")}
+                  className="text-amber-700 hover:bg-amber-100 hover:text-amber-900 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                />
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setComplianceFilter("all");
+                  setSearchParams({});
+                }}
+                className="min-h-11 text-amber-700 hover:bg-amber-100 hover:text-amber-900 dark:text-amber-300 dark:hover:bg-amber-900/50 sm:min-h-9"
+              >
+                <X className="mr-1 h-3.5 w-3.5" />
+                {t("employees.compliance.clearFilter")}
+              </Button>
+            </div>
           </div>
         )}
 

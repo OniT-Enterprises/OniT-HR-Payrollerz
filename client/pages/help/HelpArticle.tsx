@@ -13,16 +13,28 @@
  */
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, CalendarClock, Info } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarClock,
+  ChevronDown,
+  Info,
+} from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { HelpSupportCard } from "@/components/help/HelpSupportCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   getArticle,
   type ArticleLocale,
   type HelpEntry,
+  type HelpGroup,
   type PositionStatus,
 } from "@/lib/help/content";
 
@@ -155,6 +167,38 @@ function EntryCard({
   );
 }
 
+function MobileContentsGroup({ group }: { group: HelpGroup }) {
+  return (
+    <li>
+      <Collapsible>
+        <CollapsibleTrigger className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-2 text-left text-sm font-medium text-primary hover:bg-muted/50">
+          <span>
+            {group.heading}
+            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+              ({group.entries.length})
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ul className="ml-3 border-l border-border/60 pb-1 pl-3">
+            {group.entries.map((entry) => (
+              <li key={entry.id}>
+                <a
+                  href={`#${entry.id}`}
+                  className="inline-flex min-h-11 w-full items-center text-sm text-muted-foreground hover:text-primary hover:underline"
+                >
+                  {entry.heading}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
+    </li>
+  );
+}
+
 export default function HelpArticlePage() {
   const { t, locale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
@@ -222,7 +266,8 @@ export default function HelpArticlePage() {
         ))}
       </div>
 
-      {/* Contents — long-form on a phone needs a way past it. */}
+      {/* Keep the long legal contents skimmable on a phone: group names stay
+          visible, while the question-level links open only when requested. */}
       <nav
         aria-label={t("help.contentsHeading")}
         className="mb-8 rounded-xl border border-border/60 p-4"
@@ -230,7 +275,12 @@ export default function HelpArticlePage() {
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("help.contentsHeading")}
         </p>
-        <ul className="space-y-1.5">
+        <ul className="space-y-1 sm:hidden">
+          {article.groups.map((group) => (
+            <MobileContentsGroup key={group.id} group={group} />
+          ))}
+        </ul>
+        <ul className="hidden space-y-1.5 sm:block">
           {article.groups.map((group) => (
             <li key={group.id}>
               <a
