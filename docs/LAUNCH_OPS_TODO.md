@@ -7,21 +7,24 @@ Everything below is console/asset work that code can't do.
 
 ## High priority (do before marketing the launch)
 
-### 0a. Give every existing manager a department — REQUIRED for Ekipa crew clock-in photos
+### 0a. ~~Give every existing manager a department~~ — NO ACTION NEEDED, verified Aug 9 2026
 
-Storage rules now scope attendance photos and expense receipts to the uploader's
+Storage rules scope attendance photos and expense receipts to the uploader's
 department: a `manager` may write `attendance_photos/{tid}/...` only when their
 member document's `departmentId` matches the photo's metadata. Owners and
-hr-admins are unaffected.
+hr-admins are unaffected. `addTenantMember`/`updateTenantMember` require a
+department for the manager role, and Settings → Team access will not save a
+manager without one.
 
-`addTenantMember`/`updateTenantMember` require a department for the manager role
-from now on, and Settings → Team access will not save a manager without one —
-but **member documents created before this change have no `departmentId`**.
-Until an owner re-saves each manager, that supervisor's Ekipa photo upload 403s
-and the batch stays unsynced (visibly stuck, not silently lost).
+The migration worry was that member documents created before this had no
+`departmentId`. **Surveyed all 12 production tenants on 2026-08-09 with the
+Admin SDK: zero members hold the `manager` role** — every member is `owner` or
+`viewer` — so there is nothing to backfill.
 
-Action: Settings → Team access → edit each existing manager → pick their
-department → Save. Check for stragglers with:
+It stays written down because the hazard returns the moment the first manager is
+invited on a tenant with no departments: the invite dialog disables Save and
+says "Create a department before assigning a manager", which is correct but only
+discoverable at that moment. Re-check with:
 
 ```
 tenants/{tid}/members where role == 'manager' and departmentId is missing
