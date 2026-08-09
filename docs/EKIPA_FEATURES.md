@@ -346,7 +346,14 @@ Market-dependent. Build based on traction and partnerships.
 **Why TL:** Not everyone will install the app. WhatsApp is universal. Meets workers where they are.
 **Inspired by:** PaySpace/Pacey
 **Ties to payroll:** Same data, different channel.
-**Already started:** Meza bot infrastructure exists (`server/openclaw-xefe/`). Extend with employee-facing commands.
+**Status 2026-08-09: starting point removed.** This said "Meza bot
+infrastructure exists (`server/openclaw-xefe/`) — extend with employee-facing
+commands". OpenClaw and the WhatsApp channel were retired, so a WhatsApp feature
+now starts from nothing: either a WhatsApp Business API integration on
+`server/xefe-api`, or re-adopting a gateway. Weigh that cost before promising
+this, and read the retirement note in `docs/AGENTIC_ACCOUNTING_PLAN.md` first —
+an employee-facing write path through a chat channel is the exact shape we
+closed.
 
 ### 4.3 Training & Learning Modules
 **What:** Short, visual training courses on mobile.

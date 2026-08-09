@@ -2,6 +2,12 @@
 
 Status doc for the meza → Xefe / xefe.tl migration. What shipped, what's still open, and how to roll back.
 
+> **Historical record — accurate as of 2026-07-13, deliberately not rewritten.**
+> One thing it describes no longer exists: **OpenClaw / WhatsApp was retired on
+> 2026-08-09**, so the `openclaw-meza`→`openclaw-xefe` rename, the pinned
+> `openclaw@2026.4.15`, the `/openclaw/` shim and the bot model-auth 403 below
+> are all about a service that is gone. The rest still stands.
+
 ## ✅ Done & verified live
 
 | Area                | Result                                                                                                                                                                                                                                    |
