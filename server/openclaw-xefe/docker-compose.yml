@@ -24,8 +24,14 @@ services:
     network_mode: host
 
     # --- Writable tmpfs for temp files (noexec, nosuid) ---
+    # 64m was not enough and the way it failed was invisible: openclaw writes its
+    # own unrotated log to /tmp/openclaw (48M in 12 days), and once the tmpfs
+    # filled, the WhatsApp plugin died at register with "ENOSPC: no space left on
+    # device" while the container still reported healthy and Up. The host had 14G
+    # free the whole time. tmpfs pages are only allocated as used, so the larger
+    # cap costs nothing until the log grows into it.
     tmpfs:
-      - /tmp:noexec,nosuid,size=64m
+      - /tmp:noexec,nosuid,size=256m
 
     # --- Persistent volumes ---
     volumes:
