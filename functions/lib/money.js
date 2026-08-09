@@ -21,6 +21,7 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const firestore_1 = require("firebase-admin/firestore");
 const v2_1 = require("firebase-functions/v2");
 const crypto_1 = __importDefault(require("crypto"));
+const recurringInvoiceSchedule_1 = require("./recurringInvoiceSchedule");
 const db = (0, firestore_1.getFirestore)();
 // ────────────────────────────────────────────
 // Date helpers (Timor-Leste, UTC+9)
@@ -65,35 +66,6 @@ function percentOf(value, percent) {
 }
 function addMoney(a, b) {
     return round2(a + b);
-}
-function calculateNextRunDate(currentDate, frequency) {
-    const source = parseDateISO(currentDate);
-    const sourceYear = source.getUTCFullYear();
-    const sourceMonth = source.getUTCMonth();
-    const sourceDay = source.getUTCDate();
-    const sourceMonthLastDay = new Date(Date.UTC(sourceYear, sourceMonth + 1, 0)).getUTCDate();
-    const keepEndOfMonth = sourceDay === sourceMonthLastDay;
-    if (frequency === "weekly") {
-        return addDaysISO(currentDate, 7);
-    }
-    const target = new Date(source.getTime());
-    switch (frequency) {
-        case "monthly":
-            target.setUTCMonth(target.getUTCMonth() + 1);
-            break;
-        case "quarterly":
-            target.setUTCMonth(target.getUTCMonth() + 3);
-            break;
-        case "yearly":
-            target.setUTCFullYear(target.getUTCFullYear() + 1);
-            break;
-    }
-    const targetYear = target.getUTCFullYear();
-    const targetMonth = target.getUTCMonth();
-    const targetMonthLastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
-    const day = keepEndOfMonth ? targetMonthLastDay : Math.min(sourceDay, targetMonthLastDay);
-    const normalized = new Date(Date.UTC(targetYear, targetMonth, day, 12, 0, 0));
-    return normalized.toISOString().split("T")[0];
 }
 function genShareToken() {
     const bytes = crypto_1.default.randomBytes(24);
@@ -315,7 +287,7 @@ async function processRecurringInvoiceDoc(tenantId, recurringId, todayTL, resolv
             };
             transaction.set(invoiceRef, invoicePayload);
             // Update recurring template
-            const nextRunDate = calculateNextRunDate(issueDate, recurring.frequency);
+            const nextRunDate = (0, recurringInvoiceSchedule_1.advanceRecurringInvoiceDate)(issueDate, recurring.frequency, recurring.startDate || issueDate);
             const newCount = generatedCount + 1;
             const shouldComplete = (recurring.endAfterOccurrences && newCount >= recurring.endAfterOccurrences) ||
                 (recurring.endDate && nextRunDate > recurring.endDate);

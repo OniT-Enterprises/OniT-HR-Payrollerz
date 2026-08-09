@@ -13,6 +13,10 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import crypto from "crypto";
+import {
+  advanceRecurringInvoiceDate,
+  type RecurringInvoiceFrequency,
+} from "./recurringInvoiceSchedule";
 
 const db = getFirestore();
 
@@ -76,43 +80,7 @@ function addMoney(a: number, b: number): number {
 // Recurring schedule helpers (mirrors client)
 // ────────────────────────────────────────────
 
-type RecurringFrequency = "weekly" | "monthly" | "quarterly" | "yearly";
 type RecurringStatus = "active" | "paused" | "completed";
-
-function calculateNextRunDate(currentDate: string, frequency: RecurringFrequency): string {
-  const source = parseDateISO(currentDate);
-  const sourceYear = source.getUTCFullYear();
-  const sourceMonth = source.getUTCMonth();
-  const sourceDay = source.getUTCDate();
-  const sourceMonthLastDay = new Date(Date.UTC(sourceYear, sourceMonth + 1, 0)).getUTCDate();
-  const keepEndOfMonth = sourceDay === sourceMonthLastDay;
-
-  if (frequency === "weekly") {
-    return addDaysISO(currentDate, 7);
-  }
-
-  const target = new Date(source.getTime());
-
-  switch (frequency) {
-    case "monthly":
-      target.setUTCMonth(target.getUTCMonth() + 1);
-      break;
-    case "quarterly":
-      target.setUTCMonth(target.getUTCMonth() + 3);
-      break;
-    case "yearly":
-      target.setUTCFullYear(target.getUTCFullYear() + 1);
-      break;
-  }
-
-  const targetYear = target.getUTCFullYear();
-  const targetMonth = target.getUTCMonth();
-  const targetMonthLastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
-  const day = keepEndOfMonth ? targetMonthLastDay : Math.min(sourceDay, targetMonthLastDay);
-
-  const normalized = new Date(Date.UTC(targetYear, targetMonth, day, 12, 0, 0));
-  return normalized.toISOString().split("T")[0];
-}
 
 function genShareToken(): string {
   const bytes = crypto.randomBytes(24);
@@ -172,7 +140,7 @@ type RecurringInvoiceDoc = {
   customerId: string;
   customerName?: string;
   customerEmail?: string;
-  frequency: RecurringFrequency;
+  frequency: RecurringInvoiceFrequency;
   startDate: string;
   endDate?: string;
   endAfterOccurrences?: number;
@@ -421,7 +389,11 @@ async function processRecurringInvoiceDoc(
       transaction.set(invoiceRef, invoicePayload);
 
       // Update recurring template
-      const nextRunDate = calculateNextRunDate(issueDate, recurring.frequency as RecurringFrequency);
+      const nextRunDate = advanceRecurringInvoiceDate(
+        issueDate,
+        recurring.frequency as RecurringInvoiceFrequency,
+        recurring.startDate || issueDate,
+      );
       const newCount = generatedCount + 1;
       const shouldComplete =
         (recurring.endAfterOccurrences && newCount >= recurring.endAfterOccurrences) ||

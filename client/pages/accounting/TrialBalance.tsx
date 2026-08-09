@@ -40,7 +40,7 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getISODateParts, getTodayTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { addMoney, compareMoney, subtractMoney } from "@/lib/currency";
 import { downloadCSVRows } from "@/lib/csvExport";
@@ -56,7 +56,7 @@ export default function TrialBalance() {
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
-    const year = new Date().getFullYear();
+    const year = getISODateParts(getTodayTL()).year;
     return `${year}-01-01`;
   });
   const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
@@ -69,7 +69,7 @@ export default function TrialBalance() {
 
   const trialBalanceQuery = useTrialBalance(
     requestedReport?.asOfDate ?? asOfDate,
-    requestedReport?.fiscalYear ?? new Date(asOfDate).getFullYear(),
+    requestedReport?.fiscalYear ?? getISODateParts(asOfDate).year,
     !!requestedReport,
     requestedReport?.periodStart,
   );
@@ -84,7 +84,7 @@ export default function TrialBalance() {
   const handleGenerateTrialBalance = async () => {
     const nextRequest = {
       asOfDate,
-      fiscalYear: new Date(asOfDate).getFullYear(),
+      fiscalYear: getISODateParts(asOfDate).year,
       periodStart,
     };
     const isSameRequest = requestedReport

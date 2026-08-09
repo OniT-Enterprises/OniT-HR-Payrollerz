@@ -27,11 +27,11 @@ import {
   getTodayTL,
   parseDateISO,
 } from "@/lib/dateUtils";
+import { advanceRecurringInvoiceDate } from "@/lib/recurringInvoiceSchedule";
 import type {
   RecurringInvoice,
   RecurringInvoiceFormData,
   RecurringStatus,
-  RecurringFrequency,
   InvoiceItem,
 } from "@/types/money";
 export type { RecurringInvoiceFormData };
@@ -66,56 +66,6 @@ function mapRecurringInvoice(docSnap: DocumentSnapshot): RecurringInvoice {
 /**
  * Calculate next run date based on frequency
  */
-function calculateNextRunDate(
-  currentDate: string,
-  frequency: RecurringFrequency,
-): string {
-  // Runtime data is cast unchecked: an unknown frequency would fall through
-  // every branch and return the input date unchanged, which defeats the
-  // compare-and-set claim below and re-bills the same period forever.
-  if (!["weekly", "monthly", "quarterly", "yearly"].includes(frequency)) {
-    throw new Error(`Unknown recurring frequency: ${String(frequency)}`);
-  }
-  const source = parseDateISO(currentDate);
-  const sourceYear = source.getUTCFullYear();
-  const sourceMonth = source.getUTCMonth();
-  const sourceDay = source.getUTCDate();
-  const sourceMonthLastDay = new Date(
-    Date.UTC(sourceYear, sourceMonth + 1, 0),
-  ).getUTCDate();
-  const keepEndOfMonth = sourceDay === sourceMonthLastDay;
-
-  if (frequency === "weekly") {
-    return formatDateISO(addDays(source, 7));
-  }
-
-  const target = new Date(source.getTime());
-
-  switch (frequency) {
-    case "monthly":
-      target.setUTCMonth(target.getUTCMonth() + 1);
-      break;
-    case "quarterly":
-      target.setUTCMonth(target.getUTCMonth() + 3);
-      break;
-    case "yearly":
-      target.setUTCFullYear(target.getUTCFullYear() + 1);
-      break;
-  }
-
-  const targetYear = target.getUTCFullYear();
-  const targetMonth = target.getUTCMonth();
-  const targetMonthLastDay = new Date(
-    Date.UTC(targetYear, targetMonth + 1, 0),
-  ).getUTCDate();
-  const day = keepEndOfMonth
-    ? targetMonthLastDay
-    : Math.min(sourceDay, targetMonthLastDay);
-
-  const normalized = new Date(Date.UTC(targetYear, targetMonth, day, 12, 0, 0));
-  return formatDateISO(normalized);
-}
-
 class RecurringInvoiceService {
   private collectionRef(tenantId: string) {
     return collection(db, paths.recurringInvoices(tenantId));
@@ -425,9 +375,10 @@ class RecurringInvoiceService {
         }
 
         const issueDate = recurring.nextRunDate;
-        const nextRunDate = calculateNextRunDate(
+        const nextRunDate = advanceRecurringInvoiceDate(
           recurring.nextRunDate,
           recurring.frequency,
+          recurring.startDate || recurring.nextRunDate,
         );
         const newCount = recurring.generatedCount + 1;
         const shouldComplete =
