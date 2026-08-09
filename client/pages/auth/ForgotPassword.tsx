@@ -98,7 +98,7 @@ export default function ForgotPassword() {
                 <h1 className="text-2xl font-bold text-white tracking-tight">
                   {t("auth.forgotPasswordTitle")}
                 </h1>
-                <p className="text-sm text-zinc-500 mt-2">
+                <p className="text-sm text-zinc-400 mt-2">
                   {t("auth.forgotPasswordSubtitle")}
                 </p>
               </div>
@@ -115,7 +115,7 @@ export default function ForgotPassword() {
                     {t("auth.email")}
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="email"
                       name="email"
@@ -124,7 +124,7 @@ export default function ForgotPassword() {
                       placeholder={t("auth.emailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                       autoFocus
                       disabled={loading}

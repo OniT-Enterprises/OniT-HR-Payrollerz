@@ -85,10 +85,12 @@ function XefeBotInline({
   t,
   firstName,
   summary,
+  showControls = true,
 }: {
   t: (key: string) => string;
   firstName: string;
   summary: string;
+  showControls?: boolean;
 }) {
   const { setOpen, setPendingQuery } = useChatStore();
   const [input, setInput] = useState("");
@@ -122,38 +124,42 @@ function XefeBotInline({
         </h2>
         <p className="mt-0.5 text-sm text-foreground/75">{summary}</p>
       </div>
-      <form
-        onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
-        className="flex items-center gap-2"
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t("dashboard.botPlaceholder")}
-          className="h-11 flex-1 rounded-full border border-border bg-background px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary md:h-9 md:text-sm"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim()}
-          aria-label={t("dashboard.botPlaceholder")}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:opacity-40 md:h-9 md:w-9"
-        >
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </form>
-      <div className="flex flex-wrap gap-1.5">
-        {prompts.map((prompt) => (
-          <button
-            key={prompt}
-            type="button"
-            onClick={() => handleSend(prompt)}
-            className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs text-foreground/75 transition-all duration-150 hover:border-primary/40 hover:text-foreground active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      {showControls && (
+        <>
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
+            className="flex items-center gap-2"
           >
-            {prompt}
-          </button>
-        ))}
-      </div>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t("dashboard.botPlaceholder")}
+              className="h-11 flex-1 rounded-full border border-border bg-background px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary md:h-9 md:text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              aria-label={t("dashboard.botPlaceholder")}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:opacity-40 md:h-9 md:w-9"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </form>
+          <div className="flex flex-wrap gap-1.5">
+            {prompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => handleSend(prompt)}
+                className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs text-foreground/75 transition-all duration-150 hover:border-primary/40 hover:text-foreground active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -161,7 +167,7 @@ function XefeBotInline({
 function DashboardSkeleton({ cardCount }: { cardCount: number }) {
   const cards = Array.from({ length: Math.max(cardCount, 3) });
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         {/* ── Assistant strip ── */}
@@ -425,6 +431,7 @@ export default function Dashboard() {
     employeesWithIssues > 0 ||
     (moneyStats?.revenueThisMonth ?? 0) > 0 ||
     (moneyStats?.totalOutstanding ?? 0) > 0;
+  const isFirstRun = noStaffYet && !hasAnyRealNumbers;
   // The panel already carries this action; don't say it twice.
   const showAddEmployeeTodo = shouldAddEmployee && !noStaffYet;
   // Only an explicit false counts: settings are not loaded for tenants without
@@ -521,7 +528,7 @@ export default function Dashboard() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <SEO {...seoConfig.dashboard} />
         <MainNavigation />
         <DashboardLoadError onRetry={retryDashboard} isRetrying={retrying} />
@@ -639,7 +646,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
@@ -666,7 +673,12 @@ export default function Dashboard() {
               alt="XefeBot"
               className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14"
             />
-            <XefeBotInline t={t} firstName={firstName} summary={botSummary} />
+            <XefeBotInline
+              t={t}
+              firstName={firstName}
+              summary={botSummary}
+              showControls={!isFirstRun}
+            />
           </div>
         </div>
 
@@ -794,7 +806,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Things to do: the hero of the page, grouped by urgency ── */}
-        <div className="mt-8">
+        {!isFirstRun && <div className="mt-8">
           <p className="mb-3 text-sm font-semibold">{t("dashboard.thingsToDo")}</p>
 
           {hasNeedsAttention && (
@@ -904,11 +916,11 @@ export default function Dashboard() {
               <span>{t("dashboard.allGood")}</span>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Optional professional support stays visible, but as a quiet
             one-line banner that never competes with the to-do hierarchy. */}
-        <AccountantPartnerBanner />
+        {!isFirstRun && <AccountantPartnerBanner />}
       </div>
 
       <KeyboardShortcutsDialog

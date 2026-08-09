@@ -702,6 +702,13 @@ function SidebarContent({
   expandedModules, expandedSections, onNavigate, onClose,
   onToggleModule, onToggleSection, onToggleCollapsed, t, showSettings,
 }: SidebarContentProps) {
+  const primaryModules = visibleModules.filter((module) =>
+    ["people", "scheduling", "payroll"].includes(module.id),
+  );
+  const moreToolModules = visibleModules.filter((module) =>
+    ["money", "accounting", "reports"].includes(module.id),
+  );
+
   return (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <SidebarHeader
@@ -728,7 +735,7 @@ function SidebarContent({
 
           <div className="h-px bg-sidebar-border my-2" />
 
-          {visibleModules.map((mod) => (
+          {primaryModules.map((mod) => (
             <ModuleSection
               key={mod.id}
               mod={mod}
@@ -742,6 +749,32 @@ function SidebarContent({
               t={t}
             />
           ))}
+
+          {moreToolModules.length > 0 && (
+            <>
+              {collapsed ? (
+                <div className="my-2 h-px bg-sidebar-border" />
+              ) : (
+                <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                  {t("nav.moreTools")}
+                </p>
+              )}
+              {moreToolModules.map((mod) => (
+                <ModuleSection
+                  key={mod.id}
+                  mod={mod}
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  isExpanded={expandedModules.has(mod.id)}
+                  expandedSections={expandedSections}
+                  onToggleModule={onToggleModule}
+                  onToggleSection={onToggleSection}
+                  onNavigate={onNavigate}
+                  t={t}
+                />
+              ))}
+            </>
+          )}
         </div>
       </ScrollArea>
 

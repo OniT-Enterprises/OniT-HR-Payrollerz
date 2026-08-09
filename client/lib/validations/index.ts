@@ -226,17 +226,47 @@ const coerceToNumber = (val: unknown): number | undefined => {
 // EMPLOYEE SCHEMAS
 // ============================================
 
+export interface AddEmployeeValidationMessages {
+  firstNameRequired: string;
+  lastNameRequired: string;
+  invalidEmail: string;
+  startDateRequired: string;
+  salaryRequired: string;
+  salaryNonNegative: string;
+  minimumWorkingAge: (age: number) => string;
+  partTimeHours: string;
+  minimumWageTreatment: string;
+  minimumWageReviewNote: string;
+}
+
+const DEFAULT_ADD_EMPLOYEE_VALIDATION_MESSAGES: AddEmployeeValidationMessages = {
+  firstNameRequired: 'First name is required',
+  lastNameRequired: 'Last name is required',
+  invalidEmail: 'Enter a valid email address',
+  startDateRequired: 'Start date is required',
+  salaryRequired: 'Enter how much you pay them each month',
+  salaryNonNegative: 'Salary must be zero or more',
+  minimumWorkingAge: (age) =>
+    `Timor-Leste labour law: minimum working age is 15 (age at start date: ${age}).`,
+  partTimeHours: 'Enter contracted hours between 1 and 44 per week',
+  minimumWageTreatment: 'Choose how the minimum-wage check applies',
+  minimumWageReviewNote: 'Add the accountant or legal review supporting this exception',
+};
+
 /**
- * AddEmployee wizard form schema - comprehensive validation for the multi-step form
+ * Add-employee form schema. The factory keeps validation in the language the
+ * owner selected instead of leaking English from a static schema.
  */
-export const addEmployeeFormSchema = z.object({
+export const createAddEmployeeFormSchema = (
+  messages: AddEmployeeValidationMessages = DEFAULT_ADD_EMPLOYEE_VALIDATION_MESSAGES,
+) => z.object({
   // Step 1: Basic Info
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
+  firstName: z.string().min(1, messages.firstNameRequired).max(50),
+  lastName: z.string().min(1, messages.lastNameRequired).max(50),
   // Optional by design: many TL workers (guards, drivers, cleaners) have no
   // email. Nothing statutory reads it — it only gates the optional Ekipa app
   // invite, which already guards on presence.
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  email: z.string().email(messages.invalidEmail).optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   phoneApp: z.string().optional().or(z.literal('')),
   appEligible: z.boolean().default(false),
@@ -251,7 +281,7 @@ export const addEmployeeFormSchema = z.object({
   manager: z.string().optional().or(z.literal('')),
   projectCode: z.string().max(100).optional().or(z.literal('')),
   fundingSource: z.string().max(200).optional().or(z.literal('')),
-  startDate: z.string().min(1, 'Start date is required'),
+  startDate: z.string().min(1, messages.startDateRequired),
   employmentType: z.preprocess(
     (val) => {
       if (typeof val !== 'string') return val;
@@ -277,9 +307,9 @@ export const addEmployeeFormSchema = z.object({
   // Required. Previously optional and silently coerced to $0, which only
   // surfaced mid-payroll as "below minimum wage" — long after the person who
   // knew the number had moved on.
-  salary: z.string().min(1, 'Enter how much you pay them each month').refine(
+  salary: z.string().min(1, messages.salaryRequired).refine(
     (value) => Number.isFinite(Number(value)) && Number(value) >= 0,
-    'Salary must be a non-negative number',
+    messages.salaryNonNegative,
   ),
   // Art. 32 statutory annual leave is 12 working days, which is also what
   // TL_DEFAULT_LEAVE_POLICIES.annualLeave.daysPerYear uses. The old 25 default
@@ -298,7 +328,7 @@ export const addEmployeeFormSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['dateOfBirth'],
-        message: `Labour Law Art. 68: minimum working age is 15 (age at hire date: ${age})`,
+        message: messages.minimumWorkingAge(age),
       });
     }
   }
@@ -309,14 +339,14 @@ export const addEmployeeFormSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['contractedWeeklyHours'],
-        message: 'Part-time contracted hours must be between 1 and 44 per week',
+        message: messages.partTimeHours,
       });
     }
     if (!data.minimumWageTreatment) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['minimumWageTreatment'],
-        message: 'Choose how the minimum-wage check applies to this part-time contract',
+        message: messages.minimumWageTreatment,
       });
     }
     if (
@@ -326,11 +356,13 @@ export const addEmployeeFormSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['minimumWageReviewNote'],
-        message: 'Record the accountant or legal review supporting this exception',
+        message: messages.minimumWageReviewNote,
       });
     }
   }
 });
+
+export const addEmployeeFormSchema = createAddEmployeeFormSchema();
 
 export type AddEmployeeFormData = z.infer<typeof addEmployeeFormSchema>;
 

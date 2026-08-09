@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,7 +51,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
-import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
+import { createAddEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import { toDateStringTL } from "@/lib/dateUtils";
 import { divideMoney, roundMoney } from "@/lib/currency";
 import {
@@ -124,6 +123,22 @@ export default function AddEmployee() {
   const tenantId = useTenantId();
   const { user } = useAuth();
 
+  const employeeFormSchema = useMemo(
+    () => createAddEmployeeFormSchema({
+      firstNameRequired: t("addEmployee.validation.firstNameRequired"),
+      lastNameRequired: t("addEmployee.validation.lastNameRequired"),
+      invalidEmail: t("addEmployee.validation.invalidEmail"),
+      startDateRequired: t("addEmployee.validation.startDateRequired"),
+      salaryRequired: t("addEmployee.validation.salaryRequired"),
+      salaryNonNegative: t("addEmployee.validation.salaryNonNegative"),
+      minimumWorkingAge: (age) =>
+        t("addEmployee.validation.minimumWorkingAge", { age }),
+      partTimeHours: t("addEmployee.validation.partTimeHours"),
+      minimumWageTreatment: t("addEmployee.validation.minimumWageTreatment"),
+      minimumWageReviewNote: t("addEmployee.validation.minimumWageReviewNote"),
+    }),
+    [t],
+  );
 
   // Form with react-hook-form + zod validation
   const {
@@ -136,7 +151,7 @@ export default function AddEmployee() {
     setFocus,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
-    resolver: zodResolver(addEmployeeFormSchema),
+    resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       firstName: searchParams.get("firstName") || "",
       lastName: searchParams.get("lastName") || "",
@@ -717,16 +732,16 @@ export default function AddEmployee() {
           try {
             await employeeService.sendAppInvite(tenantId, { email: inviteEmail, employeeDocId: id });
             toast({
-              title: "App invite sent",
-              description: `${inviteEmail} will receive an email to set their password and sign in.`,
+              title: t("addEmployee.toast.inviteSentTitle"),
+              description: t("addEmployee.toast.inviteSentDesc", { email: inviteEmail }),
             });
           } catch (inviteError) {
             const code = (inviteError as { code?: string }).code;
             if (code !== "functions/already-exists") {
               console.error("App invite failed:", inviteError);
               toast({
-                title: "Employee saved, but the app invite failed",
-                description: "You can re-send it from their profile (Send app invite).",
+                title: t("addEmployee.toast.inviteFailedTitle"),
+                description: t("addEmployee.toast.inviteFailedDesc"),
                 variant: "destructive",
               });
             }
@@ -815,7 +830,7 @@ export default function AddEmployee() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3 min-w-0">
@@ -829,48 +844,40 @@ export default function AddEmployee() {
           </div>
 
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5 sm:hidden">
-              <div className="min-w-0 space-y-1">
-                <Skeleton className="h-3 w-10" />
-                <Skeleton className="h-4 w-28" />
+            <section className="space-y-4">
+              <Skeleton className="h-5 w-40" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
               </div>
-              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-            </div>
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </section>
 
-            <div className="relative hidden sm:flex justify-between">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="flex flex-col items-center gap-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
-            </div>
-
-            <Card>
-              <CardHeader className="hidden sm:block">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-5 rounded" />
-                  <Skeleton className="h-5 w-40" />
-                </div>
-                <Skeleton className="h-4 w-56 mt-2" />
-              </CardHeader>
-              <CardContent className="min-h-[420px] space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <Skeleton className="h-10 w-full" />
-              </CardContent>
-            </Card>
-
-            <div className="flex items-center justify-between border-t pt-4">
-              <Skeleton className="h-10 w-20" />
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Skeleton className="h-10 w-20" />
-                <Skeleton className="h-10 w-24" />
+            <section className="space-y-4 border-t border-border/60 pt-6">
+              <Skeleton className="h-5 w-64 max-w-full" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
               </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t border-border/60 pt-6">
+              <Skeleton className="h-5 w-44" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
+                <Skeleton className="h-11 w-full rounded-md" />
+              </div>
+            </section>
+
+            <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-border bg-background/95 px-4 py-3 sm:static sm:justify-end sm:border-0 sm:bg-transparent sm:px-0">
+              <Skeleton className="h-11 flex-1 rounded-md sm:w-20 sm:flex-none" />
+              <Skeleton className="h-11 flex-1 rounded-md sm:w-32 sm:flex-none" />
             </div>
           </div>
         </div>
@@ -879,7 +886,7 @@ export default function AddEmployee() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <SEO {...seoConfig.addEmployee} />
 
       <PageHeader
@@ -1115,27 +1122,29 @@ export default function AddEmployee() {
               </h2>
               {/* Department & Title */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="department">{t("addEmployee.fields.department")}</Label>
-                  <Controller
-                    name="department"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={errors.department ? "border-destructive" : ""}>
-                          <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments.map(d => (
-                            <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.department && <p className="text-sm text-destructive">{errors.department.message}</p>}
-                </div>
-                <div className="space-y-2">
+                {departments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">{t("addEmployee.fields.department")}</Label>
+                    <Controller
+                      name="department"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={errors.department ? "border-destructive" : ""}>
+                            <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map(d => (
+                              <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.department && <p className="text-sm text-destructive">{errors.department.message}</p>}
+                  </div>
+                )}
+                <div className={`space-y-2 ${departments.length === 0 ? "sm:col-span-2" : ""}`}>
                   <Label htmlFor="jobTitle">{t("addEmployee.fields.jobTitle")}</Label>
                   <Input
                     id="jobTitle"

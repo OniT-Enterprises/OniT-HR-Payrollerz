@@ -17,6 +17,7 @@ import { useAuthSettled } from "@/hooks/useAuthSettled";
 import { useTenant } from "@/contexts/TenantContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { AccountantChoice } from "@/components/accountants/AccountantChoice";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import {
   forgetAccountantPartner,
   getAccountantPartner,
@@ -48,6 +49,13 @@ export default function Signup() {
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [revealSlug, setRevealSlug] = useState(false);
+  const [showAccountantChoice] = useState(
+    () => Boolean(
+      getAccountantPartner(searchParams.get("accountant")) ||
+      readRememberedAccountantPartner(),
+    ),
+  );
   const [accountantPartnerId, setAccountantPartnerId] =
     useState<AccountantPartnerId | null>(() => {
       const fromUrl = getAccountantPartner(searchParams.get("accountant"));
@@ -127,13 +135,31 @@ export default function Signup() {
       await updateProfile(user, { displayName: displayName.trim() });
 
       // 3. Provision tenant + owner membership + user profile
-      const tenantId = await provisionOrganization({
-        user,
-        displayName: displayName.trim(),
-        companyName,
-        companySlug,
-        accountantPartnerId,
-      });
+      let tenantId: string;
+      try {
+        tenantId = await provisionOrganization({
+          user,
+          displayName: displayName.trim(),
+          companyName,
+          companySlug,
+          accountantPartnerId,
+        });
+      } catch (provisionErr) {
+        // Company ID is an implementation detail, so resolve the normal name
+        // collision without asking a first-time owner to understand it.
+        if (!(provisionErr instanceof SlugTakenError) || slugManuallyEdited) {
+          throw provisionErr;
+        }
+        const suffixed = `${companySlug}-${Math.random().toString(36).slice(2, 6)}`;
+        setCompanySlug(suffixed);
+        tenantId = await provisionOrganization({
+          user,
+          displayName: displayName.trim(),
+          companyName,
+          companySlug: suffixed,
+          accountantPartnerId,
+        });
+      }
 
       await refreshUserProfile();
 
@@ -152,6 +178,7 @@ export default function Signup() {
       console.error("Signup error:", err);
       const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
       if (err instanceof SlugTakenError) {
+        setRevealSlug(true);
         setError(t("auth.errors.companySlugTaken"));
       } else if (err instanceof ProvisioningTimeoutError) {
         setError(t("auth.errors.networkTimeout"));
@@ -241,7 +268,7 @@ export default function Signup() {
             <h1 className="text-2xl font-bold tracking-tight text-white">
               {step === "account" ? t("auth.signup.titleAccount") : t("auth.signup.titleOrganization")}
             </h1>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-zinc-400">
               {step === "account"
                 ? `${t("landing.hero.trust.trial")} · ${t("admin.createTenant.planFreeDesc")}`
                 : t("auth.signup.subtitleOrganization")}
@@ -251,7 +278,7 @@ export default function Signup() {
           <div>
             {/* Progress indicator */}
             <div className="mb-6 flex items-center justify-center gap-2">
-              <div className={`flex items-center gap-2 ${step === "account" ? "text-primary" : "text-zinc-500"}`}>
+              <div className={`flex items-center gap-2 ${step === "account" ? "text-primary" : "text-zinc-400"}`}>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                   step === "account"
                     ? "bg-primary text-primary-foreground"
@@ -262,11 +289,11 @@ export default function Signup() {
                 <span className="hidden text-sm font-medium sm:inline">{t("auth.signup.stepAccount")}</span>
               </div>
               <div className="h-0.5 w-8 bg-white/10" />
-              <div className={`flex items-center gap-2 ${step === "organization" ? "text-primary" : "text-zinc-500"}`}>
+              <div className={`flex items-center gap-2 ${step === "organization" ? "text-primary" : "text-zinc-400"}`}>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                   step === "organization"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-white/5 text-zinc-500"
+                    : "bg-white/5 text-zinc-400"
                 }`}>
                   2
                 </div>
@@ -293,7 +320,7 @@ export default function Signup() {
                     <div className="w-full border-t border-white/10" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-500">
+                    <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-400">
                       {t("auth.orDivider")}
                     </span>
                   </div>
@@ -302,7 +329,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="displayName" className="text-sm font-medium text-zinc-300">{t("auth.signup.fullName")}</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="displayName"
                       name="name"
@@ -311,7 +338,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.fullNamePlaceholder")}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
@@ -320,7 +347,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-zinc-300">{t("auth.signup.workEmail")}</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="email"
                       name="email"
@@ -329,7 +356,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.workEmailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
@@ -338,7 +365,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-zinc-300">{t("auth.password")}</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="password"
                       name="password"
@@ -347,7 +374,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.passwordHint")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                       minLength={6}
                     />
@@ -357,7 +384,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-300">{t("auth.signup.confirmPassword")}</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -366,7 +393,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
@@ -383,7 +410,7 @@ export default function Signup() {
                 <div className="space-y-2">
                   <label htmlFor="companyName" className="text-sm font-medium text-zinc-300">{t("auth.signup.companyName")}</label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                       id="companyName"
                       name="organization"
@@ -392,39 +419,46 @@ export default function Signup() {
                       placeholder={t("auth.signup.companyNamePlaceholder")}
                       value={companyName}
                       onChange={(e) => handleCompanyNameChange(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="companySlug" className="text-sm font-medium text-zinc-300">{t("auth.signup.companyUrl")}</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="companySlug"
-                      name="companySlug"
-                      type="text"
-                      autoComplete="off"
-                      placeholder={t("auth.signup.companySlugPlaceholder")}
-                      value={companySlug}
-                      onChange={(e) => {
-                        setSlugManuallyEdited(true);
-                        setCompanySlug(generateSlug(e.target.value));
-                      }}
-                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
-                    />
-                  </div>
-                  <p className="text-xs text-zinc-500">
+                <MoreDetailsSection
+                  key={revealSlug ? "slug-open" : "slug-closed"}
+                  defaultOpen={revealSlug}
+                  title={t("auth.signup.companyUrlAdvanced")}
+                  contentClassName="space-y-2"
+                >
+                  <label htmlFor="companySlug" className="text-sm font-medium text-zinc-300">
+                    {t("auth.signup.companyUrl")}
+                  </label>
+                  <input
+                    id="companySlug"
+                    name="companySlug"
+                    type="text"
+                    autoComplete="off"
+                    placeholder={t("auth.signup.companySlugPlaceholder")}
+                    value={companySlug}
+                    onChange={(e) => {
+                      setSlugManuallyEdited(true);
+                      setCompanySlug(generateSlug(e.target.value));
+                    }}
+                    className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                  />
+                  <p className="text-xs text-zinc-400">
                     {t("auth.signup.companyUrlHint")}
                   </p>
-                </div>
+                </MoreDetailsSection>
 
-                <AccountantChoice
-                  value={accountantPartnerId}
-                  onChange={handleAccountantChoice}
-                  disabled={loading}
-                />
+                {showAccountantChoice && (
+                  <AccountantChoice
+                    value={accountantPartnerId}
+                    onChange={handleAccountantChoice}
+                    disabled={loading}
+                  />
+                )}
 
                 <div className="flex gap-3">
                   <Button
@@ -460,7 +494,7 @@ export default function Signup() {
                 <div className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#0a0a0b] px-2 text-zinc-500">
+                <span className="bg-[#0a0a0b] px-2 text-zinc-400">
                   {t("auth.signup.alreadyHaveAccount")}
                 </span>
               </div>
@@ -474,7 +508,7 @@ export default function Signup() {
               <Link to="/auth/login">{t("auth.signIn")}</Link>
             </Button>
 
-            <p className="text-center text-xs text-zinc-500">
+            <p className="text-center text-xs text-zinc-400">
               {t("legal.signupAgreePre")}{" "}
               <Link to="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-300">
                 {t("legal.terms.title")}

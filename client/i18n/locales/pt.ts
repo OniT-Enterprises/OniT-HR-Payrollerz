@@ -199,6 +199,7 @@ const messages = {
     money: "Dinheiro",
     accounting: "Contabilidade",
     reports: "Relatórios da Equipa",
+    moreTools: "Mais ferramentas",
     setupBannerTitle: "A configuração ainda não terminou",
     setupBannerDesc:
       "Termine a configuração da empresa, pagamentos e salários. {{percent}}% concluído.",
@@ -2568,6 +2569,20 @@ const messages = {
       ids: "Documento de identificação e número INSS",
       idsHelp: "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário.",
     },
+    validation: {
+      firstNameRequired: "Indique o primeiro nome.",
+      lastNameRequired: "Indique o apelido.",
+      invalidEmail: "Introduza um endereço de email válido.",
+      startDateRequired: "Escolha a data de início.",
+      salaryRequired: "Indique quanto paga por mês.",
+      salaryNonNegative: "O salário deve ser zero ou superior.",
+      minimumWorkingAge:
+        "Lei laboral de Timor-Leste: a idade mínima para trabalhar é 15 anos (idade na data de início: {{age}}).",
+      partTimeHours: "Indique entre 1 e 44 horas contratadas por semana.",
+      minimumWageTreatment: "Escolha como aplicar a verificação do salário mínimo.",
+      minimumWageReviewNote:
+        "Adicione a revisão contabilística ou jurídica que fundamenta esta exceção.",
+    },
     wizard: {
       basicTitle: "Informação Básica",
       basicDesc: "Nome, contactos e contacto de emergência",
@@ -2581,7 +2596,7 @@ const messages = {
     header: {
       addTitle: "Adicionar Funcionário",
       editTitle: "Editar Funcionário",
-      addSubtitle: "Adicione um novo membro da equipa em 4 passos fáceis",
+      addSubtitle: "Adicione agora o essencial. Pode completar os detalhes mais tarde.",
       editSubtitle: "Atualizar informação do funcionário",
     },
     buttons: {
@@ -2631,6 +2646,11 @@ const messages = {
       uploadWarningTitle: "Falha no carregamento de documento",
       uploadWarningDesc:
         "Funcionário foi guardado, mas falhou o carregamento de: {files}",
+      inviteSentTitle: "Convite para a aplicação enviado",
+      inviteSentDesc:
+        "{{email}} receberá um email para definir a palavra-passe e iniciar sessão.",
+      inviteFailedTitle: "Funcionário guardado, mas o convite falhou",
+      inviteFailedDesc: "Pode reenviá-lo a partir do perfil do funcionário.",
     },
     fields: {
       contractEndDate: "Data de fim do contrato",
@@ -2647,7 +2667,7 @@ const messages = {
         "O art. 14.º limita o período experimental a 8 ou 15 dias nos contratos a termo e a 30 dias nos permanentes — até 90 para funções de elevada complexidade técnica ou responsabilidade, ou de confiança.",
       firstName: "Primeiro Nome *",
       lastName: "Apelido *",
-      email: "Email *",
+      email: "Email",
       phone: "Telefone",
       appPhone: "Telefone da App",
       appPhoneTooltip: "Telefone para acesso à aplicação móvel",
@@ -2657,9 +2677,9 @@ const messages = {
       emergencyTitle: "Contacto de Emergência",
       emergencyName: "Nome do Contacto",
       emergencyPhone: "Telefone do Contacto",
-      department: "Departamento *",
+      department: "Departamento",
       departmentPlaceholder: "Selecionar departamento",
-      jobTitle: "Cargo *",
+      jobTitle: "Cargo",
       jobTitlePlaceholder: "ex., Engenheiro de Software",
       manager: "Gestor",
       managerPlaceholder: "Selecionar gestor",

@@ -198,6 +198,7 @@ const messages = {
     money: "Money",
     accounting: "Accounting",
     reports: "Workforce Reports",
+    moreTools: "More tools",
     setupBannerTitle: "Setup is not finished yet",
     setupBannerDesc:
       "Finish company, payment, and payroll setup. {{percent}}% complete.",
@@ -2531,6 +2532,20 @@ const messages = {
       ids: "ID and INSS number",
       idsHelp: "Nothing here stops you saving. We will ask again when you need it.",
     },
+    validation: {
+      firstNameRequired: "Enter their first name.",
+      lastNameRequired: "Enter their last name.",
+      invalidEmail: "Enter a valid email address.",
+      startDateRequired: "Choose their start date.",
+      salaryRequired: "Enter how much you pay them each month.",
+      salaryNonNegative: "Salary must be zero or more.",
+      minimumWorkingAge:
+        "Timor-Leste labour law: minimum working age is 15 (age at start date: {{age}}).",
+      partTimeHours: "Enter contracted hours between 1 and 44 per week.",
+      minimumWageTreatment: "Choose how the minimum-wage check applies.",
+      minimumWageReviewNote:
+        "Add the accountant or legal review supporting this exception.",
+    },
     wizard: {
       basicTitle: "Basic Info",
       basicDesc: "Name, contact details, and emergency contact",
@@ -2544,7 +2559,7 @@ const messages = {
     header: {
       addTitle: "Add Employee",
       editTitle: "Edit Employee",
-      addSubtitle: "Add a new team member in 4 easy steps",
+      addSubtitle: "Add the essentials now. You can fill in more details later.",
       editSubtitle: "Update employee information",
     },
     buttons: {
@@ -2593,6 +2608,11 @@ const messages = {
       addedDesc: "{{name}} added!",
       uploadWarningTitle: "Document upload failed",
       uploadWarningDesc: "Employee was saved, but failed to upload: {files}",
+      inviteSentTitle: "App invite sent",
+      inviteSentDesc:
+        "{{email}} will receive an email to set their password and sign in.",
+      inviteFailedTitle: "Employee saved, but the app invite failed",
+      inviteFailedDesc: "You can resend it from their profile.",
     },
     fields: {
       contractEndDate: "Contract end date",
@@ -2609,7 +2629,7 @@ const messages = {
         "Art. 14 caps probation at 8 or 15 days for fixed-term contracts, and at 30 days for permanent ones — up to 90 for roles of high technical complexity or responsibility, or positions of trust.",
       firstName: "First Name *",
       lastName: "Last Name *",
-      email: "Email *",
+      email: "Email",
       phone: "Phone",
       appPhone: "App Phone",
       appPhoneTooltip: "Phone for mobile app access",
@@ -2619,9 +2639,9 @@ const messages = {
       emergencyTitle: "Emergency Contact",
       emergencyName: "Contact Name",
       emergencyPhone: "Contact Phone",
-      department: "Department *",
+      department: "Department",
       departmentPlaceholder: "Select department",
-      jobTitle: "Job Title *",
+      jobTitle: "Job Title",
       jobTitlePlaceholder: "e.g., Software Engineer",
       manager: "Manager",
       managerPlaceholder: "Select manager",

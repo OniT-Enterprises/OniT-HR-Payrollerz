@@ -489,7 +489,7 @@ export default function SetupWizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex min-h-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -497,7 +497,7 @@ export default function SetupWizard() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex min-h-full items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
             <div className="rounded-full bg-destructive/10 p-3 text-destructive">
@@ -520,7 +520,7 @@ export default function SetupWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <div className="mx-auto max-w-2xl px-4 py-5 sm:px-6 sm:py-10">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

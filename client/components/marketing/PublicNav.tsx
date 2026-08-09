@@ -1,9 +1,9 @@
 /**
  * Shared top navigation for the public marketing pages (/, /how-it-works,
- * /pricing, /accountants, /engine). Every menu item is a real page — never a
- * scroll-to-section link — and the bar is identical on every page with the
- * current page highlighted, so moving around the site never disorients.
- * In-page sections belong in PublicSectionNav, not here.
+ * /pricing, /accountants, /engine). The primary bar stays focused on the
+ * buyer's first decisions; technical Engine and Docs links remain available
+ * in the footer. Every menu item is a real page, never a scroll-to-section
+ * link. In-page sections belong in PublicSectionNav, not here.
  *
  * This bar also owns the URL↔locale contract for the marketing site: Tetun
  * and Portuguese live under /tet and /pt prefixes (crawlable per-language
@@ -27,8 +27,6 @@ import {
 const NAV_LINKS = [
   { to: "/", labelKey: "landing.nav.home" },
   { to: "/how-it-works", labelKey: "landing.simple.nav.howItWorks" },
-  { to: "/engine", labelKey: "landing.nav.engine" },
-  { to: "/docs", labelKey: "publicDocs.eyebrow" },
   { to: "/pricing", labelKey: "landing.nav.pricing" },
   { to: "/accountants", labelKey: "landing.nav.forAccountants" },
 ] as const;

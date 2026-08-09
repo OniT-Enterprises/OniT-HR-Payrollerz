@@ -446,8 +446,16 @@ export default function TopBar() {
   const { toast } = useToast();
   const [setupBannerHidden, setSetupBannerHidden] = useState(false);
   const canManageTenant = canManage();
+  const isDashboard = location.pathname === "/" || location.pathname === "/dashboard";
   // Billing visibility: admins always see where they stand (free vs subscribed)
   const subscribed = useIsSubscribed(canManageTenant);
+
+  // The fresh-account dashboard already carries the setup link beside its one
+  // primary action. Reuse the dashboard's employee-summary query so the top
+  // bar does not add a second, competing setup banner above it.
+  const firstRunSummaryQuery = useActiveEmployeeSummary(
+    isDashboard && hasModule("staff") && canManageTenant,
+  );
 
   const notifCounts = useNotificationCounts(
     hasModule("payroll") && canManageTenant,
@@ -511,14 +519,16 @@ export default function TopBar() {
   const userInitials = user ? getUserInitials(user) : "U";
   const hasConnectionIssue = !isOnline || !isConnected;
   const setupProgressIsAlreadyVisible =
-    location.pathname === "/setup" || location.pathname.startsWith("/settings");
+    location.pathname === "/setup" ||
+    location.pathname.startsWith("/settings") ||
+    (isDashboard && firstRunSummaryQuery.data?.active === 0);
   const setupIncomplete =
     canManageTenant &&
     setupProgress?.isComplete === false &&
     !setupBannerHidden &&
-    !setupProgressIsAlreadyVisible;
+    !setupProgressIsAlreadyVisible &&
+    (!isDashboard || !firstRunSummaryQuery.isLoading);
   const setupPercent = setupProgress?.percentComplete ?? 0;
-  const isDashboard = location.pathname === "/" || location.pathname === "/dashboard";
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border/70 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">

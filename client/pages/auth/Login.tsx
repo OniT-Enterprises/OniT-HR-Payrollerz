@@ -152,7 +152,7 @@ export default function Login() {
             <h1 className="text-2xl font-bold text-white tracking-tight">
               {t("auth.loginTitle")}
             </h1>
-            <p className="text-sm text-zinc-500 mt-2">
+            <p className="text-sm text-zinc-400 mt-2">
               {t("auth.loginSubtitle")}
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function Login() {
               <div className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-500">
+              <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-400">
                 {t("auth.orDivider")}
               </span>
             </div>
@@ -189,7 +189,7 @@ export default function Login() {
                 {t("auth.email")}
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <input
                   id="email"
                   name="email"
@@ -198,7 +198,7 @@ export default function Login() {
                   placeholder={t("auth.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                  className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                   required
                 />
               </div>
@@ -209,7 +209,7 @@ export default function Login() {
                 {t("auth.password")}
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <input
                   id="password"
                   name="password"
@@ -218,7 +218,7 @@ export default function Login() {
                   placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-12 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
+                  className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-12 text-base text-white placeholder:text-zinc-400 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                   required
                 />
                 <button
@@ -227,7 +227,7 @@ export default function Login() {
                   aria-label={`${showPassword ? t("common.hide") : t("common.view")} ${t("auth.password").toLocaleLowerCase()}`}
                   aria-pressed={showPassword}
                   aria-controls="password"
-                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-zinc-500 transition-colors hover:text-zinc-300"
+                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-zinc-400 transition-colors hover:text-zinc-300"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function Login() {
             </div>
 
             <div className="text-center">
-              <span className="text-sm text-zinc-500">
+              <span className="text-sm text-zinc-400">
                 {t("auth.noAccount")}{" "}
               </span>
               <Link

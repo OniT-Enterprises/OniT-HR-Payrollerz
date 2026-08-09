@@ -183,6 +183,7 @@ export const translations = {
       "money": "Money",
       "accounting": "Accounting",
       "reports": "Workforce Reports",
+      "moreTools": "More tools",
       "setupBannerTitle": "Setup is not finished yet",
       "setupBannerDesc": "Finish company, payment, and payroll setup. {{percent}}% complete.",
       "billingPlan": "Billing & Plan",
@@ -2265,6 +2266,18 @@ export const translations = {
         "ids": "ID and INSS number",
         "idsHelp": "Nothing here stops you saving. We will ask again when you need it."
       },
+      "validation": {
+        "firstNameRequired": "Enter their first name.",
+        "lastNameRequired": "Enter their last name.",
+        "invalidEmail": "Enter a valid email address.",
+        "startDateRequired": "Choose their start date.",
+        "salaryRequired": "Enter how much you pay them each month.",
+        "salaryNonNegative": "Salary must be zero or more.",
+        "minimumWorkingAge": "Timor-Leste labour law: minimum working age is 15 (age at start date: {{age}}).",
+        "partTimeHours": "Enter contracted hours between 1 and 44 per week.",
+        "minimumWageTreatment": "Choose how the minimum-wage check applies.",
+        "minimumWageReviewNote": "Add the accountant or legal review supporting this exception."
+      },
       "wizard": {
         "basicTitle": "Basic Info",
         "basicDesc": "Name, contact details, and emergency contact",
@@ -2278,7 +2291,7 @@ export const translations = {
       "header": {
         "addTitle": "Add Employee",
         "editTitle": "Edit Employee",
-        "addSubtitle": "Add a new team member in 4 easy steps",
+        "addSubtitle": "Add the essentials now. You can fill in more details later.",
         "editSubtitle": "Update employee information"
       },
       "buttons": {
@@ -2321,7 +2334,11 @@ export const translations = {
         "addedTitle": "Success",
         "addedDesc": "{{name}} added!",
         "uploadWarningTitle": "Document upload failed",
-        "uploadWarningDesc": "Employee was saved, but failed to upload: {files}"
+        "uploadWarningDesc": "Employee was saved, but failed to upload: {files}",
+        "inviteSentTitle": "App invite sent",
+        "inviteSentDesc": "{{email}} will receive an email to set their password and sign in.",
+        "inviteFailedTitle": "Employee saved, but the app invite failed",
+        "inviteFailedDesc": "You can resend it from their profile."
       },
       "fields": {
         "contractEndDate": "Contract end date",
@@ -2334,7 +2351,7 @@ export const translations = {
         "probationEndDateHelp": "Art. 14 caps probation at 8 or 15 days for fixed-term contracts, and at 30 days for permanent ones — up to 90 for roles of high technical complexity or responsibility, or positions of trust.",
         "firstName": "First Name *",
         "lastName": "Last Name *",
-        "email": "Email *",
+        "email": "Email",
         "phone": "Phone",
         "appPhone": "App Phone",
         "appPhoneTooltip": "Phone for mobile app access",
@@ -2344,9 +2361,9 @@ export const translations = {
         "emergencyTitle": "Emergency Contact",
         "emergencyName": "Contact Name",
         "emergencyPhone": "Contact Phone",
-        "department": "Department *",
+        "department": "Department",
         "departmentPlaceholder": "Select department",
-        "jobTitle": "Job Title *",
+        "jobTitle": "Job Title",
         "jobTitlePlaceholder": "e.g., Software Engineer",
         "manager": "Manager",
         "managerPlaceholder": "Select manager",
@@ -8138,6 +8155,7 @@ export const translations = {
       "money": "Osan",
       "accounting": "Kontabilidade",
       "reports": "Relatóriu Ekipa",
+      "moreTools": "Ferramenta sira seluk",
       "setupBannerTitle": "Setup seidauk remata",
       "setupBannerDesc": "Remata konfigurasaun empreza, pagamentu no saláriu. {{percent}}% kompletu.",
       "billingPlan": "Faturasaun & Planu",
@@ -10220,6 +10238,18 @@ export const translations = {
         "ids": "Dokumentu identidade no númeru INSS",
         "idsHelp": "Buat ida iha ne'e la bandu ita rai. Ami sei husu fali bainhira presiza."
       },
+      "validation": {
+        "firstNameRequired": "Hatama nia naran primeiru.",
+        "lastNameRequired": "Hatama nia apelidu.",
+        "invalidEmail": "Hatama enderesu email válidu.",
+        "startDateRequired": "Hili data hahú servisu.",
+        "salaryRequired": "Hatama saláriu fulan nian.",
+        "salaryNonNegative": "Saláriu tenki zero ka liu.",
+        "minimumWorkingAge": "Lei traballu Timor-Leste: idade mínimu atu servisu mak tinan 15 (idade iha data hahú: {{age}}).",
+        "partTimeHours": "Hatama oras kontratu entre 1 no 44 kada semana.",
+        "minimumWageTreatment": "Hili oinsá atu aplika verifikasaun saláriu mínimu.",
+        "minimumWageReviewNote": "Hatama nota revizaun husi kontabilista ka jurista ba exesaun ida-ne'e."
+      },
       "wizard": {
         "basicTitle": "Info Basiku",
         "basicDesc": "Naran, kontaktu no kontaktu emerjensia",
@@ -10233,7 +10263,7 @@ export const translations = {
       "header": {
         "addTitle": "Tau Empregadu",
         "editTitle": "Edita Empregadu",
-        "addSubtitle": "Tau membru foun iha 4 pasu",
+        "addSubtitle": "Hatama informasaun importante agora. Detallu seluk bele aumenta depois.",
         "editSubtitle": "Atualiza informasaun empregadu"
       },
       "buttons": {
@@ -10276,7 +10306,11 @@ export const translations = {
         "addedTitle": "Susesu",
         "addedDesc": "{{name}} aumenta!",
         "uploadWarningTitle": "Upload dokumentu la konsege",
-        "uploadWarningDesc": "Empregadu rai ona, maibé la konsege upload: {files}"
+        "uploadWarningDesc": "Empregadu rai ona, maibé la konsege upload: {files}",
+        "inviteSentTitle": "Konvite aplikasaun haruka ona",
+        "inviteSentDesc": "{{email}} sei simu email atu define senha no tama.",
+        "inviteFailedTitle": "Empregadu rai ona, maibé konvite aplikasaun falla",
+        "inviteFailedDesc": "Ita bele haruka fali husi nia perfil."
       },
       "fields": {
         "contractEndDate": "Data remata kontratu",
@@ -10289,7 +10323,7 @@ export const translations = {
         "probationEndDateHelp": "Art. 14 limita períodu esperiénsia ba loron 8 ka 15 iha kontratu ho prazu, no loron 30 iha kontratu permanente — to'o 90 ba funsaun ho kompleksidade tékniku ka responsabilidade aas, ka pozisaun konfiansa nian.",
         "firstName": "Naran *",
         "lastName": "Apelidu *",
-        "email": "Email *",
+        "email": "Email",
         "phone": "Telefone",
         "appPhone": "Telefone App",
         "appPhoneTooltip": "Telefone ba asesu app",
@@ -10299,9 +10333,9 @@ export const translations = {
         "emergencyTitle": "Kontaktu Emerjensia",
         "emergencyName": "Naran Kontaktu",
         "emergencyPhone": "Telefone Kontaktu",
-        "department": "Departamentu *",
+        "department": "Departamentu",
         "departmentPlaceholder": "Hili departamentu",
-        "jobTitle": "Kargu *",
+        "jobTitle": "Kargu",
         "jobTitlePlaceholder": "ez.: Injenier Software",
         "manager": "Xefe",
         "managerPlaceholder": "Hili xefe",
@@ -16093,6 +16127,7 @@ export const translations = {
       "money": "Dinheiro",
       "accounting": "Contabilidade",
       "reports": "Relatórios da Equipa",
+      "moreTools": "Mais ferramentas",
       "setupBannerTitle": "A configuração ainda não terminou",
       "setupBannerDesc": "Termine a configuração da empresa, pagamentos e salários. {{percent}}% concluído.",
       "billingPlan": "Faturação & Plano",
@@ -18175,6 +18210,18 @@ export const translations = {
         "ids": "Documento de identificação e número INSS",
         "idsHelp": "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário."
       },
+      "validation": {
+        "firstNameRequired": "Indique o primeiro nome.",
+        "lastNameRequired": "Indique o apelido.",
+        "invalidEmail": "Introduza um endereço de email válido.",
+        "startDateRequired": "Escolha a data de início.",
+        "salaryRequired": "Indique quanto paga por mês.",
+        "salaryNonNegative": "O salário deve ser zero ou superior.",
+        "minimumWorkingAge": "Lei laboral de Timor-Leste: a idade mínima para trabalhar é 15 anos (idade na data de início: {{age}}).",
+        "partTimeHours": "Indique entre 1 e 44 horas contratadas por semana.",
+        "minimumWageTreatment": "Escolha como aplicar a verificação do salário mínimo.",
+        "minimumWageReviewNote": "Adicione a revisão contabilística ou jurídica que fundamenta esta exceção."
+      },
       "wizard": {
         "basicTitle": "Informação Básica",
         "basicDesc": "Nome, contactos e contacto de emergência",
@@ -18188,7 +18235,7 @@ export const translations = {
       "header": {
         "addTitle": "Adicionar Funcionário",
         "editTitle": "Editar Funcionário",
-        "addSubtitle": "Adicione um novo membro da equipa em 4 passos fáceis",
+        "addSubtitle": "Adicione agora o essencial. Pode completar os detalhes mais tarde.",
         "editSubtitle": "Atualizar informação do funcionário"
       },
       "buttons": {
@@ -18231,7 +18278,11 @@ export const translations = {
         "addedTitle": "Sucesso",
         "addedDesc": "{{name}} adicionado!",
         "uploadWarningTitle": "Falha no carregamento de documento",
-        "uploadWarningDesc": "Funcionário foi guardado, mas falhou o carregamento de: {files}"
+        "uploadWarningDesc": "Funcionário foi guardado, mas falhou o carregamento de: {files}",
+        "inviteSentTitle": "Convite para a aplicação enviado",
+        "inviteSentDesc": "{{email}} receberá um email para definir a palavra-passe e iniciar sessão.",
+        "inviteFailedTitle": "Funcionário guardado, mas o convite falhou",
+        "inviteFailedDesc": "Pode reenviá-lo a partir do perfil do funcionário."
       },
       "fields": {
         "contractEndDate": "Data de fim do contrato",
@@ -18244,7 +18295,7 @@ export const translations = {
         "probationEndDateHelp": "O art. 14.º limita o período experimental a 8 ou 15 dias nos contratos a termo e a 30 dias nos permanentes — até 90 para funções de elevada complexidade técnica ou responsabilidade, ou de confiança.",
         "firstName": "Primeiro Nome *",
         "lastName": "Apelido *",
-        "email": "Email *",
+        "email": "Email",
         "phone": "Telefone",
         "appPhone": "Telefone da App",
         "appPhoneTooltip": "Telefone para acesso à aplicação móvel",
@@ -18254,9 +18305,9 @@ export const translations = {
         "emergencyTitle": "Contacto de Emergência",
         "emergencyName": "Nome do Contacto",
         "emergencyPhone": "Telefone do Contacto",
-        "department": "Departamento *",
+        "department": "Departamento",
         "departmentPlaceholder": "Selecionar departamento",
-        "jobTitle": "Cargo *",
+        "jobTitle": "Cargo",
         "jobTitlePlaceholder": "ex., Engenheiro de Software",
         "manager": "Gestor",
         "managerPlaceholder": "Selecionar gestor",

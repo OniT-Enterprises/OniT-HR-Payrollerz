@@ -199,6 +199,7 @@ const messages = {
     money: "Osan",
     accounting: "Kontabilidade",
     reports: "Relatóriu Ekipa",
+    moreTools: "Ferramenta sira seluk",
     setupBannerTitle: "Setup seidauk remata",
     setupBannerDesc:
       "Remata konfigurasaun empreza, pagamentu no saláriu. {{percent}}% kompletu.",
@@ -2516,6 +2517,20 @@ const messages = {
       ids: "Dokumentu identidade no númeru INSS",
       idsHelp: "Buat ida iha ne'e la bandu ita rai. Ami sei husu fali bainhira presiza.",
     },
+    validation: {
+      firstNameRequired: "Hatama nia naran primeiru.",
+      lastNameRequired: "Hatama nia apelidu.",
+      invalidEmail: "Hatama enderesu email válidu.",
+      startDateRequired: "Hili data hahú servisu.",
+      salaryRequired: "Hatama saláriu fulan nian.",
+      salaryNonNegative: "Saláriu tenki zero ka liu.",
+      minimumWorkingAge:
+        "Lei traballu Timor-Leste: idade mínimu atu servisu mak tinan 15 (idade iha data hahú: {{age}}).",
+      partTimeHours: "Hatama oras kontratu entre 1 no 44 kada semana.",
+      minimumWageTreatment: "Hili oinsá atu aplika verifikasaun saláriu mínimu.",
+      minimumWageReviewNote:
+        "Hatama nota revizaun husi kontabilista ka jurista ba exesaun ida-ne'e.",
+    },
     wizard: {
       basicTitle: "Info Basiku",
       basicDesc: "Naran, kontaktu no kontaktu emerjensia",
@@ -2529,7 +2544,7 @@ const messages = {
     header: {
       addTitle: "Tau Empregadu",
       editTitle: "Edita Empregadu",
-      addSubtitle: "Tau membru foun iha 4 pasu",
+      addSubtitle: "Hatama informasaun importante agora. Detallu seluk bele aumenta depois.",
       editSubtitle: "Atualiza informasaun empregadu",
     },
     buttons: {
@@ -2578,6 +2593,10 @@ const messages = {
       addedDesc: "{{name}} aumenta!",
       uploadWarningTitle: "Upload dokumentu la konsege",
       uploadWarningDesc: "Empregadu rai ona, maibé la konsege upload: {files}",
+      inviteSentTitle: "Konvite aplikasaun haruka ona",
+      inviteSentDesc: "{{email}} sei simu email atu define senha no tama.",
+      inviteFailedTitle: "Empregadu rai ona, maibé konvite aplikasaun falla",
+      inviteFailedDesc: "Ita bele haruka fali husi nia perfil.",
     },
     fields: {
       contractEndDate: "Data remata kontratu",
@@ -2594,7 +2613,7 @@ const messages = {
         "Art. 14 limita períodu esperiénsia ba loron 8 ka 15 iha kontratu ho prazu, no loron 30 iha kontratu permanente — to'o 90 ba funsaun ho kompleksidade tékniku ka responsabilidade aas, ka pozisaun konfiansa nian.",
       firstName: "Naran *",
       lastName: "Apelidu *",
-      email: "Email *",
+      email: "Email",
       phone: "Telefone",
       appPhone: "Telefone App",
       appPhoneTooltip: "Telefone ba asesu app",
@@ -2604,9 +2623,9 @@ const messages = {
       emergencyTitle: "Kontaktu Emerjensia",
       emergencyName: "Naran Kontaktu",
       emergencyPhone: "Telefone Kontaktu",
-      department: "Departamentu *",
+      department: "Departamentu",
       departmentPlaceholder: "Hili departamentu",
-      jobTitle: "Kargu *",
+      jobTitle: "Kargu",
       jobTitlePlaceholder: "ez.: Injenier Software",
       manager: "Xefe",
       managerPlaceholder: "Hili xefe",

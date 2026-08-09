@@ -203,7 +203,7 @@ export default function Settings() {
 
   if (settingsQuery.isError && settings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsQuery.isFetching}
@@ -218,7 +218,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <SEO {...seoConfig.settings} />
       <MainNavigation />
 

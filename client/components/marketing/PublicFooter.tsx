@@ -24,7 +24,7 @@ export function PublicFooter() {
             className="h-7 w-auto"
             loading="lazy"
           />
-          <span className="text-sm text-zinc-500">
+          <span className="text-sm text-zinc-400">
             {t("landing.footer.location")}
           </span>
         </div>
@@ -66,7 +66,7 @@ export function PublicFooter() {
             {t("landing.footer.links.contact")}
           </a>
         </div>
-        <div className="text-sm text-zinc-500">
+        <div className="text-sm text-zinc-400">
           {t("landing.footer.copyright")}
         </div>
       </div>

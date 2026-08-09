@@ -27,10 +27,7 @@ export function MarketingFaq() {
 
   return (
     <section className="lp-defer border-t border-white/[0.06] py-20 lg:py-24">
-      <div
-        data-reveal
-        className="public-reveal mx-auto max-w-3xl px-5 sm:px-6 lg:px-8"
-      >
+      <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
         <div className="text-center">
           <SectionEyebrow>{t("landing.simple.faq.eyebrow")}</SectionEyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white lg:text-[2.6rem]">
