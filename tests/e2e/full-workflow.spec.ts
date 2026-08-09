@@ -887,6 +887,53 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   const whatsapp = page.getByRole("link", { name: /whatsapp/i });
   await expect(whatsapp).toHaveAttribute("href", /wa\.me/);
 
+  // Three examples are enough to teach search without turning Help into a
+  // tag cloud. The night-shift example also proves aliases land on one answer.
+  const suggestedSearches = page.getByLabel(/suggested searches/i);
+  await expect(suggestedSearches.getByRole("button")).toHaveCount(3);
+  await suggestedSearches
+    .getByRole("button", { name: /^night shifts$/i })
+    .click();
+  await expect(page.getByRole("searchbox")).toHaveValue("Night shifts");
+  const nightShiftHit = page
+    .getByRole("link", { name: /^night shifts/i })
+    .first();
+  await expect(nightShiftHit).toHaveAttribute(
+    "href",
+    "/help/guide/time-and-leave?q=Night+shifts#night-shifts",
+  );
+
+  await page.getByRole("searchbox").fill("nigth shift");
+  await expect(
+    page.getByRole("link", { name: /^night shifts/i }).first(),
+  ).toBeVisible();
+
+  // The schedule screen stays compact: one contextual guide link and a
+  // conditional next-day hint are enough to explain overnight entry.
+  await page.goto("/time-leave/shifts");
+  await expect(
+    page.getByRole("heading", { name: /shift scheduling/i }),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(
+    page.getByRole("link", { name: /help with this page/i }),
+  ).toHaveAttribute("href", "/help/guide/time-and-leave#shifts");
+  await page
+    .getByRole("button", { name: /^create shift$/i })
+    .first()
+    .click();
+  const shiftDialog = page.getByRole("dialog", { name: /create shift/i });
+  await shiftDialog.getByRole("button", { name: "8:00 AM" }).click();
+  await shiftDialog
+    .getByRole("button", { name: "10", exact: true })
+    .first()
+    .click();
+  await shiftDialog.getByRole("button", { name: "PM", exact: true }).click();
+  await shiftDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(shiftDialog.getByText(/ends next day/i)).toBeVisible();
+  await shiftDialog.getByRole("button", { name: /^cancel$/i }).click();
+
+  await page.goto("/help");
+
   // The signed-in help center reuses the practical public guides instead of
   // making a new customer discover a second, smaller documentation set.
   const gettingStartedGuide = page.getByRole("link", {

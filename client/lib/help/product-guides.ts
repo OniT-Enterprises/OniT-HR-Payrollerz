@@ -7,6 +7,96 @@ import type {
 } from "@/lib/docs/types";
 import { normalizeHelpText, type ArticleLocale } from "./content";
 
+/**
+ * Words customers actually use for a guide section, across Xefe's three
+ * languages. Keep this deliberately small and explicit: controlled aliases
+ * fix common vocabulary and keyboard mistakes without fuzzy-search surprises.
+ */
+export const PRODUCT_GUIDE_SECTION_SEARCH_ALIASES: Record<
+  string,
+  readonly string[]
+> = {
+  "running-payroll#overview": [
+    "run payroll",
+    "pay run",
+    "salary run",
+    "payrol",
+    "folha de pagamento",
+    "processar salarios",
+    "processamento salarial",
+    "halo folha pagamentu",
+    "halo salariu",
+  ],
+  "tax-and-filings#overview": [
+    "social security",
+    "seguranca social",
+    "seguransa sosial",
+  ],
+  "invoices-and-money#invoices": [
+    "invoice",
+    "invoices",
+    "invoce",
+    "fatura",
+    "factura",
+    "faturra",
+    "faktura",
+  ],
+  "time-and-leave#attendance": [
+    "attendance",
+    "attendence",
+    "timesheet",
+    "clock in",
+    "clock out",
+    "assiduidade",
+    "presenca",
+    "ponto",
+    "prezensa",
+    "presensa",
+    "oras tama",
+    "oras sai",
+  ],
+  "time-and-leave#leave": [
+    "leave",
+    "leave request",
+    "annual leave",
+    "holiday request",
+    "licenca",
+    "ferias",
+    "pedido de ferias",
+    "lisensa",
+    "lisensa anual",
+  ],
+  "time-and-leave#shifts": [
+    "shift",
+    "shifts",
+    "schedule",
+    "roster",
+    "rota",
+    "turno",
+    "turnos",
+    "escala",
+    "escalas",
+    "turnu",
+    "orariu turnu",
+  ],
+  "time-and-leave#night-shifts": [
+    "night shift",
+    "night shifts",
+    "nightshift",
+    "night work",
+    "overnight shift",
+    "graveyard shift",
+    "nite shift",
+    "nigth shift",
+    "turno noturno",
+    "turnos noturnos",
+    "trabalho noturno",
+    "turno da noite",
+    "turnu kalan",
+    "servisu kalan",
+  ],
+};
+
 const GUIDE_ACTIONS: Record<string, { to: string; labelKey: string }> = {
   "getting-started": { to: "/setup", labelKey: "help.actions.continueSetup" },
   "running-payroll": {
@@ -108,11 +198,17 @@ export function productGuideSections(
   const flush = () => {
     const text = current.parts.join(" ").trim();
     if (!text && current.id !== "overview") return;
+    const aliases =
+      PRODUCT_GUIDE_SECTION_SEARCH_ALIASES[
+        `${guide.slug}#${current.id}`
+      ] ?? [];
     sections.push({
       id: current.id,
       heading: current.heading,
       preview: text.slice(0, 220),
-      haystack: normalizeHelpText(`${current.heading} ${text}`),
+      haystack: normalizeHelpText(
+        `${current.heading} ${text} ${aliases.join(" ")}`,
+      ),
       rank: 0,
     });
   };

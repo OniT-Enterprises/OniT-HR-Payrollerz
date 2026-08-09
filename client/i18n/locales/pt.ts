@@ -77,6 +77,13 @@ const messages = {
     referenceSummary:
       "{{count}} documentos detalhados, fora do caminho até precisar deles.",
     searchingGuides: "A pesquisar todos os guias…",
+    suggestionsLabel: "Pesquisas sugeridas",
+    trySearching: "Experimente:",
+    suggestions: {
+      nightShifts: "Turnos noturnos",
+      runPayroll: "Processar salários",
+      inss: "INSS",
+    },
     helpWithThisPage: "Ajuda com esta página",
     howToFixThis: "Como corrigir",
     howToAddTeam: "Como adicionar a sua equipa",
@@ -3975,6 +3982,7 @@ const messages = {
         startTime: "Hora de Início *",
         endTime: "Hora de Fim *",
         totalHours: "Total de Horas: {{hours}}h",
+        endsNextDay: "termina no dia seguinte",
         location: "Local *",
         locationPlaceholder: "Selecionar local",
         notes: "Notas",

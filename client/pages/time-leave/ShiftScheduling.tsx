@@ -18,6 +18,7 @@ import {
 
 import PageHeader from "@/components/layout/PageHeader";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   AlertDialog,
@@ -84,6 +85,7 @@ import {
   type ShiftRecord,
   type ShiftStatus,
 } from "@/services/shiftService";
+import { shiftCrossesMidnight } from "@/lib/shiftCalculations";
 
 const MAX_WEEKLY_HOURS = 44;
 
@@ -154,6 +156,7 @@ export default function ShiftScheduling() {
   const [editingShift, setEditingShift] = useState<ShiftRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ShiftRecord | null>(null);
   const [form, setForm] = useState<ShiftForm>(() => emptyForm(getTodayTL()));
+  const isOvernight = shiftCrossesMidnight(form.startTime, form.endTime);
 
   const departmentsQuery = useAllDepartments(session?.tid ?? "", 100, true);
   const departments = useMemo(
@@ -616,6 +619,10 @@ export default function ShiftScheduling() {
           ) : undefined}
         />
 
+        <div className="-mt-2 mb-2 flex justify-end">
+          <ContextualHelpLink slug="time-and-leave" anchor="shifts" />
+        </div>
+
         {!canLoadSchedule ? (
           <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
@@ -881,6 +888,9 @@ export default function ShiftScheduling() {
                 : "bg-muted/40 text-muted-foreground",
             )}>
               {t("timeLeave.shiftScheduling.create.totalHours", { hours: formHours.toFixed(1) })}
+              {isOvernight
+                ? ` · ${t("timeLeave.shiftScheduling.create.endsNextDay")}`
+                : ""}
               {selectedEmployeeWeekHours > MAX_WEEKLY_HOURS && selectedEmployee
                 ? ` · ${t("timeLeave.shiftScheduling.recommendations.overworkedTitle", { name: selectedEmployee.personalInfo.firstName })}`
                 : ""}

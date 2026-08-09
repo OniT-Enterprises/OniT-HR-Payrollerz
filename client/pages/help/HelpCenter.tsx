@@ -47,6 +47,8 @@ import {
 } from "@/lib/help/product-guides";
 import { helpResultPath } from "@/lib/help/navigation";
 
+const SEARCH_SUGGESTIONS = ["nightShifts", "runPayroll", "inss"] as const;
+
 export default function HelpCenter() {
   const { t, locale } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -195,16 +197,42 @@ export default function HelpCenter() {
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </a>
 
-      <div className="relative mb-6">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => updateQuery(e.target.value)}
-          placeholder={t("help.searchPlaceholder")}
-          aria-label={t("help.searchLabel")}
-          className="h-12 pl-9"
-        />
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => updateQuery(e.target.value)}
+            placeholder={t("help.searchPlaceholder")}
+            aria-label={t("help.searchLabel")}
+            className="h-12 pl-9"
+          />
+        </div>
+        {!searching && (
+          <div
+            role="group"
+            className="mt-2.5 flex flex-wrap items-center gap-2"
+            aria-label={t("help.suggestionsLabel")}
+          >
+            <span className="text-xs text-muted-foreground">
+              {t("help.trySearching")}
+            </span>
+            {SEARCH_SUGGESTIONS.map((suggestion) => {
+              const label = t(`help.suggestions.${suggestion}`);
+              return (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => updateQuery(label)}
+                  className="inline-flex min-h-9 items-center rounded-full border border-border/70 bg-muted/20 px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted/50"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {searching ? (

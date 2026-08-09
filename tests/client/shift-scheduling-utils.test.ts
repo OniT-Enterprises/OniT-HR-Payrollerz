@@ -4,7 +4,10 @@
  * - getWeekStartTL / addDaysISO (timezone-independent week math)
  */
 import { describe, it, expect } from 'vitest';
-import { calcShiftHours } from '../../client/lib/shiftCalculations';
+import {
+  calcShiftHours,
+  shiftCrossesMidnight,
+} from '../../client/lib/shiftCalculations';
 import { getWeekStartTL, addDaysISO } from '../../client/lib/dateUtils';
 
 describe('calcShiftHours', () => {
@@ -22,6 +25,15 @@ describe('calcShiftHours', () => {
     expect(calcShiftHours('', '14:00')).toBe(0);
     expect(calcShiftHours('06:00', '')).toBe(0);
     expect(calcShiftHours('abc', 'def')).toBe(0);
+  });
+});
+
+describe('shiftCrossesMidnight', () => {
+  it('distinguishes an overnight shift from a daytime or invalid span', () => {
+    expect(shiftCrossesMidnight('22:00', '06:00')).toBe(true);
+    expect(shiftCrossesMidnight('08:00', '17:00')).toBe(false);
+    expect(shiftCrossesMidnight('08:00', '08:00')).toBe(false);
+    expect(shiftCrossesMidnight('', '06:00')).toBe(false);
   });
 });
 

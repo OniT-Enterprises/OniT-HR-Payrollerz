@@ -34,3 +34,11 @@ export function calcShiftHours(startTime: string, endTime: string): number {
   if (diff <= 0) diff += 24 * 60;
   return Math.round((diff / 60) * 100) / 100;
 }
+
+/** Whether a valid-looking shift ends on the following calendar day. */
+export function shiftCrossesMidnight(
+  startTime: string,
+  endTime: string,
+): boolean {
+  return Boolean(startTime && endTime && endTime < startTime);
+}

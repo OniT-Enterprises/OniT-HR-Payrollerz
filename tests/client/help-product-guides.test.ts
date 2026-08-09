@@ -70,6 +70,27 @@ describe("in-app product guides", () => {
     expect(results[0]?.id).toBe("bank-reconciliation");
   });
 
+  it("finds common cross-language words and phone-keyboard mistakes", async () => {
+    const guide = productGuidesFor("en").find(
+      (candidate) => candidate.slug === "time-and-leave",
+    )!;
+    const article = await loadProductGuide(guide.slug);
+    expect(article).toBeDefined();
+
+    for (const query of [
+      "nigth shift",
+      "turno noturno",
+      "turnu kalan",
+    ]) {
+      expect(searchProductGuide(query, guide, article!.en)[0]?.id).toBe(
+        "night-shifts",
+      );
+    }
+    expect(searchProductGuide("attendence", guide, article!.en)[0]?.id).toBe(
+      "attendance",
+    );
+  });
+
   it("matches useful metadata even before a guide body loads", () => {
     const guide = productGuidesFor("en").find(
       (candidate) => candidate.slug === "tax-and-filings",

@@ -119,6 +119,23 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "heading",
+        id: "night-shifts",
+        text: "Night shifts",
+      },
+      {
+        type: "prose",
+        body: "For an overnight shift, enter the day it starts and an end time earlier than the start — for example, 22:00 to 06:00. Xefe treats the end as the following morning. If the Night row is hidden in Coverage view, open the shift-slot settings for that work site and enable it.",
+      },
+      {
+        type: "list",
+        items: [
+          "A scheduled shift is the plan, not proof of hours worked. Record the employee's actual clock-in and clock-out in Attendance.",
+          "Xefe counts the actual time worked between 21:00 and 06:00 as night work and carries those hours into payroll with the statutory 25% supplement (Art. 28).",
+          "Draft shifts stay with the manager. Publish the schedule when it is ready for employees to see in Ekipa.",
+        ],
+      },
+      {
+        type: "heading",
         id: "balances-and-timesheets",
         text: "Balances and timesheets",
       },
@@ -257,6 +274,23 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "heading",
+        id: "night-shifts",
+        text: "Turnos noturnos",
+      },
+      {
+        type: "prose",
+        body: "Para um turno que atravessa a meia-noite, introduza o dia em que começa e uma hora de fim anterior à hora de início — por exemplo, das 22:00 às 06:00. O Xefe considera que o turno termina na manhã seguinte. Se a linha Noite estiver oculta na vista Cobertura, abra as definições dos horários de turno desse local de trabalho e ative-a.",
+      },
+      {
+        type: "list",
+        items: [
+          "Um turno planeado é o plano, não a prova das horas trabalhadas. Registe a entrada e a saída reais do funcionário em Presença.",
+          "O Xefe conta o tempo efetivamente trabalhado entre as 21:00 e as 06:00 como trabalho noturno e leva essas horas para a folha com o acréscimo legal de 25% (art. 28.º).",
+          "Os turnos em rascunho ficam com o gestor. Publique a escala quando estiver pronta para os funcionários a verem no Ekipa.",
+        ],
+      },
+      {
+        type: "heading",
         id: "balances-and-timesheets",
         text: "Saldos e folhas de horas",
       },
@@ -377,6 +411,23 @@ export const article: LocalizedDocArticle = {
       {
         type: "prose",
         body: "Turnu sira planeia iha grid semanál, organiza tuir fatin no oráriu turnu, atu manajer bele haree kobertura semana tomak ho vista ida de'it. Bainhira kobertura semana ida diak ona, bele kopia ba semana tuir mai duké harii fila fali husi zero.",
+      },
+      {
+        type: "heading",
+        id: "night-shifts",
+        text: "Turnu kalan",
+      },
+      {
+        type: "prose",
+        body: "Ba turnu ne'ebé liu kalan-baluk, hatama loron ne'ebé turnu hahú no oras remata ne'ebé sedu liu oras hahú — porezemplu, 22:00 to'o 06:00. Xefe konsidera katak turnu remata iha dadeer loron tuir mai. Se liña Kalan subar iha vista Kobertura, loke konfigurasaun oras turnu ba lokal servisu ne'e no ativa.",
+      },
+      {
+        type: "list",
+        items: [
+          "Turnu ne'ebé planeia mak planu, la'ós prova oras ne'ebé servisu loloos. Rejista empregadu nia oras tama no sai loloos iha Prezensa.",
+          "Xefe sura tempu servisu loloos entre 21:00 no 06:00 nu'udar servisu kalan no lori oras sira-ne'e ba folha pagamentu ho adisionál legál 25% (Art. 28).",
+          "Turnu rascunhu hela ho manajer. Publika eskala bainhira prontu atu empregadu sira bele haree iha Ekipa.",
+        ],
       },
       {
         type: "heading",

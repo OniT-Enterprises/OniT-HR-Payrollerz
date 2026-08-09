@@ -4,8 +4,8 @@
  *
  *  - Auth: Claude subscription OAuth (CLAUDE_CODE_OAUTH_TOKEN, optional
  *    _FALLBACK failover) — same as extract.js. No metered API key.
- *  - Tools: ONE SDK-MCP tool, `get_data`, which performs GET requests against
- *    this same server's read-only tenant API (X-API-Key auth, loopback only).
+ *  - Tools: two read-only SDK-MCP tools. `get_data` reads the tenant API;
+ *    `search_docs` retrieves the same maintained Help content customers see.
  *    The tenant id is pinned server-side per request — a model-supplied path
  *    can never reach another tenant. This replaces OpenClaw's 29 tools and
  *    removes the single-tenant OPENCLAW_WEB_TENANT_ID restriction: every
@@ -104,6 +104,7 @@ function accessAllowsEndpoint(access, endpoint) {
 }
 
 const STEP_LABELS = [
+  [/^docs$/, 'Searching Xefe help'],
   [/^\/(employees|departments|stats)/, 'Checking your team'],
   [/^\/payroll/, 'Checking payroll'],
   [/^\/leave/, 'Checking leave'],
@@ -258,7 +259,39 @@ async function buildXefeMcpServer(tenantId, onToolCall, access) {
     },
   );
 
-  return createSdkMcpServer({ name: 'xefe', version: '1.0.0', tools: [getData] });
+  const searchDocsTool = tool(
+    'search_docs',
+    'Search Xefe Help and documentation for how the product works, app ' +
+      'workflows, Timor-Leste payroll or labour guidance, and common tasks. ' +
+      'Returns concise sections with an in-app Help path.',
+    {
+      query: z.string(),
+      locale: z.enum(['en', 'pt', 'tet']).optional(),
+      limit: z.number().int().min(1).max(6).optional(),
+    },
+    async ({ query, locale = 'en', limit = 4 }) => {
+      onToolCall?.('docs');
+      const { searchDocs } = require('./docsSearch');
+      const results = searchDocs(query, locale, limit);
+      if (results.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'No documentation matched. Try fewer or more general words.',
+          }],
+        };
+      }
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ results }) }],
+      };
+    },
+  );
+
+  return createSdkMcpServer({
+    name: 'xefe',
+    version: '1.0.0',
+    tools: [getData, searchDocsTool],
+  });
 }
 
 // ── Prompts ───────────────────────────────────────────────────────────────
@@ -271,12 +304,16 @@ function systemPrompt(tenantId) {
     'Use the mcp__xefe__get_data tool to look up real data before answering questions about the business. Available endpoints:',
     ENDPOINT_CATALOG,
     '',
+    'Use mcp__xefe__search_docs before answering how Xefe works, how to complete a task, or questions about payroll and labour rules. Search with a few specific words and pass the user\'s language as locale. The results are the maintained Help content visible to customers. Link the most relevant helpPath when it would help the user continue in the app.',
+    'Business data comes from get_data; product behavior and guidance come from search_docs. Never invent a rule or workflow when the documentation does not answer it.',
+    '',
     'Rules:',
     '- Reply in the language the user writes in (English, Portuguese, or Tetun).',
     '- Be concise and friendly. Summarize — never dump raw JSON.',
     '- Format money as $1,234.56 and dates like 25 Jul 2026.',
     '- You are READ-ONLY. If asked to change, create, approve, or delete anything, explain politely that you can only look things up, and point to the right screen in Xefe to do it.',
     '- If a lookup fails or returns nothing, say so honestly.',
+    '- Present labour and tax guidance as Xefe\'s documented behavior, not as personal legal or tax advice.',
   ].join('\n');
 }
 
@@ -309,7 +346,7 @@ async function runOnce({ tenantId, prompt, token, onEvent, access }) {
     maxTurns: 12,
     systemPrompt: systemPrompt(tenantId),
     mcpServers: { xefe: mcpServer },
-    allowedTools: ['mcp__xefe__get_data'],
+    allowedTools: ['mcp__xefe__get_data', 'mcp__xefe__search_docs'],
     disallowedTools: [
       'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch',
       'NotebookEdit', 'TodoWrite', 'Task', 'SlashCommand', 'ExitPlanMode',

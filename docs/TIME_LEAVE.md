@@ -212,6 +212,10 @@ operator enters; the note is what keeps the two hours from being deducted.
   leave conflicts.
 - Shifts may cross midnight. A start and end at the same time is not a valid
   24-hour shift.
+- The shift date is the day an overnight shift starts; an earlier end time is
+  treated as the following day. The schedule supplies expected times for
+  lateness, but actual Attendance clock times remain the payroll source. Hours
+  actually worked from 21:00–06:00 carry the Art. 28 night-work supplement.
 - Editing an employee or date recomputes both the old and new weekly timesheet.
 - Paid/unpaid leave hours use the configured policy’s paid percentage.
 

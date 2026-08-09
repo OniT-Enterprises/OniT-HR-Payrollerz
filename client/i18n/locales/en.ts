@@ -76,6 +76,13 @@ const messages = {
     referenceSummary:
       "{{count}} detailed documents, kept out of the way until you need them.",
     searchingGuides: "Searching all guides…",
+    suggestionsLabel: "Suggested searches",
+    trySearching: "Try:",
+    suggestions: {
+      nightShifts: "Night shifts",
+      runPayroll: "Run payroll",
+      inss: "INSS",
+    },
     helpWithThisPage: "Help with this page",
     howToFixThis: "How to fix this",
     howToAddTeam: "How to add your team",
@@ -3918,6 +3925,7 @@ const messages = {
         startTime: "Start Time *",
         endTime: "End Time *",
         totalHours: "Total Hours: {{hours}}h",
+        endsNextDay: "ends next day",
         location: "Location *",
         locationPlaceholder: "Select location",
         notes: "Notes",

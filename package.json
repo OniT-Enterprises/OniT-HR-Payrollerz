@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/check-entry-budget.mjs && tsx scripts/generate-static-heads.ts",
+    "build": "tsx scripts/generate-bot-docs.ts --check && vite build && node scripts/check-entry-budget.mjs && tsx scripts/generate-static-heads.ts",
     "test": "vitest --run -c tests/vitest.config.ts",
     "test:all": "pnpm test && pnpm emul:rules && npm --prefix functions run build",
     "format.fix": "prettier --write .",
@@ -28,13 +28,15 @@
     "check:statutory": "tsx scripts/check-statutory-copy.ts",
     "i18n:split-locales": "tsx scripts/split-i18n-locales.ts",
     "i18n:rebuild-master": "tsx scripts/rebuild-i18n-master.ts",
+    "docs:build-bot": "tsx scripts/generate-bot-docs.ts",
+    "docs:check-bot": "tsx scripts/generate-bot-docs.ts --check",
     "seed:prod": "node scripts/clearAndSeedData.mjs",
     "audit:data": "node scripts/auditData.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "test:api": "firebase emulators:exec --config firebase.dev.json --only firestore 'node --test server/xefe-api/test/api.test.mjs server/xefe-api/test/extract-sanitize.test.mjs'"
+    "test:api": "firebase emulators:exec --config firebase.dev.json --only firestore 'node --test server/xefe-api/test/api.test.mjs server/xefe-api/test/docs-search.test.mjs server/xefe-api/test/extract-sanitize.test.mjs'"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

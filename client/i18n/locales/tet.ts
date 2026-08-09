@@ -77,6 +77,13 @@ const messages = {
     referenceSummary:
       "Dokumentu detallu {{count}}, subar nafatin to'o ita presiza.",
     searchingGuides: "Buka iha gia hotu…",
+    suggestionsLabel: "Buka sujestaun",
+    trySearching: "Koko:",
+    suggestions: {
+      nightShifts: "Turnu kalan",
+      runPayroll: "Halo folha pagamentu",
+      inss: "INSS",
+    },
     helpWithThisPage: "Ajuda ba pájina ne'e",
     howToFixThis: "Oinsá atu hadi'a",
     howToAddTeam: "Oinsá atu aumenta ita-nia ekipa",
@@ -3894,6 +3901,7 @@ const messages = {
         startTime: "Ora hahuu *",
         endTime: "Ora remata *",
         totalHours: "Total oras: {{hours}}h",
+        endsNextDay: "remata iha loron tuir mai",
         location: "Lokal *",
         locationPlaceholder: "Hili lokal",
         notes: "Notas",

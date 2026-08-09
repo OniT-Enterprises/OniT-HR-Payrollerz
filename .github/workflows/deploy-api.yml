@@ -14,6 +14,10 @@ on:
     branches: [main]
     paths:
       - "server/xefe-api/**"
+      - "client/content/docs/**"
+      - "client/lib/help/content.ts"
+      - "client/lib/help/product-guides.ts"
+      - "scripts/generate-bot-docs.ts"
       - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
 
@@ -30,8 +34,26 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build XefeBot documentation index
+        run: pnpm docs:build-bot
+
       - name: Syntax check
-        run: node --check server/xefe-api/index.js
+        run: |
+          node --check server/xefe-api/index.js
+          node --check server/xefe-api/agentChat.js
+          node --check server/xefe-api/docsSearch.js
 
       - name: Rsync API to Hetzner
         # Pinned to a full commit SHA (v6.0.1), not a mutable branch ref — see
