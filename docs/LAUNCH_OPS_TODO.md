@@ -7,6 +7,25 @@ Everything below is console/asset work that code can't do.
 
 ## High priority (do before marketing the launch)
 
+### 0a. Give every existing manager a department — REQUIRED for Ekipa crew clock-in photos
+
+Storage rules now scope attendance photos and expense receipts to the uploader's
+department: a `manager` may write `attendance_photos/{tid}/...` only when their
+member document's `departmentId` matches the photo's metadata. Owners and
+hr-admins are unaffected.
+
+`addTenantMember`/`updateTenantMember` require a department for the manager role
+from now on, and Settings → Team access will not save a manager without one —
+but **member documents created before this change have no `departmentId`**.
+Until an owner re-saves each manager, that supervisor's Ekipa photo upload 403s
+and the batch stays unsynced (visibly stuck, not silently lost).
+
+Action: Settings → Team access → edit each existing manager → pick their
+department → Save. Check for stragglers with:
+
+```
+tenants/{tid}/members where role == 'manager' and departmentId is missing
+```
 ### 0. Enable Google sign-in provider — ~3 min, REQUIRED for Google login to work
 
 The "Continue with Google" buttons (login + signup) and the `/auth/onboarding`

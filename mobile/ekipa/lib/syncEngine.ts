@@ -109,6 +109,10 @@ async function syncBatch(batch: SyncBatch): Promise<void> {
   updateBatchSyncStatus(batch.id, 'uploading');
 
   try {
+    // Records carry the department needed to bind the photo to the same
+    // manager scope as the attendance documents.
+    const records = getBatchRecords(batch.id);
+
     // 1. Upload photo if we have a local path but no URL yet
     let photoUrl = batch.photoUrl;
     if (batch.photoLocalPath && !photoUrl) {
@@ -116,13 +120,14 @@ async function syncBatch(batch: SyncBatch): Promise<void> {
         batch.photoLocalPath,
         batch.tenantId,
         batch.id,
-        batch.date
+        batch.date,
+        {
+          uploaderId: batch.supervisorId,
+          departmentId: records[0]?.departmentId || '',
+        }
       );
       updateBatchPhotoUrl(batch.id, photoUrl);
     }
-
-    // 2. Get all records in this batch
-    const records = getBatchRecords(batch.id);
 
     if (batch.recordType === 'clock_in') {
       await syncClockInBatch(batch, records, photoUrl);

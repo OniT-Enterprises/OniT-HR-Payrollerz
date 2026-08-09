@@ -56,7 +56,11 @@ export async function uploadPhoto(
   localPath: string,
   tenantId: string,
   batchId: string,
-  date: string
+  date: string,
+  metadata: {
+    uploaderId: string;
+    departmentId: string;
+  }
 ): Promise<string> {
   const file = new File(localPath);
   const blob = new Blob([await file.arrayBuffer()], { type: 'image/jpeg' });
@@ -65,7 +69,13 @@ export async function uploadPhoto(
     storage,
     `attendance_photos/${tenantId}/${date}/${batchId}.jpg`
   );
-  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+  await uploadBytes(storageRef, blob, {
+    contentType: 'image/jpeg',
+    customMetadata: {
+      uploaderId: metadata.uploaderId,
+      departmentId: metadata.departmentId,
+    },
+  });
   return getDownloadURL(storageRef);
 }
 

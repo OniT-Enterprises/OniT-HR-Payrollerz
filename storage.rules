@@ -70,6 +70,18 @@ service firebase.storage {
         isPlatformSuperAdmin();
     }
 
+    function isTenantManager(tenantId) {
+      return isRealTenantMember(tenantId) &&
+        tenantMemberDoc(tenantId).data.role == 'manager';
+    }
+
+    function isManagerForStorageDepartment(tenantId, departmentId) {
+      return departmentId is string &&
+        departmentId.size() > 0 &&
+        isTenantManager(tenantId) &&
+        tenantMemberDoc(tenantId).data.get('departmentId', null) == departmentId;
+    }
+
     function getTenantModules(tenantId) {
       return isRealTenantMember(tenantId) ? tenantMemberDoc(tenantId).data.modules : [];
     }
@@ -115,6 +127,33 @@ service firebase.storage {
     function isOwnPayslipFile(tenantId, fileName) {
       return storageEmployeeId(tenantId) != null &&
         fileName.matches('^' + storageEmployeeId(tenantId) + '_.*');
+    }
+
+    // Expense receipts are uploaded before their Firestore records exist.
+    // Immutable custom metadata is therefore the only value Storage rules can
+    // use to preserve employee self-access without opening them to every member.
+    function isOwnExpenseReceipt(tenantId) {
+      return storageEmployeeId(tenantId) != null &&
+        resource.metadata.get('employeeId', '') == storageEmployeeId(tenantId);
+    }
+
+    function isOwnExpenseReceiptCreate(tenantId) {
+      return storageEmployeeId(tenantId) != null &&
+        request.resource.metadata.get('uploaderId', '') == request.auth.uid &&
+        request.resource.metadata.get('employeeId', '') == storageEmployeeId(tenantId);
+    }
+
+    function hasValidAttendancePhotoMetadata(tenantId) {
+      return request.resource.metadata.get('uploaderId', '') == request.auth.uid &&
+        request.resource.metadata.get('departmentId', '') is string &&
+        request.resource.metadata.get('departmentId', '').size() > 0 &&
+        (
+          isTenantAdmin(tenantId) ||
+          isManagerForStorageDepartment(
+            tenantId,
+            request.resource.metadata.get('departmentId', '')
+          )
+        );
     }
 
     // File size limit: 10 MB
@@ -216,31 +255,51 @@ service firebase.storage {
 
     // Expense receipts
     match /tenants/{tenantId}/expenses/{expenseId}/receipts/{document} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantMember(tenantId) && isUnderSizeLimit();
+      // Expenses serve both Money and Ekipa reimbursement workflows. Keep the
+      // finance/admin/manager set working, while employees only reach receipts
+      // whose immutable metadata names their linked employee record.
+      allow read: if isTenantFinanceAdmin(tenantId) ||
+        isTenantManager(tenantId) ||
+        isOwnExpenseReceipt(tenantId);
+      allow create: if resource == null && (
+          isTenantFinanceAdmin(tenantId) ||
+          isTenantManager(tenantId) ||
+          isOwnExpenseReceiptCreate(tenantId)
+        ) && isUnderSizeLimit() && isAllowedDocType();
+      // Receipts are evidence. New corrections use a new timestamped object;
+      // an existing object cannot be overwritten or deleted in place.
+      allow update, delete: if false;
     }
 
     // Bill attachments (vendor invoices, receipts)
     match /tenants/{tenantId}/bills/{billId}/attachments/{document} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantMember(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+      allow read: if canAccessMoneyRecords(tenantId);
+      allow create: if resource == null && isTenantFinanceAdmin(tenantId) &&
+        isUnderSizeLimit() && isAllowedDocType();
+      allow update, delete: if false;
     }
 
     // Evidence for actual ATTL supplier-withholding payments.
     match /tenants/{tenantId}/supplier-withholding/{remittanceId}/{document} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+      allow read: if canAccessMoneyRecords(tenantId) ||
+        canAccessPayrollRecords(tenantId);
+      allow create: if resource == null && isTenantFinanceAdmin(tenantId) &&
+        isUnderSizeLimit() && isAllowedDocType();
+      allow update, delete: if false;
     }
 
     match /tenants/{tenantId}/tax-clearance/{requestId}/{document} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() &&
+      allow read: if hasTenantModule(tenantId, 'accounting');
+      allow create: if resource == null && isTenantFinanceAdmin(tenantId) && isUnderSizeLimit() &&
         request.resource.contentType == 'application/pdf';
+      allow update, delete: if false;
     }
 
     match /tenants/{tenantId}/cash-advances/{advanceId}/{document} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+      allow read: if canAccessMoneyRecords(tenantId);
+      allow create: if resource == null && isTenantFinanceAdmin(tenantId) &&
+        isUnderSizeLimit() && isAllowedDocType();
+      allow update, delete: if false;
     }
 
     // As-sent customer invoice PDFs, frozen at send time. Customers reach
@@ -266,7 +325,9 @@ service firebase.storage {
     match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
       allow read: if canAccessPayrollRecords(tenantId) ||
         isOwnPayslipFile(tenantId, document);
-      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit();
+      allow create: if resource == null && isTenantFinanceAdmin(tenantId) &&
+        isUnderSizeLimit() && request.resource.contentType == 'application/pdf';
+      allow update, delete: if false;
     }
 
     // Tenant branding assets (company logos)
@@ -288,10 +349,21 @@ service firebase.storage {
 
     // Attendance photos (supervisor crew clock-in)
     match /attendance_photos/{tenantId}/{date}/{fileName} {
-      allow read: if isTenantMember(tenantId);
-      allow write: if isTenantMember(tenantId)
+      // A single photo covers a crew, so Storage cannot securely infer every
+      // employee from the object path. Employees receive the bearer URL only
+      // through their own Firestore-authorized attendance record instead of
+      // trusting a manager-supplied employee list in object metadata.
+      allow read: if isTenantFinanceAdmin(tenantId) ||
+        isManagerForStorageDepartment(
+          tenantId,
+          resource.metadata.get('departmentId', '')
+        );
+      allow create: if resource == null && hasValidAttendancePhotoMetadata(tenantId)
         && request.resource.size < 2 * 1024 * 1024
         && request.resource.contentType.matches('image/jpeg');
+      // Supervisor photos are attendance evidence. Even their original
+      // uploader cannot replace or remove them after upload.
+      allow update, delete: if false;
     }
 
     // Legacy pre-tenant-isolation paths (/employees/**, /expenses/**) were

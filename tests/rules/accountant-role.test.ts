@@ -3,7 +3,7 @@
  *
  * Pins the isTenantFinanceAdmin boundary introduced for the audience split:
  * - Accountants write money / accounting / payroll records like an admin
- *   (bills, vendors, journal entries, payruns, settings/config, mail queue,
+ *   (bills, vendors, journal entries, payruns, settings/config,
  *   invoice links).
  * - Accountants do NOT get administration: no member management, no employee
  *   create/delete, no settings/integrations, no tenant-doc updates.
@@ -26,6 +26,7 @@ const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 80
 const OWNER = 'owner-a';
 const ACCOUNTANT = 'accountant-a';
 const MANAGER = 'manager-a';
+const SUPERADMIN = 'superadmin-a';
 
 describe('Accountant role rules', () => {
   let testEnv: RulesTestEnvironment;
@@ -70,6 +71,10 @@ describe('Accountant role rules', () => {
         role: 'manager',
         modules: ['staff', 'timeleave', 'performance'],
       });
+      await setDoc(doc(adminDb, `users/${SUPERADMIN}`), {
+        email: 'superadmin@example.com',
+        isSuperAdmin: true,
+      });
       await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-1'), {
         personalInfo: { firstName: 'Maria', lastName: 'Silva' },
       });
@@ -85,6 +90,7 @@ describe('Accountant role rules', () => {
   const asAccountant = () => testEnv.authenticatedContext(ACCOUNTANT).firestore();
   const asManager = () => testEnv.authenticatedContext(MANAGER).firestore();
   const asOwner = () => testEnv.authenticatedContext(OWNER).firestore();
+  const asSuperadmin = () => testEnv.authenticatedContext(SUPERADMIN).firestore();
 
   describe('finance writes allowed', () => {
     it('accountant can create a bill', async () => {
@@ -194,69 +200,20 @@ describe('Accountant role rules', () => {
       );
     });
 
-    it('accountant can queue mail for the tenant', async () => {
-      // Mirrors notificationService.queueEmail's shape (purpose tag + pending
-      // status + bounded recipient list), which the rules now require.
-      await assertSucceeds(
-        setDoc(doc(asAccountant(), 'mail/mail-1'), {
-          tenantId: 'tenant-a',
-          to: ['customer@example.com'],
-          subject: 'Invoice',
-          html: '<p>Invoice attached</p>',
-          status: 'pending',
-          purpose: 'invoice-send',
-        }),
-      );
-    });
-
-    it('rejects a mail doc missing a purpose tag or non-pending status', async () => {
-      await assertFails(
-        setDoc(doc(asAccountant(), 'mail/mail-2'), {
-          tenantId: 'tenant-a',
-          to: ['customer@example.com'],
-          subject: 'x',
-          html: '<p>x</p>',
-          status: 'pending', // no purpose
-        }),
-      );
-      await assertFails(
-        setDoc(doc(asAccountant(), 'mail/mail-3'), {
-          tenantId: 'tenant-a',
-          to: ['customer@example.com'],
-          subject: 'x',
-          html: '<p>x</p>',
-          status: 'sent', // pre-sent injection
-          purpose: 'invoice-send',
-        }),
-      );
-    });
-
-    // Regression for sender spoofing (security scan F3/F8/F14): a client-set
-    // `from` (or `cc`) must be rejected by the hasOnly allowlist, so mail can
-    // only ever send from the server-derived address.
-    it('rejects a mail doc carrying a client-supplied from or cc', async () => {
-      await assertFails(
-        setDoc(doc(asAccountant(), 'mail/mail-spoof-from'), {
-          tenantId: 'tenant-a',
-          to: ['victim@example.com'],
-          subject: 'Reset your password',
-          html: '<a href="https://evil">reset</a>',
-          status: 'pending',
-          purpose: 'phish',
-          from: 'security@xefe.tl',
-        }),
-      );
-      await assertFails(
-        setDoc(doc(asAccountant(), 'mail/mail-spoof-cc'), {
-          tenantId: 'tenant-a',
-          to: ['customer@example.com'],
-          subject: 'x',
-          html: '<p>x</p>',
-          status: 'pending',
-          purpose: 'invoice-send',
-          cc: ['extra@example.com'],
-        }),
-      );
+    it('rejects direct mail queue writes from every tenant role', async () => {
+      const mail = {
+        tenantId: 'tenant-a',
+        to: ['victim@example.com'],
+        subject: 'Reset your password',
+        html: '<a href="https://evil">reset</a>',
+        status: 'pending',
+        purpose: 'invoice',
+        relatedId: 'invoice-1',
+      };
+      await assertFails(setDoc(doc(asAccountant(), 'mail/mail-accountant'), mail));
+      await assertFails(setDoc(doc(asManager(), 'mail/mail-manager'), mail));
+      await assertFails(setDoc(doc(asOwner(), 'mail/mail-owner'), mail));
+      await assertFails(setDoc(doc(asSuperadmin(), 'mail/mail-superadmin'), mail));
     });
 
     it('accountant can create an invoice link', async () => {

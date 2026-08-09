@@ -1,9 +1,10 @@
 /**
  * Notification service — the ONE place that knows how Xefe queues email.
  *
- * Emails are Firestore docs in the `mail` collection (Trigger-Email
- * compatible shape) delivered by functions/src/email.ts via Resend from
- * noreply@xefe.tl. Conventions enforced here:
+ * Browser callers request a named product notification through the
+ * queueTenantEmail callable. The callable authorizes the purpose, resolves
+ * recipients from linked tenant records, and writes the `mail` queue through
+ * the Admin SDK; browsers cannot write that queue directly.
  *
  *  - **Per-recipient fan-out** (default when multiple recipients): one doc
  *    per address so staff never see each other's emails — the sender has no
@@ -16,40 +17,41 @@
  *  - Recipients are trimmed, de-duplicated, and empties dropped. Zero valid
  *    recipients returns 0 without writing or throwing.
  *
- * Firestore rules allow tenant managers/admins to create mail docs for their
- * tenant. Server-side senders (functions/src/billing.ts renewal reminders,
- * authEmails) write the same shape with the Admin SDK — keep them in sync.
+ * Server-side senders (functions/src/billing.ts renewal reminders,
+ * authEmails) may still write the same queue shape with the Admin SDK.
  */
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
-  serverTimestamp,
   where,
-  writeBatch,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getFunctionsLazy } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 
 export type EmailPurpose =
   | 'notification'
   | 'invoice'
   | 'invoice-reminder'
+  | 'receipt'
+  | 'payslip'
   | 'billing-invoice-request'
   | 'leave-decision'
   | 'announcement'
-  // Open for new flows — prefer adding a literal here so purposes stay greppable
-  | (string & {});
+  | 'interview-invitation'
+  | 'interview-reminder'
+  | 'interview-reschedule'
+  | 'interview-decision'
+  | 'application-outcome'
+  | 'review-submitted'
+  | 'review-completed';
 
 export interface EmailAttachment {
   filename: string;
   /** Download URL — the sender fetches it (preferred for Storage files). */
   url?: string;
-  /** Base64 content — for small, generated-in-memory files. */
-  content?: string;
   contentType?: string;
 }
 
@@ -62,14 +64,13 @@ export interface QueueEmailInput {
   html?: string;
   replyTo?: string;
   /**
-   * Business display name for the From header. The sender composes
-   * "{fromName} via Xefe <invoices@xefe.tl>" — the address itself is never
-   * client-controlled.
+   * Legacy caller hint. The callable ignores it and derives tenant branding.
    */
   fromName?: string;
   attachments?: EmailAttachment[];
   purpose: EmailPurpose;
   relatedId?: string;
+  /** Legacy caller hint. The callable always binds createdBy to auth.uid. */
   createdBy?: string;
   /** Correlates provider status back to the latest invoice delivery attempt. */
   deliveryAttemptId?: string;
@@ -80,9 +81,6 @@ export interface QueueEmailInput {
   perRecipient?: boolean;
 }
 
-// Firestore batches cap at 500 ops; stay under with headroom.
-const BATCH_SIZE = 400;
-
 function normalizeRecipients(to: string | string[]): string[] {
   const list = Array.isArray(to) ? to : [to];
   return [...new Set(list.map((e) => e?.trim()).filter((e): e is string => Boolean(e)))];
@@ -90,8 +88,8 @@ function normalizeRecipients(to: string | string[]): string[] {
 
 export const notificationService = {
   /**
-   * Queue email(s). Returns how many mail docs were written (0 when no valid
-   * recipients). Throws on Firestore write failure — callers decide whether
+   * Queue email(s). Returns how many recipients were queued (0 when no valid
+   * recipients). Throws on callable failure — callers decide whether
    * the surrounding action should survive that (it usually should).
    */
   async queueEmail(input: QueueEmailInput): Promise<number> {
@@ -101,38 +99,34 @@ export const notificationService = {
       throw new Error('queueEmail requires text or html');
     }
 
-    const base: Record<string, unknown> = {
+    const payload: QueueEmailInput = {
       tenantId: input.tenantId,
+      to: recipients,
       subject: input.subject,
-      status: 'pending',
       purpose: input.purpose,
-      createdAt: serverTimestamp(),
       ...(input.text ? { text: input.text } : {}),
       ...(input.html ? { html: input.html } : {}),
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
-      ...(input.fromName ? { fromName: input.fromName } : {}),
       ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       ...(input.relatedId ? { relatedId: input.relatedId } : {}),
-      ...(input.createdBy ? { createdBy: input.createdBy } : {}),
       ...(input.deliveryAttemptId
         ? { deliveryAttemptId: input.deliveryAttemptId }
         : {}),
+      ...(input.perRecipient !== undefined
+        ? { perRecipient: input.perRecipient }
+        : {}),
     };
 
-    const perRecipient = input.perRecipient ?? recipients.length > 1;
-    if (!perRecipient || recipients.length === 1) {
-      await addDoc(collection(db, 'mail'), { ...base, to: recipients });
-      return recipients.length;
-    }
-
-    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-      const batch = writeBatch(db);
-      for (const email of recipients.slice(i, i + BATCH_SIZE)) {
-        batch.set(doc(collection(db, 'mail')), { ...base, to: [email] });
-      }
-      await batch.commit();
-    }
-    return recipients.length;
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import('firebase/functions'),
+      getFunctionsLazy(),
+    ]);
+    const callable = httpsCallable<QueueEmailInput, { queued: number }>(
+      functions,
+      'queueTenantEmail',
+    );
+    const result = await callable(payload);
+    return result.data.queued;
   },
 
   /** The employee's email address on file, or null. */

@@ -254,6 +254,33 @@ function tenantsClaimMap(existingClaims) {
         ? Object.fromEntries(existing.map((tid) => [tid, "member"]))
         : Object.assign({}, existing);
 }
+function sameStringSet(left, right) {
+    if (!Array.isArray(left) || left.some((value) => typeof value !== "string")) {
+        return false;
+    }
+    const a = Array.from(new Set(left)).sort();
+    const b = Array.from(new Set(right)).sort();
+    return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+/**
+ * Custom claims are a tenant-discovery hint only; Firestore member documents
+ * remain the authorization source. Keep the hint synchronized best-effort so a
+ * transient Auth failure never rolls back or falsely fails an otherwise atomic
+ * member/profile mutation.
+ */
+async function syncTenantRoleClaim(uid, tenantId, role) {
+    const auth = (0, auth_1.getAuth)();
+    const targetUser = await auth.getUser(uid);
+    const existingClaims = targetUser.customClaims || {};
+    const tenantsMap = tenantsClaimMap(existingClaims);
+    if (role === null) {
+        delete tenantsMap[tenantId];
+    }
+    else {
+        tenantsMap[tenantId] = role;
+    }
+    await auth.setCustomUserClaims(uid, Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap }));
+}
 async function writeAdminAudit(entry) {
     var _a, _b;
     try {
@@ -312,8 +339,8 @@ async function queuePasswordSetupEmail(params) {
  * Cloud Function to add a user to an existing tenant
  */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
-    var _a, _b;
-    const { tenantId, userEmail, role, modules, employeeId, tenantName } = request.data;
+    var _a, _b, _c;
+    const { tenantId, userEmail, role, modules, employeeId, departmentId, tenantName } = request.data;
     const authContext = (0, authz_1.requireAuth)(request);
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
@@ -327,6 +354,17 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
     }
     if (modules !== undefined && !Array.isArray(modules)) {
         throw new https_1.HttpsError("invalid-argument", "modules must be an array");
+    }
+    const normalizedDepartmentId = departmentId === null || departmentId === void 0 ? void 0 : departmentId.trim();
+    if (departmentId !== undefined &&
+        (!normalizedDepartmentId || normalizedDepartmentId.length > 256 || normalizedDepartmentId.includes("/"))) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid departmentId");
+    }
+    if (role === "manager" && !normalizedDepartmentId) {
+        throw new https_1.HttpsError("invalid-argument", "Managers must be assigned to a department");
+    }
+    if (role !== "manager" && normalizedDepartmentId) {
+        throw new https_1.HttpsError("invalid-argument", "Only managers can be assigned to a department");
     }
     const db = (0, firestore_1.getFirestore)();
     const auth = (0, auth_1.getAuth)();
@@ -357,6 +395,17 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
         const effectiveModules = limitModulesToFeatures(Array.isArray(modules)
             ? normalizedModules
             : DEFAULT_MODULES_BY_ROLE[role], tenantFeatures);
+        // Reject a missing/cross-tenant manager scope before creating an Auth
+        // account. The transaction rechecks it below to close the deletion race.
+        if (normalizedDepartmentId) {
+            const departmentSnap = await db
+                .collection("departments")
+                .doc(normalizedDepartmentId)
+                .get();
+            if (!departmentSnap.exists || ((_c = departmentSnap.data()) === null || _c === void 0 ? void 0 : _c.tenantId) !== tenantId) {
+                throw new https_1.HttpsError("invalid-argument", "Department does not belong to this tenant");
+            }
+        }
         // Find or create the user
         let targetUser;
         let isNewUser = false;
@@ -375,35 +424,77 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
                 throw error;
             }
         }
-        // Check if user is already a member
-        const existingMemberDoc = await db
-            .collection(`tenants/${tenantId}/members`)
-            .doc(targetUser.uid)
-            .get();
-        if (existingMemberDoc.exists) {
-            throw new https_1.HttpsError("already-exists", "User is already a member of this tenant");
-        }
-        // Create member document
-        const memberData = Object.assign({ uid: targetUser.uid, role, modules: effectiveModules, email: normalizedEmail, displayName: targetUser.displayName || null, joinedAt: new Date(), lastActiveAt: new Date() }, (employeeId ? { employeeId } : {}));
-        await db.collection(`tenants/${tenantId}/members`).doc(targetUser.uid).set(memberData);
-        // Create/update user profile with tenantAccess (for Ekipa/mobile app login)
+        const memberRef = db.collection(`tenants/${tenantId}/members`).doc(targetUser.uid);
         const userRef = db.collection("users").doc(targetUser.uid);
-        const userSnap = await userRef.get();
-        const existingData = userSnap.exists ? userSnap.data() || {} : {};
-        const existingAccess = existingData.tenantAccess || {};
-        const existingIds = existingData.tenantIds || [];
-        const profileUpdate = {
-            uid: targetUser.uid,
-            email: normalizedEmail,
-            updatedAt: new Date(),
-            tenantAccess: Object.assign(Object.assign({}, existingAccess), { [tenantId]: { name: effectiveTenantName, role } }),
-        };
-        if (!existingIds.includes(tenantId)) {
-            profileUpdate.tenantIds = [...existingIds, tenantId];
-        }
-        await userRef.set(profileUpdate, { merge: true });
-        // Email newly created users a link to set their password
-        if (isNewUser) {
+        const callerMemberRef = db.collection(`tenants/${tenantId}/members`).doc(authContext.uid);
+        const departmentRef = normalizedDepartmentId
+            ? db.collection("departments").doc(normalizedDepartmentId)
+            : null;
+        const memberData = Object.assign(Object.assign({ uid: targetUser.uid, role, modules: effectiveModules, email: normalizedEmail, displayName: targetUser.displayName || null, joinedAt: new Date(), lastActiveAt: new Date() }, (employeeId ? { employeeId } : {})), (normalizedDepartmentId ? { departmentId: normalizedDepartmentId } : {}));
+        // Member + profile are the authoritative access state and must move
+        // together. An exact existing membership is treated as a retry so a
+        // previous invocation can resume claim synchronization safely.
+        const membershipCreated = await db.runTransaction(async (transaction) => {
+            var _a, _b;
+            const [currentCallerSnap, existingMemberDoc, userSnap, departmentSnap] = await Promise.all([
+                caller.superadmin
+                    ? Promise.resolve(null)
+                    : transaction.get(callerMemberRef),
+                transaction.get(memberRef),
+                transaction.get(userRef),
+                departmentRef ? transaction.get(departmentRef) : Promise.resolve(null),
+            ]);
+            const currentCallerRole = (_a = currentCallerSnap === null || currentCallerSnap === void 0 ? void 0 : currentCallerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
+            if (!caller.superadmin &&
+                currentCallerRole !== "owner" &&
+                currentCallerRole !== "hr-admin") {
+                throw new https_1.HttpsError("permission-denied", "Tenant admin access changed; try again");
+            }
+            if (role === "owner" && !caller.superadmin && currentCallerRole !== "owner") {
+                throw new https_1.HttpsError("permission-denied", "Only tenant owners can assign owner role");
+            }
+            if (departmentRef &&
+                (!(departmentSnap === null || departmentSnap === void 0 ? void 0 : departmentSnap.exists) || ((_b = departmentSnap.data()) === null || _b === void 0 ? void 0 : _b.tenantId) !== tenantId)) {
+                throw new https_1.HttpsError("invalid-argument", "Department does not belong to this tenant");
+            }
+            if (existingMemberDoc.exists) {
+                const existingMember = existingMemberDoc.data() || {};
+                const exactRetry = existingMember.role === role &&
+                    existingMember.email === normalizedEmail &&
+                    sameStringSet(existingMember.modules, effectiveModules) &&
+                    (employeeId === undefined || existingMember.employeeId === employeeId) &&
+                    (normalizedDepartmentId === undefined ||
+                        existingMember.departmentId === normalizedDepartmentId);
+                if (!exactRetry) {
+                    throw new https_1.HttpsError("already-exists", "User is already a member of this tenant");
+                }
+            }
+            else {
+                transaction.set(memberRef, memberData);
+            }
+            const existingData = userSnap.exists ? userSnap.data() || {} : {};
+            const existingAccess = existingData.tenantAccess && typeof existingData.tenantAccess === "object"
+                ? existingData.tenantAccess
+                : {};
+            const existingIds = Array.isArray(existingData.tenantIds)
+                ? existingData.tenantIds
+                : [];
+            transaction.set(userRef, {
+                uid: targetUser.uid,
+                email: normalizedEmail,
+                updatedAt: new Date(),
+                tenantAccess: Object.assign(Object.assign({}, existingAccess), { [tenantId]: { name: effectiveTenantName, role } }),
+                tenantIds: existingIds.includes(tenantId)
+                    ? existingIds
+                    : [...existingIds, tenantId],
+            }, { merge: true });
+            return !existingMemberDoc.exists;
+        });
+        // Email accounts created by this flow a setup link. providerData remains
+        // empty if a previous attempt created the Auth user but failed before the
+        // membership commit, so a retry reconciles that partial state too.
+        if (membershipCreated &&
+            (isNewUser || targetUser.providerData.length === 0)) {
             try {
                 await queuePasswordSetupEmail({
                     email: normalizedEmail,
@@ -416,23 +507,30 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
                 firebase_functions_1.logger.warn(`Failed to queue password setup email for ${normalizedEmail}:`, resetError.message);
             }
         }
-        // Update user's custom claims (map format for firestore.rules fast-path)
-        const existingClaims = targetUser.customClaims || {};
-        const tenantsMap = tenantsClaimMap(existingClaims);
-        if (!tenantsMap[tenantId]) {
-            tenantsMap[tenantId] = role;
-            const newClaims = Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap });
-            await auth.setCustomUserClaims(targetUser.uid, newClaims);
+        try {
+            await syncTenantRoleClaim(targetUser.uid, tenantId, role);
         }
-        await writeAdminAudit({
-            action: "user_added_to_tenant",
-            actorUid: authContext.uid,
-            actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
-            targetType: "tenant",
-            targetId: tenantId,
-            targetName: effectiveTenantName,
-            details: { memberEmail: normalizedEmail, memberUid: targetUser.uid, role, modules: effectiveModules, isNewUser },
-        });
+        catch (claimsError) {
+            firebase_functions_1.logger.warn(`Member ${targetUser.uid} was added but tenant discovery claims could not be synchronized:`, claimsError);
+        }
+        if (membershipCreated) {
+            await writeAdminAudit({
+                action: "user_added_to_tenant",
+                actorUid: authContext.uid,
+                actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
+                targetType: "tenant",
+                targetId: tenantId,
+                targetName: effectiveTenantName,
+                details: {
+                    memberEmail: normalizedEmail,
+                    memberUid: targetUser.uid,
+                    role,
+                    modules: effectiveModules,
+                    departmentId: normalizedDepartmentId !== null && normalizedDepartmentId !== void 0 ? normalizedDepartmentId : null,
+                    isNewUser,
+                },
+            });
+        }
         return {
             success: true,
             message: `User ${normalizedEmail} added to tenant successfully`,
@@ -451,8 +549,8 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
  * Keeps the member doc, custom claims, and users/{uid}.tenantAccess in sync.
  */
 exports.updateTenantMember = (0, https_1.onCall)(async (request) => {
-    var _a, _b, _c, _d, _e, _f;
-    const { tenantId, memberUid, role, modules } = request.data;
+    var _a, _b, _c;
+    const { tenantId, memberUid, role, modules, departmentId } = request.data;
     const authContext = (0, authz_1.requireAuth)(request);
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
@@ -467,8 +565,17 @@ exports.updateTenantMember = (0, https_1.onCall)(async (request) => {
     if (modules !== undefined && !Array.isArray(modules)) {
         throw new https_1.HttpsError("invalid-argument", "modules must be an array");
     }
-    if (role === undefined && modules === undefined) {
+    if (role === undefined && modules === undefined && departmentId === undefined) {
         throw new https_1.HttpsError("invalid-argument", "Nothing to update");
+    }
+    const normalizedDepartmentId = departmentId === null
+        ? null
+        : departmentId === undefined
+            ? undefined
+            : departmentId.trim();
+    if (typeof normalizedDepartmentId === "string" &&
+        (!normalizedDepartmentId || normalizedDepartmentId.length > 256 || normalizedDepartmentId.includes("/"))) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid departmentId");
     }
     const normalizedModules = Array.isArray(modules)
         ? Array.from(new Set(modules.map((module) => {
@@ -479,61 +586,117 @@ exports.updateTenantMember = (0, https_1.onCall)(async (request) => {
         })))
         : undefined;
     const db = (0, firestore_1.getFirestore)();
-    const auth = (0, auth_1.getAuth)();
     try {
         const caller = await requireTenantAdminOrSuperAdmin(tenantId, authContext);
         if (!caller.superadmin && memberUid === authContext.uid) {
             throw new https_1.HttpsError("permission-denied", "You cannot change your own access");
         }
-        const memberRef = db.collection(`tenants/${tenantId}/members`).doc(memberUid);
-        const memberSnap = await memberRef.get();
-        if (!memberSnap.exists) {
-            throw new https_1.HttpsError("not-found", "Member not found in this tenant");
-        }
-        const currentRole = (_a = memberSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
-        // Only owners (or superadmins) may grant or revoke the owner role
-        if (!caller.superadmin &&
-            caller.callerRole !== "owner" &&
-            (role === "owner" || currentRole === "owner")) {
-            throw new https_1.HttpsError("permission-denied", "Only tenant owners can manage owner access");
-        }
         const tenantSnap = await db.collection("tenants").doc(tenantId).get();
-        const tenantFeatures = tenantSnap.exists ? (_b = tenantSnap.data()) === null || _b === void 0 ? void 0 : _b.features : undefined;
-        const tenantName = ((_c = tenantSnap.data()) === null || _c === void 0 ? void 0 : _c.name) || tenantId;
-        const nextRole = (_d = role !== null && role !== void 0 ? role : currentRole) !== null && _d !== void 0 ? _d : "viewer";
-        // Explicit modules win; a bare role change resets modules to that role's defaults
-        const nextModules = limitModulesToFeatures(normalizedModules !== null && normalizedModules !== void 0 ? normalizedModules : DEFAULT_MODULES_BY_ROLE[nextRole], tenantFeatures);
-        await memberRef.update({
-            role: nextRole,
-            modules: nextModules,
-            updatedAt: new Date(),
+        const tenantFeatures = tenantSnap.exists ? (_a = tenantSnap.data()) === null || _a === void 0 ? void 0 : _a.features : undefined;
+        const tenantName = ((_b = tenantSnap.data()) === null || _b === void 0 ? void 0 : _b.name) || tenantId;
+        const memberRef = db.collection(`tenants/${tenantId}/members`).doc(memberUid);
+        const userRef = db.collection("users").doc(memberUid);
+        const callerMemberRef = db.collection(`tenants/${tenantId}/members`).doc(authContext.uid);
+        const mutation = await db.runTransaction(async (transaction) => {
+            var _a, _b, _c, _d;
+            const [currentCallerSnap, memberSnap, userSnap] = await Promise.all([
+                caller.superadmin
+                    ? Promise.resolve(null)
+                    : transaction.get(callerMemberRef),
+                transaction.get(memberRef),
+                transaction.get(userRef),
+            ]);
+            const currentCallerRole = (_a = currentCallerSnap === null || currentCallerSnap === void 0 ? void 0 : currentCallerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
+            if (!caller.superadmin &&
+                currentCallerRole !== "owner" &&
+                currentCallerRole !== "hr-admin") {
+                throw new https_1.HttpsError("permission-denied", "Tenant admin access changed; try again");
+            }
+            if (!memberSnap.exists) {
+                throw new https_1.HttpsError("not-found", "Member not found in this tenant");
+            }
+            const memberData = memberSnap.data() || {};
+            const currentRole = memberData.role;
+            // Only owners (or superadmins) may grant or revoke the owner role.
+            if (!caller.superadmin &&
+                currentCallerRole !== "owner" &&
+                (role === "owner" || currentRole === "owner")) {
+                throw new https_1.HttpsError("permission-denied", "Only tenant owners can manage owner access");
+            }
+            const nextRole = (_b = role !== null && role !== void 0 ? role : currentRole) !== null && _b !== void 0 ? _b : "viewer";
+            // Explicit modules win; a bare role change resets modules to that role's defaults.
+            const nextModules = limitModulesToFeatures(normalizedModules !== null && normalizedModules !== void 0 ? normalizedModules : DEFAULT_MODULES_BY_ROLE[nextRole], tenantFeatures);
+            const currentDepartmentId = typeof memberData.departmentId === "string" ? memberData.departmentId : null;
+            const nextDepartmentId = nextRole === "manager"
+                ? normalizedDepartmentId === null
+                    ? null
+                    : normalizedDepartmentId !== null && normalizedDepartmentId !== void 0 ? normalizedDepartmentId : currentDepartmentId
+                : null;
+            if (!nextDepartmentId && nextRole === "manager") {
+                throw new https_1.HttpsError("invalid-argument", "Managers must be assigned to a department");
+            }
+            if (nextDepartmentId) {
+                const departmentSnap = await transaction.get(db.collection("departments").doc(nextDepartmentId));
+                if (!departmentSnap.exists || ((_c = departmentSnap.data()) === null || _c === void 0 ? void 0 : _c.tenantId) !== tenantId) {
+                    throw new https_1.HttpsError("invalid-argument", "Department does not belong to this tenant");
+                }
+            }
+            const changed = nextRole !== currentRole ||
+                !sameStringSet(memberData.modules, nextModules) ||
+                nextDepartmentId !== currentDepartmentId;
+            if (changed) {
+                transaction.update(memberRef, {
+                    role: nextRole,
+                    modules: nextModules,
+                    departmentId: nextDepartmentId !== null && nextDepartmentId !== void 0 ? nextDepartmentId : firestore_1.FieldValue.delete(),
+                    updatedAt: new Date(),
+                });
+            }
+            const userData = userSnap.exists ? userSnap.data() || {} : {};
+            const existingAccess = userData.tenantAccess && typeof userData.tenantAccess === "object"
+                ? userData.tenantAccess
+                : {};
+            const existingIds = Array.isArray(userData.tenantIds)
+                ? userData.tenantIds
+                : [];
+            // Repair the complete profile access slice on every invocation,
+            // including an idempotent retry after an earlier custom-claim failure.
+            transaction.set(userRef, Object.assign(Object.assign({ uid: memberUid }, (typeof memberData.email === "string" ? { email: memberData.email } : {})), { updatedAt: new Date(), tenantAccess: Object.assign(Object.assign({}, existingAccess), { [tenantId]: { name: tenantName, role: nextRole } }), tenantIds: existingIds.includes(tenantId)
+                    ? existingIds
+                    : [...existingIds, tenantId] }), { merge: true });
+            return {
+                changed,
+                currentRole,
+                nextRole,
+                nextModules,
+                departmentId: nextDepartmentId,
+                memberEmail: (_d = memberData.email) !== null && _d !== void 0 ? _d : null,
+            };
         });
-        if (role !== undefined && role !== currentRole) {
-            const targetUser = await auth.getUser(memberUid);
-            const existingClaims = targetUser.customClaims || {};
-            const tenantsMap = tenantsClaimMap(existingClaims);
-            tenantsMap[tenantId] = role;
-            await auth.setCustomUserClaims(memberUid, Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap }));
-            await db.collection("users").doc(memberUid).set({
-                updatedAt: new Date(),
-                tenantAccess: { [tenantId]: { name: tenantName, role } },
-            }, { merge: true });
+        try {
+            await syncTenantRoleClaim(memberUid, tenantId, mutation.nextRole);
         }
-        await writeAdminAudit({
-            action: "user_tenant_access_updated",
-            actorUid: authContext.uid,
-            actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
-            targetType: "tenant",
-            targetId: tenantId,
-            targetName: tenantName,
-            details: {
-                memberUid,
-                memberEmail: (_f = (_e = memberSnap.data()) === null || _e === void 0 ? void 0 : _e.email) !== null && _f !== void 0 ? _f : null,
-                previousRole: currentRole !== null && currentRole !== void 0 ? currentRole : null,
-                role: nextRole,
-                modules: nextModules,
-            },
-        });
+        catch (claimsError) {
+            firebase_functions_1.logger.warn(`Member ${memberUid} access changed but tenant discovery claims could not be synchronized:`, claimsError);
+        }
+        if (mutation.changed) {
+            await writeAdminAudit({
+                action: "user_tenant_access_updated",
+                actorUid: authContext.uid,
+                actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
+                targetType: "tenant",
+                targetId: tenantId,
+                targetName: tenantName,
+                details: {
+                    memberUid,
+                    memberEmail: mutation.memberEmail,
+                    previousRole: (_c = mutation.currentRole) !== null && _c !== void 0 ? _c : null,
+                    role: mutation.nextRole,
+                    modules: mutation.nextModules,
+                    departmentId: mutation.departmentId,
+                },
+            });
+        }
         return { success: true, message: "Member access updated" };
     }
     catch (error) {
@@ -559,60 +722,83 @@ exports.removeTenantMember = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("invalid-argument", "memberUid is required");
     }
     const db = (0, firestore_1.getFirestore)();
-    const auth = (0, auth_1.getAuth)();
     try {
         const caller = await requireTenantAdminOrSuperAdmin(tenantId, authContext);
         if (!caller.superadmin && memberUid === authContext.uid) {
             throw new https_1.HttpsError("permission-denied", "You cannot remove yourself from the tenant");
         }
+        const tenantSnap = await db.collection("tenants").doc(tenantId).get();
         const memberRef = db.collection(`tenants/${tenantId}/members`).doc(memberUid);
-        const memberSnap = await memberRef.get();
-        if (!memberSnap.exists) {
-            throw new https_1.HttpsError("not-found", "Member not found in this tenant");
-        }
-        const memberRole = (_a = memberSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
-        const memberEmail = (_b = memberSnap.data()) === null || _b === void 0 ? void 0 : _b.email;
-        if (!caller.superadmin && caller.callerRole !== "owner" && memberRole === "owner") {
-            throw new https_1.HttpsError("permission-denied", "Only tenant owners can remove an owner");
-        }
-        await memberRef.delete();
-        // Strip the tenant from custom claims (skip silently if the auth user is gone)
-        try {
-            const targetUser = await auth.getUser(memberUid);
-            const existingClaims = targetUser.customClaims || {};
-            const tenantsMap = tenantsClaimMap(existingClaims);
-            if (tenantsMap[tenantId]) {
-                delete tenantsMap[tenantId];
-                await auth.setCustomUserClaims(memberUid, Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap }));
+        const userRef = db.collection("users").doc(memberUid);
+        const callerMemberRef = db.collection(`tenants/${tenantId}/members`).doc(authContext.uid);
+        const removal = await db.runTransaction(async (transaction) => {
+            var _a;
+            const [currentCallerSnap, memberSnap, userSnap] = await Promise.all([
+                caller.superadmin
+                    ? Promise.resolve(null)
+                    : transaction.get(callerMemberRef),
+                transaction.get(memberRef),
+                transaction.get(userRef),
+            ]);
+            const currentCallerRole = (_a = currentCallerSnap === null || currentCallerSnap === void 0 ? void 0 : currentCallerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
+            if (!caller.superadmin &&
+                currentCallerRole !== "owner" &&
+                currentCallerRole !== "hr-admin") {
+                throw new https_1.HttpsError("permission-denied", "Tenant admin access changed; try again");
             }
+            const memberData = memberSnap.exists ? memberSnap.data() || {} : {};
+            const memberRole = memberData.role;
+            if (memberSnap.exists &&
+                !caller.superadmin &&
+                currentCallerRole !== "owner" &&
+                memberRole === "owner") {
+                throw new https_1.HttpsError("permission-denied", "Only tenant owners can remove an owner");
+            }
+            if (memberSnap.exists) {
+                transaction.delete(memberRef);
+            }
+            if (userSnap.exists) {
+                transaction.update(userRef, {
+                    [`tenantAccess.${tenantId}`]: firestore_1.FieldValue.delete(),
+                    tenantIds: firestore_1.FieldValue.arrayRemove(tenantId),
+                    updatedAt: new Date(),
+                });
+            }
+            return {
+                removed: memberSnap.exists,
+                memberRole,
+                memberEmail: memberData.email,
+            };
+        });
+        try {
+            await syncTenantRoleClaim(memberUid, tenantId, null);
         }
         catch (claimsError) {
             if ((claimsError === null || claimsError === void 0 ? void 0 : claimsError.code) !== "auth/user-not-found") {
-                throw claimsError;
+                firebase_functions_1.logger.warn(`Member ${memberUid} was removed but tenant discovery claims could not be synchronized:`, claimsError);
             }
         }
-        // Strip the tenant from the user profile (profile may not exist)
-        try {
-            await db.collection("users").doc(memberUid).update({
-                [`tenantAccess.${tenantId}`]: firestore_1.FieldValue.delete(),
-                tenantIds: firestore_1.FieldValue.arrayRemove(tenantId),
-                updatedAt: new Date(),
+        if (removal.removed) {
+            await writeAdminAudit({
+                action: "user_removed_from_tenant",
+                actorUid: authContext.uid,
+                actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
+                targetType: "tenant",
+                targetId: tenantId,
+                targetName: (_b = (_a = tenantSnap.data()) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : tenantId,
+                details: {
+                    memberUid,
+                    memberEmail: (_c = removal.memberEmail) !== null && _c !== void 0 ? _c : null,
+                    previousRole: (_d = removal.memberRole) !== null && _d !== void 0 ? _d : null,
+                },
             });
         }
-        catch (profileError) {
-            firebase_functions_1.logger.warn(`Could not update user profile for removed member ${memberUid}:`, profileError);
-        }
-        const tenantSnap = await db.collection("tenants").doc(tenantId).get();
-        await writeAdminAudit({
-            action: "user_removed_from_tenant",
-            actorUid: authContext.uid,
-            actorEmail: typeof authContext.token.email === "string" ? authContext.token.email : "",
-            targetType: "tenant",
-            targetId: tenantId,
-            targetName: (_d = (_c = tenantSnap.data()) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : tenantId,
-            details: { memberUid, memberEmail: memberEmail !== null && memberEmail !== void 0 ? memberEmail : null, previousRole: memberRole !== null && memberRole !== void 0 ? memberRole : null },
-        });
-        return { success: true, message: "Member removed from tenant" };
+        return {
+            success: true,
+            message: removal.removed
+                ? "Member removed from tenant"
+                : "Member access was already removed",
+        };
     }
     catch (error) {
         firebase_functions_1.logger.error("Failed to remove tenant member:", error);

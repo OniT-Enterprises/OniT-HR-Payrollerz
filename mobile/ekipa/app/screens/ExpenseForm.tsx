@@ -125,7 +125,13 @@ export default function ExpenseForm() {
         const storageRef = ref(storage, filename);
         const response = await fetch(receiptUri);
         const blob = await response.blob();
-        await uploadBytes(storageRef, blob);
+        await uploadBytes(storageRef, blob, {
+          contentType: blob.type || 'image/jpeg',
+          customMetadata: {
+            uploaderId: user?.uid || '',
+            employeeId,
+          },
+        });
         receiptUrl = await getDownloadURL(storageRef);
       }
 

@@ -440,12 +440,12 @@ describe('Tenant Isolation Security Rules', () => {
       );
     });
 
-    it('should allow owners to write member documents', async () => {
+    it('should require owners to use the synchronized member-management callable', async () => {
       const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
         tenants: testUsers.tenantAOwner.tenants,
       }).firestore();
 
-      await assertSucceeds(
+      await assertFails(
         setDoc(doc(db, 'tenants/tenant-a/members/new-member'), {
           uid: 'new-member',
           role: 'viewer',

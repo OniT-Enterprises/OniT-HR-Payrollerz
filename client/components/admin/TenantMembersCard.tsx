@@ -48,6 +48,7 @@ import {
   useTenantMembers,
   useUpdateTenantMember,
 } from "@/hooks/useAdmin";
+import { useDepartments } from "@/hooks/useDepartments";
 import {
   DEFAULT_ROLE_PERMISSIONS,
   ModulePermission,
@@ -103,6 +104,7 @@ interface MemberFormState {
   email: string;
   role: TenantRole;
   modules: ModulePermission[];
+  departmentId: string;
 }
 
 interface TenantMembersCardProps {
@@ -112,6 +114,8 @@ interface TenantMembersCardProps {
 
 export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardProps) {
   const { data: members = [], isLoading } = useTenantMembers(tenantId);
+  const departmentsQuery = useDepartments(tenantId, 100);
+  const departments = departmentsQuery.data || [];
   const addMutation = useAddTenantMember();
   const updateMutation = useUpdateTenantMember();
   const removeMutation = useRemoveTenantMember();
@@ -125,11 +129,17 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
     email: "",
     role: "hr-admin",
     modules: DEFAULT_ROLE_PERMISSIONS["hr-admin"],
+    departmentId: "",
   });
 
   const openAddDialog = () => {
     setEditingMember(null);
-    setForm({ email: "", role: "hr-admin", modules: DEFAULT_ROLE_PERMISSIONS["hr-admin"] });
+    setForm({
+      email: "",
+      role: "hr-admin",
+      modules: DEFAULT_ROLE_PERMISSIONS["hr-admin"],
+      departmentId: "",
+    });
     setDialogOpen(true);
   };
 
@@ -142,12 +152,18 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
         member.modules && member.modules.length > 0
           ? member.modules
           : DEFAULT_ROLE_PERMISSIONS[member.role],
+      departmentId: member.departmentId || "",
     });
     setDialogOpen(true);
   };
 
   const handleRoleChange = (role: TenantRole) => {
-    setForm((current) => ({ ...current, role, modules: DEFAULT_ROLE_PERMISSIONS[role] }));
+    setForm((current) => ({
+      ...current,
+      role,
+      modules: DEFAULT_ROLE_PERMISSIONS[role],
+      departmentId: role === "manager" ? current.departmentId : "",
+    }));
   };
 
   const toggleModule = (module: ModulePermission, checked: boolean) => {
@@ -169,6 +185,7 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
           memberUid: editingMember.uid,
           role: form.role,
           modules: form.modules,
+          departmentId: form.role === "manager" ? form.departmentId : null,
         });
         toast.success(`Access updated for ${editingMember.email || "member"}`);
       } else {
@@ -178,6 +195,7 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
           userEmail: form.email.trim(),
           role: form.role,
           modules: form.modules,
+          ...(form.role === "manager" ? { departmentId: form.departmentId } : {}),
         });
         toast.success(`${form.email.trim()} added to ${tenantName}. New users receive a password setup email.`);
       }
@@ -357,7 +375,7 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{editingMember ? "Edit access" : "Add user"}</DialogTitle>
             <DialogDescription>
@@ -394,6 +412,44 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
                 </SelectContent>
               </Select>
             </div>
+            {form.role === "manager" && (
+              <div className="space-y-2">
+                <Label htmlFor="admin-manager-department">Manager department</Label>
+                <Select
+                  value={form.departmentId}
+                  onValueChange={(departmentId) =>
+                    setForm((current) => ({ ...current, departmentId }))}
+                  disabled={
+                    departmentsQuery.isLoading ||
+                    (departmentsQuery.isError && departments.length === 0) ||
+                    departments.length === 0
+                  }
+                >
+                  <SelectTrigger
+                    id="admin-manager-department"
+                    aria-describedby="admin-manager-department-help"
+                  >
+                    <SelectValue placeholder="Choose a department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="admin-manager-department-help" className="text-xs text-muted-foreground">
+                  {departmentsQuery.isLoading
+                    ? "Loading departments…"
+                    : departmentsQuery.isError && departments.length === 0
+                      ? "Departments could not be loaded. Try again."
+                      : departments.length === 0
+                        ? "Create a department before assigning a manager."
+                        : "Attendance access is limited to this department."}
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Modules</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -419,7 +475,14 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving || (!editingMember && !form.email.trim())}>
+              <Button
+                type="submit"
+                disabled={
+                  saving ||
+                  (!editingMember && !form.email.trim()) ||
+                  (form.role === "manager" && !form.departmentId)
+                }
+              >
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingMember ? "Save changes" : "Add user"}
               </Button>
