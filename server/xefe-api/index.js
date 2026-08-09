@@ -2254,324 +2254,52 @@ router.post('/payroll/calculate', async (req, res) => {
   }
 });
 
+// The legacy bot payroll writers target payrollRuns/payrollRecords and bypass
+// the canonical payruns engine's subscription gate, fresh-figure check,
+// two-person approval, settlement journal, immutable payment evidence, and
+// server audit callables. Keep reads and the calculation preview available,
+// but fail every mutation closed until this API delegates to that engine.
+const LEGACY_PAYROLL_MUTATION_ERROR = Object.freeze({
+  success: false,
+  code: 'LEGACY_PAYROLL_MUTATION_DISABLED',
+  retryable: false,
+  message: 'Legacy payroll mutations are disabled. Use the canonical Xefe payroll workflow.',
+});
+
+function rejectLegacyPayrollMutation(_req, res) {
+  res.set('Cache-Control', 'no-store');
+  return res.status(503).json(LEGACY_PAYROLL_MUTATION_ERROR);
+}
+
 /**
  * POST /api/tenants/:tenantId/payroll/runs
- * Creates a payroll run + records in Firestore (batched writes).
- * Body: { payrollRun: {...}, records: [...], createdBy? }
+ * Disabled legacy mutation. Canonical payroll owns run creation.
  */
-router.post('/payroll/runs', async (req, res) => {
-  try {
-    const { payrollRun, records, createdBy = 'bot' } = req.body;
-    const tid = req.tenantId;
-
-    if (!payrollRun || !records?.length) {
-      return res.status(400).json({ success: false, message: 'payrollRun and records[] are required' });
-    }
-    if (!payrollRun.periodStart || !payrollRun.periodEnd || !payrollRun.payDate) {
-      return res.status(400).json({ success: false, message: 'payrollRun must include periodStart, periodEnd, payDate' });
-    }
-
-    // Check fiscal period is open
-    const payDate = payrollRun.payDate.split('T')[0];
-    const year = parseInt(payDate.slice(0, 4), 10);
-    const month = parseInt(payDate.slice(5, 7), 10);
-    await assertPeriodOpen(tid, year, month);
-
-    // Batch write: run + records
-    const BATCH_LIMIT = 499;
-    const runRef = tenantCol(tid, 'payrollRuns').doc();
-    let batch = db.batch();
-    let batchCount = 0;
-
-    // Write the run doc first
-    const targetStatus = payrollRun.status || 'draft';
-    batch.set(runRef, {
-      ...payrollRun,
-      status: records.length > BATCH_LIMIT ? 'writing_records' : targetStatus,
-      expectedRecordCount: records.length,
-      createdBy,
-      tenantId: tid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    batchCount++;
-
-    const recordIds = [];
-    for (const record of records) {
-      if (batchCount >= BATCH_LIMIT) {
-        await batch.commit();
-        batch = db.batch();
-        batchCount = 0;
-      }
-      const recRef = tenantCol(tid, 'payrollRecords').doc();
-      batch.set(recRef, {
-        ...record,
-        payrollRunId: runRef.id,
-        tenantId: tid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      recordIds.push(recRef.id);
-      batchCount++;
-    }
-
-    if (batchCount > 0) await batch.commit();
-
-    // Finalize run status if it was 'writing_records'
-    if (records.length > BATCH_LIMIT) {
-      await runRef.update({
-        status: targetStatus,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    }
-
-    // Audit log
-    await writeAuditLog(tid, {
-      userId: createdBy,
-      userEmail: createdBy,
-      action: 'payroll.run',
-      module: 'payroll',
-      description: `Created payroll run for ${payrollRun.periodStart} to ${payrollRun.periodEnd} (${records.length} employees)`,
-      entityId: runRef.id,
-      entityType: 'payroll_run',
-      metadata: {
-        employeeCount: records.length,
-        totalGross: payrollRun.totalGrossPay,
-        totalNet: payrollRun.totalNetPay,
-        periodStart: payrollRun.periodStart,
-        periodEnd: payrollRun.periodEnd,
-      },
-      severity: 'info',
-    });
-
-    console.log(`[payroll/runs] Created run ${runRef.id} for tenant ${tid} (${records.length} records)`);
-    res.status(201).json({ success: true, runId: runRef.id, recordIds, status: targetStatus });
-  } catch (error) {
-    console.error('[payroll/runs]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+router.post('/payroll/runs', rejectLegacyPayrollMutation);
 
 /**
  * PUT /api/tenants/:tenantId/payroll/runs/:runId/approve
- * Body: { approvedBy }
- * Guards: Two-person rule (approver ≠ creator), status must be draft/processing
+ * Disabled legacy mutation. Canonical payroll owns approval.
  */
-router.put('/payroll/runs/:runId/approve', authenticateFirebaseToken, async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const tid = req.tenantId;
-
-    // The approver is the VERIFIED caller, never a body-supplied string.
-    // A shared API key carries no per-user identity, so this route now
-    // requires a real Firebase user token: without it the two-person rule
-    // below is meaningless (one key-holder could set createdBy and approvedBy
-    // to any two strings and self-approve). approvedBy is derived, not trusted.
-    const approvedBy = req.user && req.user.uid;
-    if (!approvedBy) {
-      return res.status(401).json({ success: false, message: 'Authenticated approver required' });
-    }
-
-    const runRef = tenantCol(tid, 'payrollRuns').doc(runId);
-    const runSnap = await runRef.get();
-    if (!runSnap.exists) {
-      return res.status(404).json({ success: false, message: 'Payroll run not found' });
-    }
-
-    const run = runSnap.data();
-    if (!['draft', 'processing'].includes(run.status)) {
-      return res.status(400).json({ success: false, message: `Cannot approve run with status '${run.status}'` });
-    }
-
-    // Two-person rule: the verified approver must differ from the creator.
-    if (run.createdBy && run.createdBy === approvedBy) {
-      return res.status(400).json({ success: false, message: 'Approver must be different from creator (two-person rule)' });
-    }
-
-    await runRef.update({
-      status: 'approved',
-      approvedBy,
-      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    await writeAuditLog(tid, {
-      userId: approvedBy,
-      userEmail: approvedBy,
-      action: 'payroll.approve',
-      module: 'payroll',
-      description: `Approved payroll run ${runId}`,
-      entityId: runId,
-      entityType: 'payroll_run',
-      severity: 'critical',
-    });
-
-    res.json({ success: true, message: 'Payroll run approved' });
-  } catch (error) {
-    console.error('[payroll/approve]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+router.put('/payroll/runs/:runId/approve', rejectLegacyPayrollMutation);
 
 /**
  * PUT /api/tenants/:tenantId/payroll/runs/:runId/reject
- * Body: { rejectedBy, reason }
+ * Disabled legacy mutation. Canonical payroll owns rejection.
  */
-router.put('/payroll/runs/:runId/reject', async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const { rejectedBy, reason } = req.body;
-    const tid = req.tenantId;
-
-    if (!rejectedBy || !reason) {
-      return res.status(400).json({ success: false, message: 'rejectedBy and reason are required' });
-    }
-
-    const runRef = tenantCol(tid, 'payrollRuns').doc(runId);
-    const runSnap = await runRef.get();
-    if (!runSnap.exists) {
-      return res.status(404).json({ success: false, message: 'Payroll run not found' });
-    }
-
-    const run = runSnap.data();
-    if (!['draft', 'processing'].includes(run.status)) {
-      return res.status(400).json({ success: false, message: `Cannot reject run with status '${run.status}'` });
-    }
-
-    await runRef.update({
-      status: 'rejected',
-      rejectedBy,
-      rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
-      rejectionReason: reason,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    await writeAuditLog(tid, {
-      userId: rejectedBy,
-      userEmail: rejectedBy,
-      action: 'payroll.reject',
-      module: 'payroll',
-      description: `Rejected payroll run ${runId}: ${reason}`,
-      entityId: runId,
-      entityType: 'payroll_run',
-      metadata: { reason },
-      severity: 'warning',
-    });
-
-    res.json({ success: true, message: 'Payroll run rejected' });
-  } catch (error) {
-    console.error('[payroll/reject]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+router.put('/payroll/runs/:runId/reject', rejectLegacyPayrollMutation);
 
 /**
  * PUT /api/tenants/:tenantId/payroll/runs/:runId/mark-paid
- * Guards: Status must be approved
+ * Disabled legacy mutation. Canonical payroll owns settlement and paid status.
  */
-router.put('/payroll/runs/:runId/mark-paid', async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const { paidBy = 'bot' } = req.body;
-    const tid = req.tenantId;
-
-    const runRef = tenantCol(tid, 'payrollRuns').doc(runId);
-    const runSnap = await runRef.get();
-    if (!runSnap.exists) {
-      return res.status(404).json({ success: false, message: 'Payroll run not found' });
-    }
-
-    const run = runSnap.data();
-    if (run.status !== 'approved') {
-      return res.status(400).json({ success: false, message: `Cannot mark-paid: status is '${run.status}' (must be approved)` });
-    }
-
-    await runRef.update({
-      status: 'paid',
-      paidAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    await writeAuditLog(tid, {
-      userId: paidBy,
-      userEmail: paidBy,
-      action: 'payroll.mark_paid',
-      module: 'payroll',
-      description: `Marked payroll run ${runId} as paid`,
-      entityId: runId,
-      entityType: 'payroll_run',
-      severity: 'info',
-    });
-
-    res.json({ success: true, message: 'Payroll run marked as paid' });
-  } catch (error) {
-    console.error('[payroll/mark-paid]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+router.put('/payroll/runs/:runId/mark-paid', rejectLegacyPayrollMutation);
 
 /**
  * POST /api/tenants/:tenantId/payroll/runs/:runId/repair
- * Repairs a stuck payroll run (status: writing_records).
- * Checks actual record count vs expected, finalizes or deletes.
+ * Disabled legacy mutation. Canonical payroll owns stuck-run repair.
  */
-router.post('/payroll/runs/:runId/repair', async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const tid = req.tenantId;
-
-    const runRef = tenantCol(tid, 'payrollRuns').doc(runId);
-    const runSnap = await runRef.get();
-    if (!runSnap.exists) {
-      return res.status(404).json({ success: false, message: 'Payroll run not found' });
-    }
-
-    const run = runSnap.data();
-    if (run.status !== 'writing_records') {
-      return res.status(400).json({ success: false, message: `Run status is '${run.status}', not 'writing_records'. No repair needed.` });
-    }
-
-    // Count actual records written
-    const recordsSnap = await tenantCol(tid, 'payrollRecords')
-      .where('payrollRunId', '==', runId)
-      .get();
-    const actualCount = recordsSnap.size;
-    const expectedCount = run.expectedRecordCount || 0;
-
-    if (actualCount === 0) {
-      // No records written — delete the run
-      await runRef.delete();
-      await writeAuditLog(tid, {
-        action: 'payroll.repair',
-        module: 'payroll',
-        description: `Deleted empty payroll run ${runId} (0/${expectedCount} records written)`,
-        entityId: runId,
-        entityType: 'payroll_run',
-        severity: 'warning',
-      });
-      return res.json({ success: true, result: 'deleted', message: `Deleted empty run (0/${expectedCount} records)` });
-    }
-
-    // Some records exist — finalize to draft
-    await runRef.update({
-      status: 'draft',
-      employeeCount: actualCount,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    await writeAuditLog(tid, {
-      action: 'payroll.repair',
-      module: 'payroll',
-      description: `Repaired payroll run ${runId} (${actualCount}/${expectedCount} records, finalized to draft)`,
-      entityId: runId,
-      entityType: 'payroll_run',
-      severity: 'warning',
-    });
-
-    res.json({ success: true, result: 'repaired', message: `Repaired: ${actualCount}/${expectedCount} records, status → draft` });
-  } catch (error) {
-    console.error('[payroll/repair]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+router.post('/payroll/runs/:runId/repair', rejectLegacyPayrollMutation);
 
 // ── JOURNAL ENTRY WRITE ENDPOINTS ──────────────────────────────────────────
 
