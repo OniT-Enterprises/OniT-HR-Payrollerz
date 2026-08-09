@@ -3765,6 +3765,7 @@ const messages = {
         status: "Status",
       },
       status: {
+        clockedIn: "Clocked in",
         present: "Present",
         late: "Late",
         absent: "Absent",

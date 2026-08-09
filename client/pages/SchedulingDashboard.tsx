@@ -200,6 +200,7 @@ export default function SchedulingDashboard() {
     ? countOvernightAttendanceNeedingAttention(
         previousShifts,
         previousAttendance ?? [],
+        currentMinutes,
       )
     : 0;
   const weekShifts = shifts.filter(

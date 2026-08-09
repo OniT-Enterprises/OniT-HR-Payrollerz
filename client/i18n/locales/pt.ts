@@ -3821,6 +3821,7 @@ const messages = {
         status: "Estado",
       },
       status: {
+        clockedIn: "Entrada registada",
         present: "Presente",
         late: "Atrasado",
         absent: "Ausente",

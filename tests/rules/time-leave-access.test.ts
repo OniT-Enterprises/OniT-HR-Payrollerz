@@ -1,11 +1,20 @@
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   assertFails,
   assertSucceeds,
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 
 const PROJECT_ID = 'test-time-leave-access';
 const PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8081);
@@ -84,6 +93,18 @@ describe('canonical Time & Leave access', () => {
         employeeId: 'emp-b',
         departmentId: 'dept-b',
       });
+      await setDoc(doc(db, 'leave_requests/approved-team-a'), {
+        ...requestBase,
+        status: 'approved',
+        employeeId: 'emp-a',
+        departmentId: 'dept-a',
+      });
+      await setDoc(doc(db, 'leave_requests/approved-team-b'), {
+        ...requestBase,
+        status: 'approved',
+        employeeId: 'emp-b',
+        departmentId: 'dept-b',
+      });
 
       await setDoc(doc(db, 'leave_balances/balance-a'), {
         tenantId: TID,
@@ -137,6 +158,21 @@ describe('canonical Time & Leave access', () => {
     await assertFails(getDoc(doc(asUser(MANAGER), 'attendance/attendance-b')));
     await assertSucceeds(getDoc(doc(asUser(MANAGER), 'leave_balances/balance-a')));
     await assertFails(getDoc(doc(asUser(MANAGER), 'leave_balances/balance-b')));
+  });
+
+  it('lets managers load only overlapping approved leave for their department', async () => {
+    const managerLeave = query(
+      collection(asUser(MANAGER), 'leave_requests'),
+      where('tenantId', '==', TID),
+      where('status', '==', 'approved'),
+      where('departmentId', '==', 'dept-a'),
+      where('startDate', '<=', '2026-07-20'),
+      where('endDate', '>=', '2026-07-20'),
+    );
+    const snapshot = await assertSucceeds(getDocs(managerLeave));
+    expect(snapshot.docs.map((document) => document.id)).toEqual([
+      'approved-team-a',
+    ]);
   });
 
   it('requires managers to use the validated decision callable', async () => {

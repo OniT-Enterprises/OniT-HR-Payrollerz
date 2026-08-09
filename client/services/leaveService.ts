@@ -774,15 +774,25 @@ class LeaveService {
     tenantId: string,
     startDate: string,
     endDate: string,
+    departmentId?: string,
   ): Promise<LeaveRequest[]> {
     try {
-      const q = query(
-        collection(db, LEAVE_REQUESTS_COLLECTION),
-        where("tenantId", "==", tenantId),
-        where("status", "==", "approved"),
-        where("startDate", "<=", endDate),
-        where("endDate", ">=", startDate),
-      );
+      const q = departmentId
+        ? query(
+            collection(db, LEAVE_REQUESTS_COLLECTION),
+            where("tenantId", "==", tenantId),
+            where("status", "==", "approved"),
+            where("departmentId", "==", departmentId),
+            where("startDate", "<=", endDate),
+            where("endDate", ">=", startDate),
+          )
+        : query(
+            collection(db, LEAVE_REQUESTS_COLLECTION),
+            where("tenantId", "==", tenantId),
+            where("status", "==", "approved"),
+            where("startDate", "<=", endDate),
+            where("endDate", ">=", startDate),
+          );
 
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map((doc) => {

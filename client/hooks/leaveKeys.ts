@@ -15,6 +15,19 @@ export const leaveKeys = {
     [...leaveKeys.requests(tenantId), filters ?? {}] as const,
   employeeRequests: (tenantId: string, employeeId: string) =>
     [...leaveKeys.requests(tenantId), "employee", employeeId] as const,
+  onLeave: (
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    departmentId?: string,
+  ) =>
+    [
+      ...leaveKeys.requests(tenantId),
+      "on-leave",
+      startDate,
+      endDate,
+      departmentId ?? "all",
+    ] as const,
   balances: (tenantId: string) =>
     [...leaveKeys.all(tenantId), "balances"] as const,
   balance: (tenantId: string, employeeId: string) =>

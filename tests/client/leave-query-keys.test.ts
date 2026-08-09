@@ -36,4 +36,22 @@ describe("leaveKeys factory", () => {
     expect(isPrefixMatch(leaveKeys.stats(TID), leaveKeys.requests(TID))).toBe(false);
     expect(isPrefixMatch(leaveKeys.stats(TID), leaveKeys.balances(TID))).toBe(false);
   });
+
+  it("keeps overlapping-leave queries under requests invalidation", () => {
+    const allDepartments = leaveKeys.onLeave(
+      TID,
+      "2026-08-12",
+      "2026-08-12",
+    );
+    const oneDepartment = leaveKeys.onLeave(
+      TID,
+      "2026-08-12",
+      "2026-08-12",
+      "ops",
+    );
+
+    expect(isPrefixMatch(allDepartments, leaveKeys.requests(TID))).toBe(true);
+    expect(isPrefixMatch(oneDepartment, leaveKeys.requests(TID))).toBe(true);
+    expect(allDepartments).not.toEqual(oneDepartment);
+  });
 });

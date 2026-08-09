@@ -3741,6 +3741,7 @@ const messages = {
         status: "Estadu",
       },
       status: {
+        clockedIn: "Tama ona",
         present: "Presente",
         late: "Atrasadu",
         absent: "Ausente",

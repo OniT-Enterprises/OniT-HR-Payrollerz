@@ -404,10 +404,15 @@ function getTLHolidayDates(year) {
 }
 
 function timeToMinutes(value) {
-  if (!value) return null;
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string') return Number.NaN;
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return Number.NaN;
   const [hours, minutes] = value.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function getAttendanceDocumentId(tenantId, employeeId, date) {
+  return `${encodeURIComponent(tenantId)}|${encodeURIComponent(employeeId)}|${date}`;
 }
 
 function selectAttendanceShift(shifts) {
@@ -3376,6 +3381,15 @@ router.post('/attendance', async (req, res) => {
     if (!parseValidISODate(date)) {
       return res.status(400).json({ success: false, message: 'date must be YYYY-MM-DD' });
     }
+    if (
+      (clockIn != null && clockIn !== '' && !Number.isFinite(timeToMinutes(clockIn))) ||
+      (clockOut != null && clockOut !== '' && !Number.isFinite(timeToMinutes(clockOut)))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'clockIn and clockOut must use 24-hour HH:MM',
+      });
+    }
 
     const empSnap = await tenantCol(tid, 'employees').doc(employeeId).get();
     if (!empSnap.exists) {
@@ -3391,12 +3405,20 @@ router.post('/attendance', async (req, res) => {
     const scheduledShift = selectAttendanceShift(
       shiftSnapshot.docs.map((document) => document.data()),
     );
-    const attendance = calculateAttendanceValues(
-      clockIn,
-      clockOut,
-      scheduledShift?.startTime,
-      scheduledShift?.endTime,
-    );
+    let attendance;
+    try {
+      attendance = calculateAttendanceValues(
+        clockIn,
+        clockOut,
+        scheduledShift?.startTime,
+        scheduledShift?.endTime,
+      );
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Invalid attendance times',
+      });
+    }
     const allowedStatuses = ['present', 'late', 'absent', 'half_day', 'leave', 'holiday'];
     if (status && !allowedStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid attendance status' });
@@ -3440,10 +3462,13 @@ router.post('/attendance', async (req, res) => {
       await db.collection('attendance').doc(id).update(record);
       action = 'attendance.update';
     } else {
-      const docRef = await db.collection('attendance').add({
+      const docRef = db.collection('attendance').doc(
+        getAttendanceDocumentId(tid, employeeId, date),
+      );
+      await docRef.set({
         ...record,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
       id = docRef.id;
       action = 'attendance.create';
     }

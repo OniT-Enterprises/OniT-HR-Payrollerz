@@ -403,6 +403,49 @@ describe("xefe-api", () => {
     assert.equal(response.status, 400);
   });
 
+  it("returns validation errors for malformed or excessive attendance times", async () => {
+    const malformed = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date: "2026-08-13",
+      clockIn: "25:00",
+      clockOut: "17:00",
+    });
+    assert.equal(malformed.status, 400);
+    assert.match((await malformed.json()).message, /HH:MM/);
+
+    const excessive = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date: "2026-08-13",
+      clockIn: "08:00",
+      clockOut: "03:00",
+    });
+    assert.equal(excessive.status, 400);
+    assert.match((await excessive.json()).message, /exceeds 16 hours/);
+  });
+
+  it("converges simultaneous attendance upserts on one employee/day record", async () => {
+    const db = admin.firestore();
+    const date = "2026-08-14";
+    const responses = await Promise.all([
+      request("/api/tenants/tenant-a/attendance", "POST", {
+        employeeId: "emp-1", date, clockIn: "08:00", clockOut: "17:00",
+      }),
+      request("/api/tenants/tenant-a/attendance", "POST", {
+        employeeId: "emp-1", date, clockIn: "08:05", clockOut: "17:05",
+      }),
+    ]);
+    assert.deepEqual(responses.map((response) => response.status), [200, 200]);
+    const bodies = await Promise.all(responses.map((response) => response.json()));
+    assert.equal(bodies[0].id, bodies[1].id);
+
+    const records = await db.collection("attendance")
+      .where("tenantId", "==", "tenant-a")
+      .where("employeeId", "==", "emp-1")
+      .where("date", "==", date)
+      .get();
+    assert.equal(records.size, 1);
+  });
+
   it("never approves a leave request belonging to another tenant", async () => {
     const response = await request(
       "/api/tenants/tenant-a/leave/requests/leave-b/approve",

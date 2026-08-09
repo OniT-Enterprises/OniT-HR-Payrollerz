@@ -49,6 +49,34 @@ export function useEmployeeLeaveRequests(employeeId: string | undefined) {
   });
 }
 
+/** Fetch approved leave overlapping a date range. */
+export function useEmployeesOnLeave(
+  startDate: string,
+  endDate: string,
+  enabled: boolean = true,
+  departmentId?: string,
+) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: leaveKeys.onLeave(
+      tenantId,
+      startDate,
+      endDate,
+      departmentId,
+    ),
+    queryFn: () =>
+      leaveService.getEmployeesOnLeave(
+        tenantId,
+        startDate,
+        endDate,
+        departmentId,
+      ),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: !!tenantId && !!startDate && !!endDate && enabled,
+  });
+}
+
 /**
  * Fetch all leave balances
  */

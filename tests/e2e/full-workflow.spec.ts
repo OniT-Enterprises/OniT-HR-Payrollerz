@@ -415,6 +415,35 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   });
   await expect(page.getByText(/no attendance records found/i)).toBeVisible();
 
+  // An open attendance record is work in progress, not a completed "Present"
+  // day. Record only a clock-in on a historical date and verify the calmer,
+  // accurate label shown to the owner.
+  await page.goto("/time-leave/attendance");
+  await pickDate(
+    page,
+    page.locator("[data-datepicker]").first(),
+    "2026-01-08",
+  );
+  await page
+    .getByRole("button", { name: /mark attendance/i })
+    .first()
+    .click();
+  const markAttendanceDialog = page.getByRole("dialog", {
+    name: /mark attendance/i,
+  });
+  await markAttendanceDialog.getByRole("combobox").first().click();
+  await page
+    .getByRole("option", { name: `${EMPLOYEE.first} ${EMPLOYEE.last}` })
+    .click();
+  await markAttendanceDialog.getByRole("button", { name: /clock in/i }).click();
+  await markAttendanceDialog.getByRole("button", { name: "8:00 AM" }).click();
+  await markAttendanceDialog
+    .getByRole("button", { name: /mark attendance/i })
+    .click();
+  await expect(page.getByText("Clocked in").first()).toBeVisible({
+    timeout: 20_000,
+  });
+
   await page.goto("/reports/setup");
   await expect(page.getByRole("heading", { name: /setup reports/i })).toBeVisible({
     timeout: 30_000,

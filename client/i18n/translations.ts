@@ -3410,6 +3410,7 @@ export const translations = {
           "status": "Status"
         },
         "status": {
+          "clockedIn": "Clocked in",
           "present": "Present",
           "late": "Late",
           "absent": "Absent",
@@ -11413,6 +11414,7 @@ export const translations = {
           "status": "Estadu"
         },
         "status": {
+          "clockedIn": "Tama ona",
           "present": "Presente",
           "late": "Atrasadu",
           "absent": "Ausente",
@@ -19416,6 +19418,7 @@ export const translations = {
           "status": "Estado"
         },
         "status": {
+          "clockedIn": "Entrada registada",
           "present": "Presente",
           "late": "Atrasado",
           "absent": "Ausente",

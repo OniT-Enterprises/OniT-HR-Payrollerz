@@ -37,6 +37,20 @@ export interface AttendanceAttentionRecord {
   clockOut?: string;
 }
 
+export interface AttendanceLeaveExpectation {
+  employeeId: string;
+  startDate: string;
+  endDate: string;
+  status?: string;
+  halfDay?: boolean;
+}
+
+export interface AttendanceWorkQueueEntry {
+  employeeId: string;
+  startTime: string;
+  endTime: string;
+}
+
 function parseClockMinutes(value: string | undefined): number | null {
   if (!value || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
   const [hour, minute] = value.split(':').map(Number);
@@ -60,6 +74,91 @@ export function selectAttendanceExpectation(
     });
   const selected = candidates[0];
   return selected ? { start: selected.startTime!, end: selected.endTime! } : null;
+}
+
+/** Stable ID used by every attendance writer to enforce one employee/day row. */
+export function getAttendanceDocumentId(
+  tenantId: string,
+  employeeId: string,
+  date: string,
+): string {
+  return `${encodeURIComponent(tenantId)}|${encodeURIComponent(employeeId)}|${date}`;
+}
+
+/**
+ * Build the daily "who still needs a record" queue.
+ *
+ * When a business has schedule records for the day, only employees with a
+ * published/confirmed shift belong in the queue and their one-tap record uses
+ * those hours. Businesses that do not use scheduling retain the simple
+ * tenant-default day. Full-day approved leave is
+ * never turned into a worked record; half-day leave remains actionable because
+ * the employee may still work the other half.
+ */
+export function buildAttendanceWorkQueue({
+  employeeIds,
+  recordedEmployeeIds,
+  shifts,
+  leave,
+  date,
+  defaultStartTime = DEFAULT_EXPECTED_START,
+  defaultEndTime = DEFAULT_EXPECTED_END,
+}: {
+  employeeIds: string[];
+  recordedEmployeeIds: Iterable<string>;
+  shifts: ScheduledAttendanceExpectation[];
+  leave: AttendanceLeaveExpectation[];
+  date: string;
+  defaultStartTime?: string;
+  defaultEndTime?: string;
+}): AttendanceWorkQueueEntry[] {
+  const recorded = new Set(recordedEmployeeIds);
+  const fullDayLeave = new Set(
+    leave
+      .filter((request) =>
+        request.status === 'approved' &&
+        !request.halfDay &&
+        request.startDate <= date &&
+        request.endDate >= date)
+      .map((request) => request.employeeId),
+  );
+
+  const shiftCandidates = new Map<string, ScheduledAttendanceExpectation[]>();
+  for (const shift of shifts) {
+    if (!shift.employeeId) continue;
+    const candidates = shiftCandidates.get(shift.employeeId) ?? [];
+    candidates.push(shift);
+    shiftCandidates.set(shift.employeeId, candidates);
+  }
+
+  const scheduleByEmployee = new Map<string, { start: string; end: string }>();
+  for (const [employeeId, candidates] of shiftCandidates) {
+    const selected = selectAttendanceExpectation(candidates);
+    if (selected) scheduleByEmployee.set(employeeId, selected);
+  }
+  const usesSchedule = shiftCandidates.size > 0;
+
+  const queued = new Set<string>();
+  const result: AttendanceWorkQueueEntry[] = [];
+  for (const employeeId of employeeIds) {
+    if (
+      !employeeId ||
+      queued.has(employeeId) ||
+      recorded.has(employeeId) ||
+      fullDayLeave.has(employeeId)
+    ) {
+      continue;
+    }
+    const scheduled = scheduleByEmployee.get(employeeId);
+    if (usesSchedule && !scheduled) continue;
+    queued.add(employeeId);
+    result.push({
+      employeeId,
+      startTime: scheduled?.start ?? defaultStartTime,
+      endTime: scheduled?.end ?? defaultEndTime,
+    });
+  }
+  return result;
 }
 
 /**
@@ -250,21 +349,35 @@ export function countMissingAttendanceDue({
 export function countOvernightAttendanceNeedingAttention(
   shifts: ScheduledAttendanceExpectation[],
   records: AttendanceAttentionRecord[],
+  currentMinutes: number,
+  graceMinutes: number = LATE_GRACE_MINUTES,
 ): number {
+  if (
+    !Number.isFinite(currentMinutes) ||
+    currentMinutes < 0 ||
+    currentMinutes >= 24 * 60
+  ) {
+    return 0;
+  }
   const recordsByEmployee = new Map(records.map((record) => [record.employeeId, record]));
   const employeeIds = new Set<string>();
   for (const shift of shifts) {
+    const endMinutes = parseClockMinutes(shift.endTime);
     if (
       !shift.employeeId ||
       (shift.status !== 'published' && shift.status !== 'confirmed') ||
       parseClockMinutes(shift.startTime) === null ||
-      parseClockMinutes(shift.endTime) === null ||
+      endMinutes === null ||
       shift.endTime! >= shift.startTime!
     ) {
       continue;
     }
     const record = recordsByEmployee.get(shift.employeeId);
-    if (!record || Boolean(record.clockIn) !== Boolean(record.clockOut)) {
+    const missingRecord = !record;
+    const clockOutWithoutClockIn = Boolean(record?.clockOut) && !record?.clockIn;
+    const openPastScheduledEnd = Boolean(record?.clockIn) && !record?.clockOut &&
+      currentMinutes >= endMinutes + graceMinutes;
+    if (missingRecord || clockOutWithoutClockIn || openPastScheduledEnd) {
       employeeIds.add(shift.employeeId);
     }
   }

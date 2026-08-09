@@ -8,7 +8,7 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -34,6 +34,7 @@ import {
   classifyWorkedHours,
   determineStatus,
   calculateHoursBreakdown,
+  getAttendanceDocumentId,
   selectAttendanceExpectation,
   DEFAULT_EXPECTED_START,
   DEFAULT_EXPECTED_END,
@@ -656,13 +657,19 @@ class AttendanceService {
       });
       return existing.id!;
     } else {
-      // Create new record
-      const docRef = await addDoc(this.collectionRef, {
+      // A stable employee/day ID makes simultaneous app, import, and bot
+      // writes converge on one row instead of racing into payroll duplicates.
+      const recordId = getAttendanceDocumentId(
+        tenantId,
+        data.employeeId,
+        data.date,
+      );
+      await setDoc(doc(this.collectionRef, recordId), {
         ...record,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-      return docRef.id;
+      }, { merge: true });
+      return recordId;
     }
   }
 
@@ -939,7 +946,10 @@ class AttendanceService {
           totalHours,
         );
 
-        const attendanceRef = doc(this.collectionRef);
+        const attendanceRef = doc(
+          this.collectionRef,
+          getAttendanceDocumentId(tenantId, record.employeeId, record.date),
+        );
         batch.set(attendanceRef, {
           ...record,
           tenantId,
@@ -960,7 +970,7 @@ class AttendanceService {
           isAdjusted: false,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        }, { merge: true });
         writesInBatch += 1;
         existingKeys.add(`${record.employeeId}:${record.date}`);
         await commitBatchIfFull();

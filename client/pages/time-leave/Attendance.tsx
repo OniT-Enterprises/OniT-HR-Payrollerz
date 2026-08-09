@@ -80,11 +80,12 @@ import {
   DEFAULT_WORKING_WEEKDAYS,
   type LeaveType,
 } from "@/services/leaveService";
-import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 import {
-  DEFAULT_EXPECTED_START,
-  DEFAULT_EXPECTED_END,
-} from "@/lib/attendanceCalculations";
+  useEmployeesOnLeave,
+  useLeaveBalance,
+} from "@/hooks/useLeaveRequests";
+import { useShiftsByRange } from "@/hooks/useShifts";
+import { buildAttendanceWorkQueue } from "@/lib/attendanceCalculations";
 import {
   attendanceService,
   computeEntryHours,
@@ -216,6 +217,8 @@ export default function Attendance() {
   const currentEmployeeId = useCurrentEmployeeId() ?? undefined;
   const queryClient = useQueryClient();
   const { data: settings } = useSettings();
+  const attendanceMode =
+    settings?.timeOffPolicies?.attendanceMode ?? "exceptions";
   const role = session?.role;
   const isAttendanceAdmin = role === "owner" || role === "hr-admin";
   const isAttendanceManager = role === "manager";
@@ -296,13 +299,28 @@ export default function Attendance() {
     canReadAttendance,
     managerDepartmentId,
   );
+  const shiftsQuery = useShiftsByRange(
+    selectedDate,
+    selectedDate,
+    canManageAttendance && attendanceMode === "daily",
+    managerDepartmentId,
+  );
+  const leaveOnDateQuery = useEmployeesOnLeave(
+    selectedDate,
+    selectedDate,
+    canManageAttendance && attendanceMode === "daily",
+    managerDepartmentId,
+  );
   const markAttendanceMutation = useMarkAttendance();
   const adjustAttendanceMutation = useAdjustAttendance();
   const deleteAttendanceMutation = useDeleteAttendance();
 
   const loading =
     (canManageAttendance &&
-      (employeesQuery.isLoading || deptQuery.isLoading)) ||
+      (employeesQuery.isLoading ||
+        deptQuery.isLoading ||
+        shiftsQuery.isLoading ||
+        leaveOnDateQuery.isLoading)) ||
     attendanceQuery.isLoading;
   const allEmployees = useMemo(
     () => employeesQuery.data ?? [],
@@ -321,6 +339,47 @@ export default function Attendance() {
   const attendanceRecords = useMemo(
     () => attendanceQuery.data ?? [],
     [attendanceQuery.data],
+  );
+  const recordedEmployeeIds = useMemo(
+    () => new Set(attendanceRecords.map((record) => record.employeeId)),
+    [attendanceRecords],
+  );
+  const workQueue = useMemo(
+    () =>
+      attendanceMode !== "daily" ||
+      selectedDate > today ||
+      shiftsQuery.isError ||
+      leaveOnDateQuery.isError
+        ? []
+        : buildAttendanceWorkQueue({
+            employeeIds: employees
+              .map((employee) => employee.id)
+              .filter((id): id is string => Boolean(id)),
+            recordedEmployeeIds,
+            shifts: shiftsQuery.data ?? [],
+            leave: leaveOnDateQuery.data ?? [],
+            date: selectedDate,
+          }),
+    [
+      employees,
+      attendanceMode,
+      leaveOnDateQuery.data,
+      leaveOnDateQuery.isError,
+      recordedEmployeeIds,
+      selectedDate,
+      shiftsQuery.data,
+      shiftsQuery.isError,
+      today,
+    ],
+  );
+  const workQueueByEmployee = useMemo(
+    () => new Map(workQueue.map((entry) => [entry.employeeId, entry])),
+    [workQueue],
+  );
+  const unrecordedEmployees = useMemo(
+    () => employees.filter((employee) =>
+      Boolean(employee.id && workQueueByEmployee.has(employee.id))),
+    [employees, workQueueByEmployee],
   );
 
   // Form data
@@ -374,12 +433,19 @@ export default function Attendance() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const totalEmployees = canManageAttendance ? employees.length : 0;
     const recordedEmployees = new Set(
       attendanceRecords.map((record) => record.employeeId),
     ).size;
+    const totalEmployees = canManageAttendance
+      ? recordedEmployees + workQueue.length
+      : 0;
+    const clockedIn = attendanceRecords.filter(
+      (record) => Boolean(record.clockIn) && !record.clockOut,
+    ).length;
     const present = attendanceRecords.filter(
-      (r) => r.status === "present" || r.status === "late",
+      (record) =>
+        (record.status === "present" || record.status === "late") &&
+        !(record.clockIn && !record.clockOut),
     ).length;
     const late = attendanceRecords.filter((r) => r.status === "late").length;
     const absent = attendanceRecords.filter(
@@ -388,8 +454,7 @@ export default function Attendance() {
     const onLeave = attendanceRecords.filter(
       (r) => r.status === "leave",
     ).length;
-    const notRecorded =
-      totalEmployees > 0 ? Math.max(totalEmployees - recordedEmployees, 0) : 0;
+    const notRecorded = attendanceMode === "daily" ? workQueue.length : 0;
     const totalOvertimeHours = attendanceRecords.reduce(
       (sum, r) => sum + r.overtimeHours,
       0,
@@ -398,6 +463,7 @@ export default function Attendance() {
     return {
       totalEmployees,
       recordedEmployees,
+      clockedIn,
       present,
       late,
       absent,
@@ -405,7 +471,7 @@ export default function Attendance() {
       notRecorded,
       totalOvertimeHours,
     };
-  }, [attendanceRecords, canManageAttendance, employees.length]);
+  }, [attendanceMode, attendanceRecords, canManageAttendance, workQueue.length]);
 
   // Filter records
   const filteredRecords = useMemo(() => {
@@ -473,12 +539,19 @@ export default function Attendance() {
     },
   };
 
-  const getStatusBadge = (status: AttendanceStatus) => {
-    const cfg = statusConfig[status] || {
-      color: "bg-muted text-muted-foreground border border-border",
-      dot: "bg-muted-foreground",
-      label: status,
-    };
+  const getStatusBadge = (record: AttendanceRecord) => {
+    const cfg = record.clockIn && !record.clockOut
+      ? {
+          color:
+            "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
+          dot: "bg-cyan-500",
+          label: t("timeLeave.attendance.status.clockedIn"),
+        }
+      : statusConfig[record.status] || {
+          color: "bg-muted text-muted-foreground border border-border",
+          dot: "bg-muted-foreground",
+          label: record.status,
+        };
     return (
       <span
         className={cn(
@@ -573,31 +646,6 @@ export default function Attendance() {
     return absenceWorkingDays === 0;
   }, [absenceForm.date, absenceWorkingDays]);
 
-  // Who has NO record for the shown day.
-  //
-  // The count was already on screen as a grey dot with a number — no names, no
-  // action, and a bare colour, which the style guide forbids. It is also the
-  // most consequential state on the page: "not recorded" is UNKNOWN, not
-  // present and not absent, so these people are invisible to payroll until
-  // someone says what happened.
-  const recordedEmployeeIds = useMemo(
-    () => new Set(attendanceRecords.map((record) => record.employeeId)),
-    [attendanceRecords],
-  );
-  // In `exceptions` mode a day with no record MEANS "worked normally" by
-  // company policy, so the missing-record list is not a problem to solve —
-  // it is the expected state and flagging it would cry wolf every day.
-  const attendanceMode =
-    settings?.timeOffPolicies?.attendanceMode ?? "exceptions";
-
-  const unrecordedEmployees = useMemo(() => {
-    // A future day having no records is normal, not a gap worth flagging.
-    if (selectedDate > today) return [];
-    return employees.filter(
-      (employee) => employee.id && !recordedEmployeeIds.has(employee.id),
-    );
-  }, [employees, recordedEmployeeIds, selectedDate, today]);
-
   const [markingWorked, setMarkingWorked] = useState(false);
   // A 300-employee tenant needs to reach the 40th name, not just the first 8.
   const [showAllUnrecorded, setShowAllUnrecorded] = useState(false);
@@ -626,8 +674,14 @@ export default function Attendance() {
       // Chunked: a 300-employee tenant should not open 300 parallel writes.
       for (let i = 0; i < list.length; i += 10) {
         await Promise.all(
-          list.slice(i, i + 10).map((employee) =>
-            attendanceService.markAttendance(tenantId, {
+          list.slice(i, i + 10).map((employee) => {
+            const planned = employee.id
+              ? workQueueByEmployee.get(employee.id)
+              : undefined;
+            if (!planned) {
+              throw new Error("Employee is no longer awaiting attendance");
+            }
+            return attendanceService.markAttendance(tenantId, {
               employeeId: employee.id!,
               employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
               department: employee.jobDetails.department,
@@ -636,11 +690,11 @@ export default function Attendance() {
                   department.name === employee.jobDetails.department,
               )?.id,
               date: selectedDate,
-              clockIn: DEFAULT_EXPECTED_START,
-              clockOut: DEFAULT_EXPECTED_END,
+              clockIn: planned.startTime,
+              clockOut: planned.endTime,
               source: "manual",
-            }),
-          ),
+            });
+          }),
         );
       }
       await queryClient.invalidateQueries({
@@ -1943,6 +1997,13 @@ export default function Attendance() {
           {/* Inline Stats */}
           {attendanceRecords.length > 0 && (
             <div className="flex flex-wrap items-center gap-3 lg:ml-auto text-xs text-muted-foreground">
+              {stats.clockedIn > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-cyan-500" />
+                  {stats.clockedIn}{" "}
+                  {t("timeLeave.attendance.status.clockedIn")}
+                </span>
+              )}
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 {stats.present} {t("timeLeave.attendance.status.present")}
@@ -2247,7 +2308,7 @@ export default function Attendance() {
                     )}
                   </span>
                   <div className="flex items-center justify-end gap-1">
-                    {getStatusBadge(record.status)}
+                    {getStatusBadge(record)}
                     {record.status === "absent" && canManageAttendance && (
                       <Button
                         type="button"
@@ -2285,7 +2346,7 @@ export default function Attendance() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      {getStatusBadge(record.status)}
+                      {getStatusBadge(record)}
                       {record.status === "absent" && canManageAttendance && (
                         <Button
                           type="button"

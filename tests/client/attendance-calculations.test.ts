@@ -13,8 +13,10 @@ import {
   calculateEarlyDeparture,
   determineStatus,
   calculateHoursBreakdown,
+  buildAttendanceWorkQueue,
   countMissingAttendanceDue,
   countOvernightAttendanceNeedingAttention,
+  getAttendanceDocumentId,
   isAttendanceStartDue,
   selectAttendanceExpectation,
   MAX_REASONABLE_ENTRY_HOURS,
@@ -175,6 +177,63 @@ describe('attendance shift selection', () => {
       { startTime: '08:00', endTime: '12:00', status: 'confirmed' },
     ])).toEqual({ start: '08:00', end: '12:00' });
   });
+
+  it('builds stable employee/day document IDs', () => {
+    expect(getAttendanceDocumentId('tenant a', 'emp/1', '2026-08-12'))
+      .toBe('tenant%20a|emp%2F1|2026-08-12');
+  });
+});
+
+describe('attendance work queue', () => {
+  it('uses published schedules and omits unscheduled staff when schedules exist', () => {
+    expect(buildAttendanceWorkQueue({
+      employeeIds: ['night-1', 'day-1', 'off-1'],
+      recordedEmployeeIds: [],
+      shifts: [
+        { employeeId: 'night-1', startTime: '22:00', endTime: '06:00', status: 'published' },
+        { employeeId: 'day-1', startTime: '08:00', endTime: '17:00', status: 'draft' },
+      ],
+      leave: [],
+      date: '2026-08-12',
+    })).toEqual([
+      { employeeId: 'night-1', startTime: '22:00', endTime: '06:00' },
+    ]);
+  });
+
+  it('does not turn draft or cancelled schedules into default worked days', () => {
+    expect(buildAttendanceWorkQueue({
+      employeeIds: ['draft-1', 'cancelled-1'],
+      recordedEmployeeIds: [],
+      shifts: [
+        { employeeId: 'draft-1', startTime: '22:00', endTime: '06:00', status: 'draft' },
+        { employeeId: 'cancelled-1', startTime: '08:00', endTime: '17:00', status: 'cancelled' },
+      ],
+      leave: [],
+      date: '2026-08-12',
+    })).toEqual([]);
+  });
+
+  it('excludes recorded and full-day leave staff but keeps half-day leave actionable', () => {
+    expect(buildAttendanceWorkQueue({
+      employeeIds: ['recorded-1', 'leave-1', 'half-1', 'available-1'],
+      recordedEmployeeIds: ['recorded-1'],
+      shifts: [],
+      leave: [
+        {
+          employeeId: 'leave-1', startDate: '2026-08-11', endDate: '2026-08-13',
+          status: 'approved',
+        },
+        {
+          employeeId: 'half-1', startDate: '2026-08-12', endDate: '2026-08-12',
+          status: 'approved', halfDay: true,
+        },
+      ],
+      date: '2026-08-12',
+    })).toEqual([
+      { employeeId: 'half-1', startTime: '08:00', endTime: '17:00' },
+      { employeeId: 'available-1', startTime: '08:00', endTime: '17:00' },
+    ]);
+  });
 });
 
 describe('schedule-aware missing attendance', () => {
@@ -227,11 +286,17 @@ describe('overnight attendance carryover', () => {
     status: 'published',
   };
 
-  it('keeps a missing or open previous-night record visible', () => {
-    expect(countOvernightAttendanceNeedingAttention([nightShift], [])).toBe(1);
+  it('keeps a missing previous-night record visible without flagging an active shift', () => {
+    expect(countOvernightAttendanceNeedingAttention([nightShift], [], 30)).toBe(1);
     expect(countOvernightAttendanceNeedingAttention(
       [nightShift],
       [{ employeeId: 'night-1', clockIn: '22:00' }],
+      5 * 60,
+    )).toBe(0);
+    expect(countOvernightAttendanceNeedingAttention(
+      [nightShift],
+      [{ employeeId: 'night-1', clockIn: '22:00' }],
+      6 * 60 + 16,
     )).toBe(1);
   });
 
@@ -239,15 +304,17 @@ describe('overnight attendance carryover', () => {
     expect(countOvernightAttendanceNeedingAttention(
       [nightShift],
       [{ employeeId: 'night-1', clockIn: '22:00', clockOut: '06:00' }],
+      8 * 60,
     )).toBe(0);
     expect(countOvernightAttendanceNeedingAttention(
       [nightShift],
       [{ employeeId: 'night-1' }],
+      8 * 60,
     )).toBe(0);
     expect(countOvernightAttendanceNeedingAttention([
       { ...nightShift, status: 'draft' },
       { ...nightShift, employeeId: 'day-1', startTime: '08:00', endTime: '17:00' },
-    ], [])).toBe(0);
+    ], [], 8 * 60)).toBe(0);
   });
 });
 
