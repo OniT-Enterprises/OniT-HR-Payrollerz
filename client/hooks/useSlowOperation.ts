@@ -1,15 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function useSlowOperation(active: boolean, delayMs = 6_000): boolean {
-  const [slow, setSlow] = useState(false);
+  const [slowOperation, setSlowOperation] = useState<symbol | null>(null);
+  const operation = useMemo(
+    () => (active ? Symbol(`slow-operation-${delayMs}`) : null),
+    [active, delayMs],
+  );
 
   useEffect(() => {
-    setSlow(false);
-    if (!active) return;
-    const timer = window.setTimeout(() => setSlow(true), delayMs);
+    if (!operation) return;
+    const timer = window.setTimeout(
+      () => setSlowOperation(operation),
+      delayMs,
+    );
     return () => window.clearTimeout(timer);
-  }, [active, delayMs]);
+  }, [delayMs, operation]);
 
-  return slow;
+  return operation !== null && slowOperation === operation;
 }
-

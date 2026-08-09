@@ -1,0 +1,354 @@
+/**
+ * First-customer mobile gauntlet for the failure modes that ordinary happy
+ * path coverage misses:
+ *
+ *   signup → recover employee form → slow employee save → payroll draft →
+ *   recover invoice form → offline save/resume → overnight shift in EN/PT/TET
+ *
+ * The deeper accounting and approval assertions remain in the full workflow
+ * specs. This one stays deliberately compact enough to run often, at the
+ * 390px width and network conditions used by many Xefe customers.
+ */
+import { expect, type Page, test } from "@playwright/test";
+import { pickNthDate } from "./helpers/datePicker";
+import {
+  adminDb,
+  closeAdmin,
+  findTenantIdByName,
+  markSetupComplete,
+  waitForEmulators,
+} from "./helpers/admin";
+
+const stamp = Date.now().toString(36);
+const COMPANY = `E2E Mobile Co ${stamp}`;
+const OWNER = {
+  name: "Lucia Mobile",
+  email: `mobile-${stamp}@e2e.test`,
+  password: "e2e-Password-4",
+};
+const EMPLOYEE = {
+  first: "Ana",
+  last: "Soares",
+};
+const CUSTOMER = `Kios ${stamp}`;
+
+test.beforeAll(async () => {
+  await waitForEmulators();
+});
+
+test.afterAll(async () => {
+  await closeAdmin();
+});
+
+async function expectNoHorizontalScroll(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+      ),
+    )
+    .toBe(true);
+}
+
+async function waitForLocalDraftValue(
+  page: Page,
+  suffix: string,
+  path: Array<string | number>,
+  expected: string,
+) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ draftSuffix, valuePath }) => {
+          const key = Object.keys(window.localStorage).find(
+            (candidate) =>
+              candidate.startsWith("xefe:form-draft:v1:") &&
+              candidate.endsWith(draftSuffix),
+          );
+          const raw = key ? window.localStorage.getItem(key) : null;
+          if (!raw) return undefined;
+
+          let value: unknown = JSON.parse(raw);
+          for (const segment of valuePath) {
+            if (!value || typeof value !== "object") return undefined;
+            value = (value as Record<string, unknown>)[String(segment)];
+          }
+          return value;
+        },
+        { draftSuffix: suffix, valuePath: path },
+      ),
+    )
+    .toBe(expected);
+}
+
+async function expectNoLocalDraft(page: Page, suffix: string) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (draftSuffix) =>
+          Object.keys(window.localStorage).some(
+            (key) =>
+              key.startsWith("xefe:form-draft:v1:") &&
+              key.endsWith(draftSuffix),
+          ),
+        suffix,
+      ),
+    )
+    .toBe(false);
+}
+
+async function reloadPastUnsavedWarning(page: Page) {
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.reload();
+}
+
+async function setLocale(page: Page, locale: "en" | "pt" | "tet") {
+  await page.evaluate((nextLocale) => {
+    window.sessionStorage.setItem("e2e:locale", nextLocale);
+    window.localStorage.setItem("onit:locale", nextLocale);
+  }, locale);
+  await page.reload();
+}
+
+test("a first customer can recover, resume, and work overnight on a phone", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  page.setDefaultTimeout(30_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "onit:locale",
+      window.sessionStorage.getItem("e2e:locale") || "en",
+    );
+  });
+
+  // ── Signup ──────────────────────────────────────────────────────────────
+  await page.goto("/auth/signup");
+  await expectNoHorizontalScroll(page);
+  await page.getByLabel(/full name/i).fill(OWNER.name);
+  await page.getByLabel(/work email/i).fill(OWNER.email);
+  await page.getByLabel(/^password$/i).fill(OWNER.password);
+  await page.getByLabel(/confirm password/i).fill(OWNER.password);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel(/company name/i).fill(COMPANY);
+  await page.getByRole("button", { name: /create/i }).click();
+  await expect(page.getByText(COMPANY).first()).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const tenantId = await findTenantIdByName(COMPANY);
+  await markSetupComplete(tenantId);
+
+  // ── Employee recovery, leave warning, and slow save feedback ────────────
+  await page.goto("/people/add");
+  await expect(
+    page.getByRole("heading", { name: /add employee/i }),
+  ).toBeVisible();
+  await expectNoHorizontalScroll(page);
+  await page.getByLabel(/first name/i).fill(EMPLOYEE.first);
+  await page.getByLabel(/last name/i).fill(EMPLOYEE.last);
+  await pickNthDate(page, page, 0, "2026-01-05");
+  await page
+    .getByLabel(/monthly salary/i)
+    .first()
+    .fill("600");
+  await waitForLocalDraftValue(
+    page,
+    ":employee-new",
+    ["data", "form", "salary"],
+    "600",
+  );
+
+  await reloadPastUnsavedWarning(page);
+  await expect(page.getByText("Continue your unfinished form?")).toBeVisible();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByLabel(/first name/i)).toHaveValue(EMPLOYEE.first);
+  await expect(page.getByLabel(/last name/i)).toHaveValue(EMPLOYEE.last);
+  await expect(page.getByLabel(/monthly salary/i).first()).toHaveValue("600");
+
+  const warningMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.dismiss();
+    });
+  });
+  await page
+    .getByRole("button", { name: "Cancel", exact: true })
+    .last()
+    .click();
+  expect(await warningMessage).toBe("Leave this form with unsaved changes?");
+  await expect(page).toHaveURL(/\/people\/add/);
+
+  // A high-latency connection must explain the wait instead of looking
+  // frozen. Once that status appears, remove the throttle and let the same
+  // in-flight create finish.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 10_000,
+    downloadThroughput: 1_000_000,
+    uploadThroughput: 1_000_000,
+    connectionType: "cellular3g",
+  });
+  await page
+    .getByRole("button", { name: "Add Employee", exact: true })
+    .last()
+    .click();
+  await expect(
+    page.getByRole("status").getByText("Still saving — keep this page open."),
+  ).toBeVisible({ timeout: 15_000 });
+  await cdp.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  });
+  await expect(page).toHaveURL(/\/people\/employees/, { timeout: 45_000 });
+  await cdp.detach();
+  await expect(
+    page.getByText(`${EMPLOYEE.first} ${EMPLOYEE.last}`).first(),
+  ).toBeVisible();
+  await expectNoLocalDraft(page, ":employee-new");
+  expect(
+    (await adminDb().collection(`tenants/${tenantId}/employees`).get()).size,
+  ).toBe(1);
+
+  // ── The existing end-to-end payroll path, now checked at phone width ───
+  await page.goto("/payroll/run");
+  await expectNoHorizontalScroll(page);
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(
+    page.getByText(`${EMPLOYEE.first} ${EMPLOYEE.last}`).first(),
+  ).toBeVisible();
+  const complianceAck = page.getByRole("checkbox").first();
+  if (await complianceAck.isVisible().catch(() => false)) {
+    await complianceAck.click();
+    await page
+      .getByRole("combobox")
+      .filter({ hasText: /select a reason/i })
+      .click();
+    await page.getByRole("option").first().click();
+  }
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page
+    .getByRole("button", { name: /submit for approval/i })
+    .last()
+    .click();
+  await expect(page.getByText(/draft|submitted|success/i).first()).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // ── Invoice recovery and a real offline resume ──────────────────────────
+  await page.goto("/money/invoices/new");
+  await expectNoHorizontalScroll(page);
+  await page.getByRole("button", { name: /add a customer first/i }).click();
+  const customerDialog = page.getByRole("dialog", { name: /new customer/i });
+  await customerDialog.getByLabel(/^name/i).fill(CUSTOMER);
+  await customerDialog.getByRole("button", { name: /add customer/i }).click();
+  await expect(customerDialog).toBeHidden({ timeout: 30_000 });
+  await page
+    .getByPlaceholder(/description of service or product/i)
+    .fill("Mobile payroll support");
+  await page.locator('input[name="items.0.unitPrice"]').fill("75");
+  await waitForLocalDraftValue(
+    page,
+    ":invoice-new",
+    ["data", "items", 0, "description"],
+    "Mobile payroll support",
+  );
+
+  await reloadPastUnsavedWarning(page);
+  await expect(page.getByText("Continue your unfinished form?")).toBeVisible();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(
+    page.getByPlaceholder(/description of service or product/i),
+  ).toHaveValue("Mobile payroll support");
+  await expect(page.getByRole("combobox").first()).toContainText(CUSTOMER);
+
+  await page.context().setOffline(true);
+  // Two taps can arrive before React paints the disabled state. Send both
+  // while offline, then verify the pending operation resumes as one create
+  // when connectivity returns.
+  await page.getByRole("button", { name: /save draft/i }).evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(
+    "Still saving — keep this page open.",
+    {
+      timeout: 15_000,
+    },
+  );
+  await page.context().setOffline(false);
+  await expect(page).toHaveURL(/\/money\/invoices$/, { timeout: 45_000 });
+  await expectNoLocalDraft(page, ":invoice-new");
+  const invoices = await adminDb()
+    .collection(`tenants/${tenantId}/invoices`)
+    .get();
+  expect(invoices.size).toBe(1);
+  expect(invoices.docs[0].data().invoiceNumber).toMatch(/^INV-\d{4}-001$/);
+  expect(
+    (
+      await adminDb().doc(`tenants/${tenantId}/settings/invoice_settings`).get()
+    ).data()?.nextNumber,
+  ).toBe(2);
+
+  // ── Overnight shifts and the same 24-hour control in all app languages ─
+  await page.goto("/time-leave/shifts");
+  await expectNoHorizontalScroll(page);
+  await expect(page.getByRole("button", { name: /^list$/i })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page
+    .getByRole("button", { name: /^create shift$/i })
+    .first()
+    .click();
+  const shiftDialog = page.getByRole("dialog", { name: /create shift/i });
+  await shiftDialog.getByRole("combobox").first().click();
+  await page
+    .getByRole("option", { name: `${EMPLOYEE.first} ${EMPLOYEE.last}` })
+    .click();
+  await shiftDialog.getByRole("button", { name: "08:00" }).click();
+  await shiftDialog.getByLabel("Hour").selectOption("22");
+  await shiftDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(shiftDialog.getByText(/ends next day/i)).toBeVisible();
+  await shiftDialog.getByPlaceholder("Select location").fill("Dili Office");
+  await shiftDialog
+    .getByRole("button", { name: "Create Shift", exact: true })
+    .click();
+  await expect(shiftDialog).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByText(/22:00.*17:00.*ends next day/i)).toBeVisible();
+
+  await setLocale(page, "pt");
+  await expectNoHorizontalScroll(page);
+  await page
+    .getByRole("button", { name: "Criar Turno", exact: true })
+    .first()
+    .click();
+  const ptShiftDialog = page.getByRole("dialog", { name: "Criar Turno" });
+  await ptShiftDialog.getByRole("button", { name: "08:00" }).click();
+  await expect(ptShiftDialog.getByText("Seleção rápida")).toBeVisible();
+  await expect(ptShiftDialog.getByLabel("Hora")).toBeVisible();
+  await expect(ptShiftDialog.getByLabel("Minuto")).toBeVisible();
+  await ptShiftDialog.getByRole("button", { name: "Concluir" }).click();
+  await ptShiftDialog.getByRole("button", { name: "Cancelar" }).click();
+
+  await setLocale(page, "tet");
+  await expectNoHorizontalScroll(page);
+  await page
+    .getByRole("button", { name: "Kria Turnu", exact: true })
+    .first()
+    .click();
+  const tetShiftDialog = page.getByRole("dialog", { name: "Kria Turnu" });
+  await tetShiftDialog.getByRole("button", { name: "08:00" }).click();
+  await expect(tetShiftDialog.getByText("Hili lalais")).toBeVisible();
+  await expect(tetShiftDialog.getByLabel("Oras")).toBeVisible();
+  await expect(tetShiftDialog.getByLabel("Minutu")).toBeVisible();
+  await tetShiftDialog.getByRole("button", { name: "Remata" }).click();
+  await tetShiftDialog.getByRole("button", { name: "Kansela" }).click();
+});

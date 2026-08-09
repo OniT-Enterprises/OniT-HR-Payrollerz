@@ -956,11 +956,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .click();
   const shiftDialog = page.getByRole("dialog", { name: /create shift/i });
   await shiftDialog.getByRole("button", { name: "08:00" }).click();
-  await shiftDialog
-    .getByRole("button", { name: "10", exact: true })
-    .first()
-    .click();
-  await shiftDialog.getByRole("button", { name: "PM", exact: true }).click();
+  await shiftDialog.getByLabel("Hour").selectOption("22");
   await shiftDialog.getByRole("button", { name: "Done", exact: true }).click();
   await expect(shiftDialog.getByText(/ends next day/i)).toBeVisible();
   await shiftDialog.getByRole("button", { name: /^cancel$/i }).click();

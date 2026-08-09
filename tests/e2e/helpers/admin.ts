@@ -14,7 +14,7 @@ import { Firestore, getFirestore, Timestamp } from "firebase-admin/firestore";
 
 const PROJECT_ID = "onit-hr-payroll";
 
-process.env.FIRESTORE_EMULATOR_HOST ||= "localhost:8081";
+process.env.FIRESTORE_EMULATOR_HOST ||= "localhost:8181";
 process.env.FIREBASE_AUTH_EMULATOR_HOST ||= "localhost:9100";
 
 let app: App | null = null;
@@ -26,7 +26,7 @@ let app: App | null = null;
  * emulator the journey touches before any test begins.
  */
 export async function waitForEmulators(timeoutMs = 90_000): Promise<void> {
-  const firestorePort = (process.env.FIRESTORE_EMULATOR_HOST || "localhost:8081")
+  const firestorePort = (process.env.FIRESTORE_EMULATOR_HOST || "localhost:8181")
     .split(":")
     .pop();
   const targets = [

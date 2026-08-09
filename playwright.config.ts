@@ -8,6 +8,11 @@
  */
 import { defineConfig } from "@playwright/test";
 
+// Keep the browser suite off 8081: that is the default React Native / Expo
+// development port and is commonly occupied on a product developer's laptop.
+// Rules-only tests keep their existing firebase.dev.json port.
+process.env.FIRESTORE_EMULATOR_HOST = "localhost:8181";
+
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 120_000,
@@ -46,6 +51,7 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         VITE_USE_EMULATORS: "true",
+        VITE_FIREBASE_FIRESTORE_EMULATOR_PORT: "8181",
       },
       stdout: "ignore",
     },
