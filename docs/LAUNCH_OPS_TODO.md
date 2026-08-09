@@ -120,7 +120,24 @@ monogram); all favicon/PWA icon sizes generated and the manifest's previously-mi
 icon files now exist. Remaining art task: a proper XefeBot mascot (current xefebot.webp
 is the old book character).
 
-### 7. ~~WhatsApp bot identity~~ — DONE July 5 2026
+### 7. ~~WhatsApp bot identity~~ — MOOT since Aug 9 2026 (channel retired)
+
+**The whole WhatsApp channel was retired on 2026-08-09**, so nothing below needs
+doing. Two corrections to what it says, for the record:
+
+- The "pairing dead since July 2" diagnosis was **wrong**. The pairing was still
+  valid. The real fault was the container's 64m `/tmp` filling with openclaw's
+  own unrotated log, which made the WhatsApp plugin die at register with `ENOSPC`
+  while Docker still reported the container healthy. Freeing `/tmp` brought the
+  channel straight back — no QR scan.
+- It was retired anyway: the web chat had already moved to the Claude Agent SDK
+  on `server/xefe-api`, leaving the gateway to carry one unused channel plus 28
+  write tools aimed at production data.
+
+The uptime workflow's WhatsApp step is removed. `/opt/openclaw-xefe` and the
+Docker volumes are still on the box if this ever needs reviving.
+
+<details><summary>Original entry (July 5 2026)</summary>
 
 Renamed to **XefeBot** in the live `openclaw.json` (backup at
 `openclaw.json.bak-20260705`), the workspace `IDENTITY.md`, the repo example
@@ -132,6 +149,8 @@ Re-pair from a phone with the bot's WhatsApp account:
 `ssh hetzner`, then `docker exec -it openclaw-xefe openclaw channels login`
 and scan the QR. This outage went unnoticed for 3 days — item 3 (uptime
 monitoring) would have caught it.
+
+</details>
 
 ### 8. OpenAI key rotation (optional)
 

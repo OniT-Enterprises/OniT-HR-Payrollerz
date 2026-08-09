@@ -17,8 +17,8 @@
 - **Payroll money chain**: Read `docs/MONEY_CHAIN.md` (diagrams) before touching payroll run statuses, settlement, payroll/tax journals, leaver final pay, or rules around `payruns`/`taxFilings` — it maps run lifecycle → journals → statutory filings and lists the non-negotiable invariants. §4a carries the **scope contract** for a leaver's once-only Art. 56 severance / Art. 44 subsídio / Art. 32 untaken-leave payout: entitlement and the amount netted off it must ALWAYS be computed over the same scope, from equally-recorded data. Four separate money bugs in Jul 2026 were that one mistake — three of them inside the fix for the previous one — so treat any change on one side as requiring the other. Adding the Art. 32 payout in Aug 2026 immediately inherited the same hazard (two runs over one termination period would each pay it), which is the fifth instance: **any new final-pay earning needs its own once-only guard before it ships.**
 - **Bank payments**: Read `docs/BANK_PAYMENTS.md` before touching `client/lib/bank-transfers/*` or the Bank Transfers page. BNU/BNCTL take salary batches by emailed Excel pack + signed payment order (evidence-based), NOT CSV upload; bank-facing text stays Portuguese.
 - **Accounting automations**: Read `docs/ACCOUNTING_AUTOMATIONS.md` before touching fixed assets, depreciation, or recurring journals. Recurring journal templates (`tenants/{tid}/recurringJournals`) post nightly via the `processRecurringJournals` Cloud Function; fixed-asset depreciation and disposal each post through `createJournalEntry` in ONE atomic transaction, guarded by append-only per-period docs (`fixedAssetPostings/{YYYY-MM}`, `recurringJournalPostings/{templateId}_{YYYY-MM}`) that make posting exactly-once — reversal = manual journal, never delete a guard. Depreciation math is straight-line **cumulative-cap** (accumulated never exceeds cost−residual, never a negative charge) using decimal.js money helpers, pure/unit-tested in `client/lib/accounting/{recurring,depreciation}.ts` — keep the CF copies in sync and `templateIsDue` lives in the functions module (tested=running). Acquisition posts NO GL journal (register-only, to avoid double-booking bill-acquired assets) — an open decision. Statutory Excel exports mirror OFFICIAL templates only (INSS portal DR, ATTL form — compliance); everything else (fixed-asset register, resumo sheets) is Xefe's own layout, never a client/firm workbook's.
-- **Bot integration**: See `OPENCLAW_XEFE_INTEGRATION.md` for the Xefe AI assistant (WhatsApp + web dashboard).
-- **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Infra was renamed meza-* → xefe-* on 2026-07-13 (`server/xefe-api`, `openclaw-xefe`, PM2/Docker `xefe-*`); the canonical public domain is **xefe.tl** (was meza.naroman.tl, which now 301s to it). The `onit-hr-payroll` Firebase project ID is unchanged.
+- **Bot / AI assistant**: XefeBot is the **web chat only**, and it runs on the Claude Agent SDK inside `server/xefe-api` (`agentChat.js`), as does document extraction (`extract.js`). **WhatsApp and the OpenClaw gateway were retired on 2026-08-09** — the container, its nginx `/openclaw/` route and `server/openclaw-xefe/` are gone (recoverable from git history; the box keeps `/opt/openclaw-xefe` and the Docker volumes). Don't reintroduce a WhatsApp write path: the plugin's 28 write tools were the last callers of the legacy payroll endpoints that now fail closed. `server/xefe-api` remains the only AI surface.
+- **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Infra was renamed meza-* → xefe-* on 2026-07-13 (`server/xefe-api`, PM2 `xefe-api`); the canonical public domain is **xefe.tl** (was meza.naroman.tl, which now 301s to it). The `onit-hr-payroll` Firebase project ID is unchanged.
 
 ## Project Overview
 OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, attendance and leave, performance, payroll, reporting) targeting Timor-Leste market.
@@ -28,7 +28,7 @@ OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, 
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
 - **State**: React Context + TanStack React Query
 - **Backend**: Firebase (Firestore/Auth)
-- **Server**: Express.js REST API (Xefe API) + OpenClaw bot gateway
+- **Server**: Express.js REST API (Xefe API), which also hosts XefeBot and document extraction on the Claude Agent SDK
 - **Deployment**: Hetzner VPS (nginx static SPA); Firebase for Firestore/Auth/Functions only
 - **Analytics**: GA4 via gtag.js in `index.html` (property `G-WVYDBVTC1P`); relies on GA4 Enhanced Measurement for SPA route views. Marketing UTMs (e.g. `utm_source=tetumdili`) land here.
 
@@ -95,13 +95,10 @@ client/
 └── types/          # TypeScript definitions
 
 server/
-├── xefe-api/       # Express REST API for bot (port 3201, PM2)
-│   └── index.js    # 26 read-only Firestore endpoints
-└── openclaw-xefe/  # OpenClaw Docker gateway (port 18790)
-    ├── extensions/xefe-hr/  # Plugin: 29 tools + 5 commands
-    ├── docker-compose.yml
-    ├── Dockerfile
-    └── deploy.sh
+└── xefe-api/       # Express REST API + XefeBot (port 3201, PM2)
+    ├── index.js    # Firestore endpoints (payroll mutations fail closed)
+    ├── agentChat.js  # XefeBot web chat on the Claude Agent SDK
+    └── extract.js  # Bill/receipt/timesheet reading, same SDK
 
 routes.tsx          # All route definitions (extracted from App.tsx)
 ```
@@ -225,26 +222,22 @@ rsync -avz --delete --exclude .env --exclude serviceAccountKey.json \
   server/xefe-api/ hetzner:/opt/xefe-api/
 ssh hetzner 'cd /opt/xefe-api && npm ci --omit=dev && pm2 startOrReload ecosystem.config.js --update-env'
 
-# Deploy OpenClaw bot
-cd server/openclaw-xefe && ./deploy.sh
-
-# Pair WhatsApp (on server)
-docker exec -it openclaw-xefe openclaw channels login
+# (OpenClaw/WhatsApp was retired 2026-08-09 — there is no bot gateway to deploy.)
 ```
 
 **Ports on Hetzner:**
 | Service | Port | Process |
 |---------|------|---------|
 | Xefe API | 3201 | PM2 |
-| OpenClaw Xefe | 18790 | Docker |
 | Hotel API | 3100 | PM2 |
 | OpenClaw Hotel | 18789 | Docker |
+
+Port 18790 is now free; `openclaw-hotel` on 18789 belongs to a different
+project and must be left alone.
 
 **Sensitive files (never commit):**
 - `server/xefe-api/.env` — API key, tenant ID
 - `server/xefe-api/serviceAccountKey.json` — Firebase Admin credentials
-- `server/openclaw-xefe/.env` — Anthropic API key
-- `server/openclaw-xefe/openclaw.json` — Bot config with API keys
 
 ## Firestore Timestamps
 Always handle Firestore Timestamps properly:

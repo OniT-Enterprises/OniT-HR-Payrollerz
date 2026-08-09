@@ -59,16 +59,3 @@ jobs:
             "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
             'cd /opt/xefe-api && node scripts/check-extraction-auth.cjs'
 
-      - name: WhatsApp bot channel
-        # The pairing died on Jul 2 2026 and needs a phone-side QR re-scan;
-        # flip continue-on-error to false once re-paired so this alerts too.
-        continue-on-error: true
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/uptime_key
-          chmod 600 ~/.ssh/uptime_key
-          fails=$(ssh -i ~/.ssh/uptime_key -o StrictHostKeyChecking=accept-new \
-            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
-            'docker logs openclaw-xefe --since 30m 2>&1 | grep -c "Connection Failure" || true')
-          echo "WhatsApp connection failures in last 30m: $fails"
-          test "$fails" -lt 5

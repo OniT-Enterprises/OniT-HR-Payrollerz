@@ -1,8 +1,9 @@
 /**
  * Client helpers for AI-assisted writing features.
- * Routes through the Meza API's /ai/compose endpoint, which relays to the
- * OpenClaw bot gateway — keeping all model credentials server-side and sharing
- * the same infrastructure as the chat widget.
+ * Routes through the Xefe API's /ai/compose endpoint, which answers from the
+ * Claude Agent SDK in `agentChat.js` — keeping all model credentials
+ * server-side and sharing the same infrastructure as the chat widget.
+ * (This used to relay to the OpenClaw gateway; that was retired 2026-08-09.)
  */
 
 import { auth } from "@/lib/firebase-core";

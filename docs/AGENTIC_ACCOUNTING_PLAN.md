@@ -2,6 +2,27 @@
 
 > Making Meza's AI assistant go from "read-only reporter" to "accountant that checks its own work."
 
+> ## ⛔ SUPERSEDED 2026-08-09 — do not implement Phase 2 as written
+>
+> This plan is kept for its **reasoning about write safety**, which still holds.
+> Its delivery mechanism does not: **OpenClaw and WhatsApp were retired.** The
+> container, the nginx `/openclaw/` route and `server/openclaw-xefe/` are gone
+> (in git history if needed), and the five legacy payroll write endpoints the
+> plan builds on now fail closed with 503 — see §1.1.
+>
+> Two things changed underneath it:
+>
+> 1. **The AI surface moved.** XefeBot is web chat only, on the Claude Agent SDK
+>    in `server/xefe-api/agentChat.js`. There is no plugin to add tools to, and
+>    no `openClawChatWithSteps` to hook.
+> 2. **Write-through-the-bot was the hazard, not the goal.** The plugin's 28
+>    write tools were the last callers of endpoints that bypassed the canonical
+>    payroll engine's subscription gate, two-person approval and settlement
+>    journal. Anything agentic must go through that engine, not around it.
+>
+> So treat every "add a write tool to the plugin" instruction below as a
+> description of a road we deliberately closed.
+
 ---
 
 ## What We Have Today
