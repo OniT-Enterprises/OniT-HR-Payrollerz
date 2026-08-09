@@ -9,7 +9,6 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -1258,8 +1257,12 @@ class InvoiceService {
     tenantId: string,
     data: InvoiceFormData,
     userId?: string,
+    requestId?: string,
   ): Promise<string> {
     const actor = this.actorId(userId);
+    const invoiceRef = requestId
+      ? doc(this.collectionRef(tenantId), requestId)
+      : doc(this.collectionRef(tenantId));
     // Get customer info + settings (for presentation/payment defaults)
     const [customer, settings] = await Promise.all([
       customerService.getCustomerById(tenantId, data.customerId),
@@ -1269,16 +1272,13 @@ class InvoiceService {
       throw new Error("Customer not found");
     }
 
-    // Get next invoice number
-    const invoiceNumber = await this.getNextInvoiceNumber(tenantId);
-
     // Calculate and persist the same per-line totals shown in the form
     // preview (net of per-line discounts; per-line VAT rate wins over the
     // invoice-level rate).
     const calculated = calculateInvoiceAmounts(data.items, data.taxRate);
     const baseItems: InvoiceItem[] = calculated.items.map((item, index) => ({
       ...item,
-      id: `item_${Date.now()}_${index}`,
+      id: `item_${invoiceRef.id}_${index}`,
     }));
     const vatFields = this.buildVatFields(
       baseItems,
@@ -1291,8 +1291,7 @@ class InvoiceService {
     // Generate share token
     const shareToken = this.generateShareToken();
 
-    const invoice: Omit<Invoice, "id"> = {
-      invoiceNumber,
+    const invoice: Omit<Invoice, "id" | "invoiceNumber"> = {
       customerId: data.customerId,
       customerName: customer.name,
       customerEmail: customer.email,
@@ -1333,13 +1332,64 @@ class InvoiceService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef(tenantId), {
-      ...invoice,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    // The request document and the sequence counter advance together. If the
+    // browser loses the success response, retrying with the same requestId
+    // finds the existing invoice and neither duplicates it nor burns another
+    // invoice number.
+    await runTransaction(db, async (transaction) => {
+      const existingInvoice = await transaction.get(invoiceRef);
+      if (existingInvoice.exists()) {
+        if (existingInvoice.data().createdBy !== actor) {
+          throw new Error("This invoice request ID is already in use.");
+        }
+        return;
+      }
+
+      const settingsDocRef = this.settingsRef(tenantId);
+      const settingsDoc = await transaction.get(settingsDocRef);
+      const year = parseInt(getTodayTL().slice(0, 4), 10);
+      let prefix = "INV";
+      let number = 1;
+
+      if (!settingsDoc.exists()) {
+        transaction.set(
+          settingsDocRef,
+          {
+            prefix: "INV",
+            nextNumber: 2,
+            defaultTaxRate: 0,
+            defaultTerms: "Payment due within 30 days",
+            defaultNotes: "Thank you for your business",
+            defaultDueDays: 30,
+            companyName: "",
+            companyAddress: "",
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } else {
+        const sequence = settingsDoc.data() as Partial<InvoiceSettings>;
+        prefix = sequence.prefix || "INV";
+        number =
+          typeof sequence.nextNumber === "number" && sequence.nextNumber > 0
+            ? Math.floor(sequence.nextNumber)
+            : 1;
+        transaction.update(settingsDocRef, {
+          nextNumber: number + 1,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      const invoiceNumber = `${prefix}-${year}-${String(number).padStart(3, "0")}`;
+      transaction.set(invoiceRef, {
+        ...invoice,
+        invoiceNumber,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
 
-    return docRef.id;
+    return invoiceRef.id;
   }
 
   /**
@@ -3285,49 +3335,6 @@ class InvoiceService {
   // ----------------------------------------
   // Helpers
   // ----------------------------------------
-
-  private async getNextInvoiceNumber(tenantId: string): Promise<string> {
-    const settingsDocRef = this.settingsRef(tenantId);
-    const year = parseInt(getTodayTL().slice(0, 4), 10);
-    return runTransaction(db, async (transaction) => {
-      const settingsDoc = await transaction.get(settingsDocRef);
-
-      let prefix = "INV";
-      let number = 1;
-
-      if (!settingsDoc.exists()) {
-        transaction.set(
-          settingsDocRef,
-          {
-            prefix: "INV",
-            nextNumber: 2,
-            defaultTaxRate: 0,
-            defaultTerms: "Payment due within 30 days",
-            defaultNotes: "Thank you for your business",
-            defaultDueDays: 30,
-            companyName: "",
-            companyAddress: "",
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        );
-      } else {
-        const data = settingsDoc.data() as Partial<InvoiceSettings>;
-        prefix = data.prefix || "INV";
-        number =
-          typeof data.nextNumber === "number" && data.nextNumber > 0
-            ? Math.floor(data.nextNumber)
-            : 1;
-
-        transaction.update(settingsDocRef, {
-          nextNumber: number + 1,
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      return `${prefix}-${year}-${String(number).padStart(3, "0")}`;
-    });
-  }
 
   private generateShareToken(): string {
     const bytes = new Uint8Array(24);

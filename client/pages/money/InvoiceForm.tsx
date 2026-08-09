@@ -81,6 +81,13 @@ import {
   MoreHorizontal,
   SlidersHorizontal,
 } from 'lucide-react';
+import { RecoverableDraftAlert } from '@/components/forms/RecoverableDraftAlert';
+import {
+  useRecoverableFormDraft,
+  useUnsavedChangesWarning,
+} from '@/hooks/useRecoverableFormDraft';
+import { useSlowOperation } from '@/hooks/useSlowOperation';
+import { recoverableFormDraftKey } from '@/lib/recoverableFormDraft';
 
 export default function InvoiceForm() {
   const { id } = useParams();
@@ -190,6 +197,34 @@ export default function InvoiceForm() {
 
   // Watch form values for summary calculation
   const formData = watch();
+
+  const invoiceDraftStorageKey = recoverableFormDraftKey({
+    userId: session?.member.uid || 'anonymous',
+    tenantId,
+    form: !isNew && id
+      ? `invoice-edit-${id}`
+      : duplicateId
+        ? `invoice-duplicate-${duplicateId}`
+        : 'invoice-new',
+  });
+  const {
+    availableDraft,
+    operationId: invoiceCreateOperationId,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+  } = useRecoverableFormDraft({
+    storageKey: invoiceDraftStorageKey,
+    data: formData,
+    enabled: Boolean(session?.member.uid && tenantId && !loading),
+    shouldSave: isDirty,
+    onRestore: (draft) => reset(draft, { keepDefaultValues: true }),
+  });
+  const savingSlowly = useSlowOperation(saving);
+  const confirmLeave = useUnsavedChangesWarning(
+    isDirty && !saving,
+    t('common.unsavedChangesWarning'),
+  );
 
   const paymentAccounts = useMemo(
     () => getSettingsPaymentAccounts(invoiceSettings),
@@ -450,7 +485,10 @@ export default function InvoiceForm() {
       let invoiceId: string;
       try {
         if (isNew || duplicateId) {
-          invoiceId = await createInvoiceMutation.mutateAsync(dataToSave);
+          invoiceId = await createInvoiceMutation.mutateAsync({
+            data: dataToSave,
+            requestId: invoiceCreateOperationId,
+          });
         } else if (invoice) {
           await updateInvoiceMutation.mutateAsync({ id: invoice.id, data: dataToSave });
           invoiceId = invoice.id;
@@ -466,6 +504,7 @@ export default function InvoiceForm() {
         });
         return;
       }
+      clearDraft();
 
       if (!sendAfter) {
         toast({
@@ -835,7 +874,12 @@ export default function InvoiceForm() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (confirmLeave()) navigate('/money/invoices');
+                }}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('common.back') || 'Back'}
               </Button>
@@ -845,7 +889,7 @@ export default function InvoiceForm() {
               </Button>
               <Button className="hidden sm:inline-flex" variant="outline" onClick={() => handleSave(false)} disabled={saving}>
                 <Save className="h-4 w-4 mr-2" />
-                {t('money.invoices.saveDraft') || 'Save Draft'}
+                {saving ? t('common.saving') : t('money.invoices.saveDraft') || 'Save Draft'}
               </Button>
               <Button
                 onClick={() => handleSave(true)}
@@ -853,7 +897,7 @@ export default function InvoiceForm() {
                 className="hidden sm:inline-flex"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {t('money.invoices.saveAndSend') || 'Save & Send'}
+                {saving ? t('common.saving') : t('money.invoices.saveAndSend') || 'Save & Send'}
               </Button>
               {/* Non-modal: a menu item here opens a Dialog. A modal DropdownMenu puts
                   `pointer-events: none` on <body> and that lock can outlive both, freezing
@@ -876,6 +920,18 @@ export default function InvoiceForm() {
         />
 
         <div className="space-y-6">
+          {availableDraft && (
+            <RecoverableDraftAlert
+              savedAt={availableDraft.updatedAt}
+              onRestore={restoreDraft}
+              onDiscard={discardDraft}
+            />
+          )}
+          {savingSlowly && (
+            <p className="hidden text-sm text-muted-foreground sm:block" role="status">
+              {t('common.stillSaving')}
+            </p>
+          )}
           {/* Customer & dates */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Customer Selection */}
@@ -1253,7 +1309,9 @@ export default function InvoiceForm() {
                         variant="link"
                         className="min-h-11 p-0 text-xs text-primary"
                         type="button"
-                        onClick={() => navigate('/money/invoices/settings')}
+                        onClick={() => {
+                          if (confirmLeave()) navigate('/money/invoices/settings');
+                        }}
                       >
                         <Plus className="h-3 w-3 mr-1" />
                         {t('money.invoices.addAccountInSettings') || 'Add a payment account in Settings'}
@@ -1446,7 +1504,12 @@ export default function InvoiceForm() {
           </div>
 
           {/* Keep the two decisions that matter within thumb reach on phones. */}
-          <div className="sticky bottom-0 z-20 -mx-4 flex gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+          <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+            {savingSlowly && (
+              <p className="w-full text-center text-xs text-muted-foreground" role="status">
+                {t('common.stillSaving')}
+              </p>
+            )}
             <Button
               variant="outline"
               className="flex-1"
@@ -1454,7 +1517,7 @@ export default function InvoiceForm() {
               disabled={saving}
             >
               <Save className="h-4 w-4" />
-              {t('money.invoices.saveDraft') || 'Save Draft'}
+              {saving ? t('common.saving') : t('money.invoices.saveDraft') || 'Save Draft'}
             </Button>
             <Button
               className="flex-1"
@@ -1462,7 +1525,7 @@ export default function InvoiceForm() {
               disabled={saving}
             >
               <Send className="h-4 w-4" />
-              {t('money.invoices.saveAndSend') || 'Save & Send'}
+              {saving ? t('common.saving') : t('money.invoices.saveAndSend') || 'Save & Send'}
             </Button>
           </div>
         </div>

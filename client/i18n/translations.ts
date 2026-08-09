@@ -146,6 +146,23 @@ export const translations = {
       "save": "Save",
       "saved": "Saved",
       "saving": "Saving...",
+      "stillSaving": "Still saving — keep this page open.",
+      "unsavedChangesWarning": "Leave this form with unsaved changes?",
+      "formRecovery": {
+        "title": "Continue your unfinished form?",
+        "savedAt": "Saved on this device {{time}}.",
+        "filesNotSaved": "Choose any document files again before saving.",
+        "continue": "Continue",
+        "startOver": "Start over"
+      },
+      "timePicker": {
+        "selectTime": "Select time",
+        "quickSelect": "Quick select",
+        "hour": "Hour",
+        "minute": "Minute",
+        "noTime": "No time set",
+        "done": "Done"
+      },
       "success": "Success",
       "view": "View",
       "name": "Name",
@@ -8150,6 +8167,23 @@ export const translations = {
       "save": "Rai",
       "saved": "Rai ona",
       "saving": "Rai hela...",
+      "stillSaving": "Seidauk rai remata — husik pájina ne'e nakloke.",
+      "unsavedChangesWarning": "Sai husi formuláriu ne'e ho mudansa ne'ebé seidauk rai?",
+      "formRecovery": {
+        "title": "Kontinua formuláriu ne'ebé seidauk remata?",
+        "savedAt": "Rai ona iha dispozitivu ne'e iha {{time}}.",
+        "filesNotSaved": "Hili fila fali dokumentu nia ficheiru molok rai.",
+        "continue": "Kontinua",
+        "startOver": "Hahu fali"
+      },
+      "timePicker": {
+        "selectTime": "Hili oras",
+        "quickSelect": "Hili lalais",
+        "hour": "Oras",
+        "minute": "Minutu",
+        "noTime": "Seidauk define oras",
+        "done": "Remata"
+      },
       "success": "Susesu",
       "view": "Hare",
       "name": "Naran",
@@ -16154,6 +16188,23 @@ export const translations = {
       "save": "Guardar",
       "saved": "Guardado",
       "saving": "A guardar...",
+      "stillSaving": "Ainda a guardar — mantenha esta página aberta.",
+      "unsavedChangesWarning": "Sair deste formulário com alterações por guardar?",
+      "formRecovery": {
+        "title": "Continuar o formulário inacabado?",
+        "savedAt": "Guardado neste dispositivo em {{time}}.",
+        "filesNotSaved": "Selecione novamente os ficheiros dos documentos antes de guardar.",
+        "continue": "Continuar",
+        "startOver": "Começar de novo"
+      },
+      "timePicker": {
+        "selectTime": "Selecionar hora",
+        "quickSelect": "Seleção rápida",
+        "hour": "Hora",
+        "minute": "Minuto",
+        "noTime": "Sem hora definida",
+        "done": "Concluir"
+      },
       "success": "Sucesso",
       "view": "Ver",
       "name": "Nome",

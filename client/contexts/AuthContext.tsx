@@ -14,6 +14,10 @@ import {
   isFreshTokenSuperAdmin,
   settleAuthAuthorityRequests,
 } from "@/lib/auth-session-timeout";
+import {
+  allowFormContextChange,
+  clearRecoverableFormDrafts,
+} from "@/lib/recoverableFormDraft";
 
 interface AuthContextType {
   user: User | null;
@@ -376,6 +380,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signOut = async () => {
+    if (!allowFormContextChange()) return;
     ++profileRequestRef.current;
     activeUidRef.current = null;
     localStorage.removeItem(AUTH_CACHE_KEY);
@@ -395,6 +400,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     try {
       await authService.signOut();
+      if (user?.uid) {
+        try {
+          clearRecoverableFormDrafts(localStorage, { userId: user.uid });
+        } catch {
+          // Storage access must never break sign-out.
+        }
+      }
       // Firebase normally resolves this in onAuthStateChanged. Keep the public
       // app usable if an adapter signs out without emitting another callback.
       if (!auth?.currentUser && activeUidRef.current === null) {

@@ -81,10 +81,10 @@ class FileUploadService {
     tenantId: string,
     employeeId: string,
     documentType: string,
+    retryKey?: string,
   ): Promise<string> {
-    const timestamp = Date.now();
     const fileExtension = file.name.split(".").pop();
-    const fileName = `${documentType}_${timestamp}.${fileExtension}`;
+    const fileName = `${documentType}_${retryKey || Date.now()}.${fileExtension}`;
     const path = `tenants/${tenantId}/employees/${employeeId}/documents/${fileName}`;
 
     return this.uploadFile(file, path);

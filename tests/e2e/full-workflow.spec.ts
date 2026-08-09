@@ -436,7 +436,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .getByRole("option", { name: `${EMPLOYEE.first} ${EMPLOYEE.last}` })
     .click();
   await markAttendanceDialog.getByRole("button", { name: /clock in/i }).click();
-  await markAttendanceDialog.getByRole("button", { name: "8:00 AM" }).click();
+  await markAttendanceDialog.getByRole("button", { name: "08:00" }).click();
   await markAttendanceDialog
     .getByRole("button", { name: /mark attendance/i })
     .click();
@@ -955,7 +955,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .first()
     .click();
   const shiftDialog = page.getByRole("dialog", { name: /create shift/i });
-  await shiftDialog.getByRole("button", { name: "8:00 AM" }).click();
+  await shiftDialog.getByRole("button", { name: "08:00" }).click();
   await shiftDialog
     .getByRole("button", { name: "10", exact: true })
     .first()

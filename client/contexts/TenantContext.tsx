@@ -13,6 +13,10 @@ import { paths } from "@/lib/paths";
 import { isPublicPath } from "@/lib/publicPaths";
 import { clearPersistedQueryCache } from "@/lib/queryCache";
 import {
+  allowFormContextChange,
+  clearRecoverableFormDrafts,
+} from "@/lib/recoverableFormDraft";
+import {
   TenantConfig,
   TenantMember,
   TenantSession,
@@ -529,6 +533,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     if (!user) {
       throw new Error("No authenticated user");
     }
+    if (session?.tid !== tid && !allowFormContextChange()) return;
 
     if (switchingRef.current) return;
     switchingRef.current = true;
@@ -545,6 +550,16 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
       const newSession = await loadTenantSession(tid, user);
       if (newSession && isCurrentAccount()) {
+        if (session?.tid && session.tid !== tid) {
+          try {
+            clearRecoverableFormDrafts(localStorage, {
+              userId: user.uid,
+              tenantId: session.tid,
+            });
+          } catch {
+            // Storage access must never break a tenant switch.
+          }
+        }
         // Commit the replacement atomically. A failed load must leave the
         // impersonation banner and virtual-owner session intact.
         if (isImpersonating) {
@@ -570,7 +585,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       if (isCurrentAccount()) setLoading(false);
       if (isCurrentAccount()) setTenantResolved(true);
     }
-  }, [user, isImpersonating, loadTenantSession, availableTenants, queryClient]);
+  }, [user, session?.tid, isImpersonating, loadTenantSession, availableTenants, queryClient]);
 
   // Refresh current session
   const refreshSession = useCallback(async () => {

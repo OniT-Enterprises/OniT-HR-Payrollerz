@@ -561,6 +561,25 @@ class EmployeeService {
     preGeneratedId?: string,
     hiringHandoff?: HiringHandoff,
   ): Promise<string> {
+    const employeeRef = preGeneratedId
+      ? doc(this.collectionRef(tenantId), preGeneratedId)
+      : doc(this.collectionRef(tenantId));
+    const docId = employeeRef.id;
+    if (preGeneratedId) {
+      const previousAttempt = await getDoc(employeeRef);
+      if (previousAttempt.exists()) {
+        const existing = previousAttempt.data() as Employee;
+        if (
+          existing.jobDetails?.employeeId !== employee.jobDetails?.employeeId ||
+          existing.personalInfo?.firstName !== employee.personalInfo?.firstName ||
+          existing.personalInfo?.lastName !== employee.personalInfo?.lastName
+        ) {
+          throw new Error("This employee creation request is already in use.");
+        }
+        return docId;
+      }
+    }
+
     // Uniqueness check: prevent duplicate employeeId (National ID / BI number)
     const empId = employee.jobDetails?.employeeId;
     if (empId && !empId.startsWith("TEMP")) {
@@ -588,10 +607,6 @@ class EmployeeService {
       updatedAt: serverTimestamp(),
     };
 
-    const employeeRef = preGeneratedId
-      ? doc(this.collectionRef(tenantId), preGeneratedId)
-      : doc(this.collectionRef(tenantId));
-    const docId = employeeRef.id;
     if (hiringHandoff?.applicationId) {
       // Creating the employee and closing the hiring pipeline are one write:
       // no half-hired candidate or duplicate retry can be left behind.

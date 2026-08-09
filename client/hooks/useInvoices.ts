@@ -55,8 +55,8 @@ export function useCreateInvoice() {
   const { session } = useTenant();
 
   return useMutation({
-    mutationFn: (data: InvoiceFormData) =>
-      invoiceService.createInvoice(tenantId, data, session?.member.uid),
+    mutationFn: ({ data, requestId }: { data: InvoiceFormData; requestId: string }) =>
+      invoiceService.createInvoice(tenantId, data, session?.member.uid, requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },

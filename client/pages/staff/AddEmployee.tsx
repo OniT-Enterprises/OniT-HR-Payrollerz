@@ -39,9 +39,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
 import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
-import { collection, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { paths } from "@/lib/paths";
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
@@ -74,6 +71,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { RecoverableDraftAlert } from "@/components/forms/RecoverableDraftAlert";
+import {
+  useRecoverableFormDraft,
+  useUnsavedChangesWarning,
+} from "@/hooks/useRecoverableFormDraft";
+import { useSlowOperation } from "@/hooks/useSlowOperation";
+import { recoverableFormDraftKey } from "@/lib/recoverableFormDraft";
 
 // Optional, heavy and rarely opened: the contract generator pulls the PDF
 // stack in with it, so it must not sit in this page's chunk (STYLE_GUIDE:
@@ -150,7 +154,7 @@ export default function AddEmployee() {
     reset,
     setValue,
     setFocus,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
@@ -311,6 +315,61 @@ export default function AddEmployee() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [supplementalDirty, setSupplementalDirty] = useState(false);
+
+  const draftStorageKey = recoverableFormDraftKey({
+    userId: user?.uid || "anonymous",
+    tenantId,
+    form: editEmployeeId
+      ? `employee-edit-${editEmployeeId}`
+      : hiringApplicationId
+        ? `employee-hire-${hiringApplicationId}`
+        : "employee-new",
+  });
+  const employeeDraftData = useMemo(() => ({
+    form: formValues,
+    documents: docValues,
+    additional: {
+      nationality: additionalInfo.nationality,
+      residencyStatus: additionalInfo.residencyStatus,
+      workingVisaNumber: additionalInfo.workingVisaNumber,
+      workingVisaExpiry: additionalInfo.workingVisaExpiry,
+      sefopePermitNumber: additionalInfo.sefopePermitNumber,
+      sefopePermitExpiry: additionalInfo.sefopePermitExpiry,
+      paymentMethod: additionalInfo.paymentMethod,
+      bankName: additionalInfo.bankName,
+      bankAccountNumber: additionalInfo.bankAccountNumber,
+    },
+  }), [additionalInfo, docValues, formValues]);
+  const {
+    availableDraft,
+    operationId: employeeCreateOperationId,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+  } = useRecoverableFormDraft({
+    storageKey: draftStorageKey,
+    data: employeeDraftData,
+    enabled: Boolean(user?.uid && tenantId && !loading),
+    shouldSave: isDirty || supplementalDirty,
+    onRestore: (draft) => {
+      reset(draft.form, { keepDefaultValues: true });
+      setDocValues(draft.documents);
+      setAdditionalInfo((current) => ({
+        ...current,
+        ...draft.additional,
+        workContract: null,
+        workingVisaFile: null,
+        sefopePermitFile: null,
+      }));
+      setSupplementalDirty(true);
+    },
+  });
+  const savingSlowly = useSlowOperation(isSubmitting);
+  const confirmLeave = useUnsavedChangesWarning(
+    (isDirty || supplementalDirty) && !isSubmitting,
+    t("common.unsavedChangesWarning"),
+  );
 
   // In edit mode, show green border for filled fields and red for empty ones
   const loadEmployeeForEdit = useCallback(async (employeeId: string) => {
@@ -441,10 +500,12 @@ export default function AddEmployee() {
   }, [editEmployeeId, tenantId, loadDepartmentsAndManagers, loadEmployeeForEdit]);
 
   const handleDocumentChange = (fieldKey: string, field: "number" | "expiryDate", value: string) => {
+    setSupplementalDirty(true);
     setDocValues(prev => ({ ...prev, [fieldKey]: { ...prev[fieldKey], [field]: value } }));
   };
 
   const handleAdditionalInfoChange = (field: string, value: string | File | null) => {
+    setSupplementalDirty(true);
     setAdditionalInfo(prev => {
       const next = { ...prev, [field]: value };
       // Auto-set residency status when nationality changes
@@ -480,6 +541,9 @@ export default function AddEmployee() {
     const uploadedThisSave: string[] = [];
     const supersededAfterSave: string[] = [];
     let employeeRecordSaved = false;
+    const employeeIdForUpload = isEditMode && editingEmployee
+      ? editingEmployee.id!
+      : hiringApplicationId || employeeCreateOperationId;
 
     try {
       let savedEmployeeId = editingEmployee?.id || "";
@@ -487,7 +551,11 @@ export default function AddEmployee() {
       const primaryDocNumber = isTimorese
         ? docValues.bilheteIdentidade?.number
         : docValues.passport?.number;
-      const employeeId = primaryDocNumber || `TEMP${Date.now()}`;
+      const employeeId = primaryDocNumber || (
+        isEditMode && editingEmployee?.jobDetails.employeeId
+          ? editingEmployee.jobDetails.employeeId
+          : `TEMP-${employeeCreateOperationId}`
+      );
       const currentDate = new Date();
 
       // Compute from the submitted data (zod-normalized), not watched values.
@@ -606,14 +674,17 @@ export default function AddEmployee() {
       };
 
       // Upload files if they exist
-      const employeeIdForUpload = isEditMode && editingEmployee
-        ? editingEmployee.id!
-        : hiringApplicationId || doc(collection(db, paths.employees(tenantId))).id;
       const failedUploads: string[] = [];
 
       if (additionalInfo.workContract) {
         try {
-          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workContract, tenantId, employeeIdForUpload, "workContract");
+          const url = await fileUploadService.uploadEmployeeDocument(
+            additionalInfo.workContract,
+            tenantId,
+            employeeIdForUpload,
+            "workContract",
+            isEditMode ? undefined : employeeCreateOperationId,
+          );
           uploadedThisSave.push(url);
           if (editingEmployee?.documents.workContract.fileUrl) {
             supersededAfterSave.push(editingEmployee.documents.workContract.fileUrl);
@@ -628,7 +699,13 @@ export default function AddEmployee() {
 
       if (additionalInfo.workingVisaFile) {
         try {
-          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workingVisaFile, tenantId, employeeIdForUpload, "workingVisa");
+          const url = await fileUploadService.uploadEmployeeDocument(
+            additionalInfo.workingVisaFile,
+            tenantId,
+            employeeIdForUpload,
+            "workingVisa",
+            isEditMode ? undefined : employeeCreateOperationId,
+          );
           uploadedThisSave.push(url);
           if (editingEmployee?.documents.workingVisaResidency.fileUrl) {
             supersededAfterSave.push(editingEmployee.documents.workingVisaResidency.fileUrl);
@@ -642,7 +719,13 @@ export default function AddEmployee() {
 
       if (additionalInfo.sefopePermitFile && newEmployee.documents.sefopeWorkPermit) {
         try {
-          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.sefopePermitFile, tenantId, employeeIdForUpload, "sefopePermit");
+          const url = await fileUploadService.uploadEmployeeDocument(
+            additionalInfo.sefopePermitFile,
+            tenantId,
+            employeeIdForUpload,
+            "sefopePermit",
+            isEditMode ? undefined : employeeCreateOperationId,
+          );
           uploadedThisSave.push(url);
           if (editingEmployee?.documents.sefopeWorkPermit?.fileUrl) {
             supersededAfterSave.push(editingEmployee.documents.sefopeWorkPermit.fileUrl);
@@ -798,6 +881,7 @@ export default function AddEmployee() {
       await queryClient.invalidateQueries({
         queryKey: employeeKeys.all(tenantId),
       });
+      clearDraft();
 
       if (isHiringHandoff && savedEmployeeId) {
         const params = new URLSearchParams({ employeeId: savedEmployeeId });
@@ -808,7 +892,20 @@ export default function AddEmployee() {
         navigate("/people/employees");
       }
     } catch (error) {
-      if (!employeeRecordSaved) {
+      let confirmedNotSaved = !employeeRecordSaved && isEditMode;
+      if (!employeeRecordSaved && !isEditMode) {
+        try {
+          confirmedNotSaved = !(await employeeService.getEmployeeById(
+            tenantId,
+            employeeIdForUpload,
+          ));
+        } catch {
+          // An ambiguous offline result may hide a successful write. Keep the
+          // deterministic uploads so a retry can safely converge on it.
+          confirmedNotSaved = false;
+        }
+      }
+      if (confirmedNotSaved) {
         await Promise.all(
           uploadedThisSave.map((url) =>
             fileUploadService.deleteFile(url).catch((cleanupError) => {
@@ -950,6 +1047,14 @@ export default function AddEmployee() {
           })}
           className="space-y-6 pb-24"
         >
+          {availableDraft && (
+            <RecoverableDraftAlert
+              savedAt={availableDraft.updatedAt}
+              filesNeedReattaching
+              onRestore={restoreDraft}
+              onDiscard={discardDraft}
+            />
+          )}
           {/* Who they are — the only two fields every employee must have. */}
           <>
             <div className="space-y-6">
@@ -1801,11 +1906,18 @@ export default function AddEmployee() {
           {/* Sticky save bar: on a phone this sits where the thumb already
               is, and never scrolls away mid-form. */}
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-            <div className="mx-auto flex max-w-screen-2xl gap-2 sm:justify-end sm:px-0">
+            <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2 sm:justify-end sm:px-0">
+              {savingSlowly && (
+                <p className="w-full text-center text-xs text-muted-foreground sm:text-right" role="status">
+                  {t("common.stillSaving")}
+                </p>
+              )}
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => navigate("/people/employees")}
+                onClick={() => {
+                  if (confirmLeave()) navigate("/people/employees");
+                }}
                 disabled={isSubmitting}
                 className="min-h-11 flex-1 sm:flex-none"
               >
@@ -1817,9 +1929,11 @@ export default function AddEmployee() {
                 className="min-h-11 flex-1 sm:flex-none"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode
-                  ? t("addEmployee.buttons.updateEmployee")
-                  : t("addEmployee.buttons.addEmployee")}
+                {isSubmitting
+                  ? t("common.saving")
+                  : isEditMode
+                    ? t("addEmployee.buttons.updateEmployee")
+                    : t("addEmployee.buttons.addEmployee")}
               </Button>
             </div>
           </div>
