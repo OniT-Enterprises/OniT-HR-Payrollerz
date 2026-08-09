@@ -42,6 +42,10 @@ export default defineConfig({
       url: "http://localhost:4400",
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
+      // Firebase traps Ctrl+C and stops its Java emulator children. Playwright's
+      // default SIGKILL can strand Firestore on :8181, making the next local run
+      // fail before any test starts.
+      gracefulShutdown: { signal: "SIGINT", timeout: 10_000 },
       stdout: "ignore",
     },
     {
