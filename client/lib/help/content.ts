@@ -252,6 +252,45 @@ const LAW_POSITIONS: HelpArticle = {
           open:
             "Which basis Timor-Leste employers actually use, and whether a prior year's untaken balance carries into that calculation.",
         },
+        {
+          id: "notice-setoff",
+          heading:
+            "If someone leaves without working their notice, may you keep it back from their final pay?",
+          status: "asks-you",
+          quote:
+            "Salvo nos casos expressamente previstos na lei, o empregador não pode, através da remuneração, compensar créditos que tenha sobre o trabalhador.",
+          quoteCite: "Lei 4/2012, Art. 43(1)",
+          body: [
+            "When a worker resigns without serving their full notice, Art. 49(9) makes them owe you an indemnity equal to the pay for the days not worked. That much is clear. What is not clear is whether you may simply hold it back.",
+            "Two provisions pull opposite ways. Art. 43(1), above, bars an employer from setting its own credits off against wages — **except** in cases expressly provided for by law. And Art. 42(2) permits deductions for social security \"bem como noutros casos **determinados por lei** ou por decisão judicial\". Art. 49(9) is a case determined by law, so whether it clears the Art. 43(1) bar is genuinely arguable.",
+            "If it does, Art. 42(1) still needs the worker's written authorisation and Art. 42(3) caps deductions at 30% of a month — and the statute nowhere says how that monthly cap applies to a one-off final settlement.",
+          ],
+          synonyms: ["notice", "resignation", "deduction", "final pay", "set-off"],
+          today:
+            "Xefe states the debt beside the final payslip and deducts nothing. It also does not tell you that you may deduct it, because either answer would assert a rule the statute does not settle.",
+          impact:
+            "On a $180/month worker a 30-day shortfall is the entire final month. If the 30% cap applies, at most about $54 could ever be taken lawfully.",
+          open:
+            "Whether Art. 49(9) is one of the cases Art. 43(1) exempts, and whether the 30% monthly cap binds a one-off final settlement.",
+        },
+        {
+          id: "art55-routes",
+          heading:
+            "The Art. 55 indemnity is not court-only — which routes should Xefe surface?",
+          status: "confirming",
+          body: [
+            "Xefe used to describe this as money a court awards after an unlawful dismissal. That is one route, and four articles import the same banded scale **with no court involved at all**: a cessation agreed after a suspension (Art. 15(9)), a resignation after a transfer that harms the worker (Art. 17(3)), a dismissal on a prohibited ground, which is void rather than merely unlawful (Art. 45(3)), and a resignation for just cause — where it is **doubled** (Art. 49(5)).",
+            "Two things stop us simply wiring those up. Only Art. 49(5) uses the unambiguous quantum formula \"é calculada nos termos do disposto no artigo 55.º\"; the other three say \"a indemnização prevista no artigo 55.º\", and Art. 55(3)'s own opening is conditional on reinstatement being declined or refused. And the Art. 49(5) doubling is contingent: Art. 49(6) lets the employer challenge within 60 days, and Art. 49(7) can turn the claim back onto the worker.",
+            "So the correction shipped is to the wording, not to the arithmetic.",
+          ],
+          synonyms: ["indemnity", "unlawful dismissal", "resignation", "just cause"],
+          today:
+            "Shown as a reference figure for a dismissal, never paid through payroll. The card does not appear for a resignation or a mutual agreement — an ordinary resignation is owed nothing (Art. 49(8)), and the ordinary agreed cessation is Art. 48, where compensation is whatever the parties agree.",
+          impact:
+            "Up to six months of salary, and double that on a just-cause resignation.",
+          open:
+            "How much the three non-court routes actually import, and whether the doubled figure is something to provision for or exposure to disclose.",
+        },
       ],
     },
     {
@@ -382,6 +421,20 @@ const LAW_POSITIONS: HelpArticle = {
           today: "Not implemented. Nothing prompts it.",
           open:
             "Whether employers here actually field this, or whether it is dormant in practice.",
+        },
+        {
+          id: "carry-over-clock",
+          heading: "How long does an untaken leave balance survive?",
+          status: "asks-you",
+          body: [
+            "Art. 32 gives the entitlement and says nothing about how long an unused balance lasts. Xefe lets you carry days over and cap how many, but nothing in the product ever **expires** a carried day — a balance from three years ago is still there.",
+            "That reaches money, because untaken leave is paid out in cash at termination. A long-serving worker who never took their days leaves with all of them on the final payslip.",
+          ],
+          synonyms: ["carry over", "carryover", "expire", "lapse", "balance"],
+          today:
+            "Carried-over days never lapse. The carry-over cap in Settings limits how many roll into the next year; it does not put a clock on them.",
+          open:
+            "Whether there is a use-by period for untaken annual leave — a 12-month rule is common elsewhere — and if so, when it starts running.",
         },
         {
           id: "identifiers",
