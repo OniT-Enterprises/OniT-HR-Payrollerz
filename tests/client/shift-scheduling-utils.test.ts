@@ -6,9 +6,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   calcShiftHours,
+  formatShiftTimeRange,
   shiftCrossesMidnight,
 } from '../../client/lib/shiftCalculations';
-import { getWeekStartTL, addDaysISO } from '../../client/lib/dateUtils';
+import {
+  getWeekStartTL,
+  addDaysISO,
+  getCurrentMinutesTL,
+} from '../../client/lib/dateUtils';
 
 describe('calcShiftHours', () => {
   it('calculates a normal day shift', () => {
@@ -34,6 +39,21 @@ describe('shiftCrossesMidnight', () => {
     expect(shiftCrossesMidnight('08:00', '17:00')).toBe(false);
     expect(shiftCrossesMidnight('08:00', '08:00')).toBe(false);
     expect(shiftCrossesMidnight('', '06:00')).toBe(false);
+  });
+});
+
+describe('formatShiftTimeRange', () => {
+  it('labels overnight ranges but leaves daytime ranges compact', () => {
+    expect(formatShiftTimeRange('22:00', '06:00', 'ends next day'))
+      .toBe('22:00–06:00 · ends next day');
+    expect(formatShiftTimeRange('08:00', '17:00', 'ends next day'))
+      .toBe('08:00–17:00');
+  });
+});
+
+describe('getCurrentMinutesTL', () => {
+  it('reads the clock in Dili rather than the machine timezone', () => {
+    expect(getCurrentMinutesTL(new Date('2026-08-09T00:30:00.000Z'))).toBe(9 * 60 + 30);
   });
 });
 

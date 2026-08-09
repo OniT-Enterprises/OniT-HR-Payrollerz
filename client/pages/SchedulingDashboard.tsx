@@ -11,7 +11,13 @@ import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAttendanceByDate } from "@/hooks/useAttendance";
 import { useShiftsByRange } from "@/hooks/useShifts";
-import { addDaysISO, getTodayTL, getWeekStartTL } from "@/lib/dateUtils";
+import {
+  addDaysISO,
+  getCurrentMinutesTL,
+  getTodayTL,
+  getWeekStartTL,
+} from "@/lib/dateUtils";
+import { countMissingAttendanceDue } from "@/lib/attendanceCalculations";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCurrentEmployeeId, useTenant } from "@/contexts/TenantContext";
 import {
@@ -106,6 +112,12 @@ export default function SchedulingDashboard() {
     : currentEmployeeId;
   const canReadAttendance = canReadAllAttendance || Boolean(managerDepartmentId || attendanceEmployeeId);
   const canReadShifts = canManageTimeLeave && (role !== "manager" || Boolean(managerDepartmentId));
+  const [currentMinutes, setCurrentMinutes] = React.useState(() => getCurrentMinutesTL());
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => setCurrentMinutes(getCurrentMinutesTL()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const employeeSummaryQuery = useActiveEmployeeSummary(canReadEmployeeDirectory);
   const leaveStatsQuery = useLeaveStats(canReadLeave, leaveScope);
@@ -159,9 +171,16 @@ export default function SchedulingDashboard() {
   const records = todayAttendance ?? [];
   const lateToday = records.filter((r) => r.status === "late").length;
   const absentToday = records.filter((r) => r.status === "absent").length;
-  const recordedToday = new Set(records.map((record) => record.employeeId)).size;
-  const notRecordedToday = canReadEmployeeDirectory
-    ? Math.max(activeEmployees - recordedToday, 0)
+  const recordedEmployeeIds = new Set(records.map((record) => record.employeeId));
+  const recordedToday = recordedEmployeeIds.size;
+  const todayShifts = shifts.filter((shift) => shift.date === today);
+  const notRecordedToday = canReadShifts
+    ? countMissingAttendanceDue({
+        activeEmployeeCount: canReadEmployeeDirectory ? activeEmployees : undefined,
+        recordedEmployeeIds,
+        shifts: todayShifts,
+        currentMinutes,
+      })
     : 0;
   const weekShifts = shifts.filter((shift) => shift.status !== "cancelled");
   const draftShifts = weekShifts.filter((shift) => shift.status === "draft").length;

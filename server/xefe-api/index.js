@@ -433,6 +433,25 @@ function calculateAttendanceValues(clockIn, clockOut, expectedStart = '08:00', e
   const earlyDepartureMinutes = outMinutes == null ? 0 : Math.max(0, expectedEndMinutes - outMinutes);
   const regularHours = Math.min(totalHours, 8);
   const overtimeHours = Math.max(0, totalHours - 8);
+  let nightMinutes = 0;
+  if (inMinutes != null && outMinutes != null) {
+    let adjustedOut = outMinutes;
+    if (adjustedOut <= inMinutes) adjustedOut += 24 * 60;
+    const nightWindows = [
+      [0, 6 * 60],
+      [21 * 60, (24 + 6) * 60],
+      [(24 + 21) * 60, (48 + 6) * 60],
+    ];
+    for (const [windowStart, windowEnd] of nightWindows) {
+      nightMinutes += Math.max(
+        0,
+        Math.min(adjustedOut, windowEnd) - Math.max(inMinutes, windowStart),
+      );
+    }
+  }
+  const nightHours = Math.round(
+    Math.min(nightMinutes / 60, totalHours) * 100,
+  ) / 100;
   const inferredStatus = inMinutes == null && outMinutes == null
     ? 'absent'
     : inMinutes != null && outMinutes == null
@@ -446,6 +465,7 @@ function calculateAttendanceValues(clockIn, clockOut, expectedStart = '08:00', e
     totalHours,
     regularHours,
     overtimeHours,
+    nightHours,
     lateMinutes,
     earlyDepartureMinutes,
     inferredStatus,
@@ -3366,6 +3386,7 @@ router.post('/attendance', async (req, res) => {
       totalHours: attendance.totalHours,
       regularHours: attendance.regularHours,
       overtimeHours: attendance.overtimeHours,
+      nightHours: attendance.nightHours,
       lateMinutes: attendance.lateMinutes,
       earlyDepartureMinutes: attendance.earlyDepartureMinutes,
       status: resolvedStatus,

@@ -42,3 +42,15 @@ export function shiftCrossesMidnight(
 ): boolean {
   return Boolean(startTime && endTime && endTime < startTime);
 }
+
+/** Compact, localized time range for both daytime and overnight shift displays. */
+export function formatShiftTimeRange(
+  startTime: string,
+  endTime: string,
+  endsNextDayLabel: string,
+): string {
+  const range = `${startTime}–${endTime}`;
+  return shiftCrossesMidnight(startTime, endTime) && endsNextDayLabel
+    ? `${range} · ${endsNextDayLabel}`
+    : range;
+}

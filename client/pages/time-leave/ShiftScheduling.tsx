@@ -85,7 +85,10 @@ import {
   type ShiftRecord,
   type ShiftStatus,
 } from "@/services/shiftService";
-import { shiftCrossesMidnight } from "@/lib/shiftCalculations";
+import {
+  formatShiftTimeRange,
+  shiftCrossesMidnight,
+} from "@/lib/shiftCalculations";
 
 const MAX_WEEKLY_HOURS = 44;
 
@@ -803,7 +806,13 @@ export default function ShiftScheduling() {
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-semibold">{shift.employeeName}</span>
                               <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                                <span>{shift.startTime} — {shift.endTime}</span>
+                                <span>
+                                  {formatShiftTimeRange(
+                                    shift.startTime,
+                                    shift.endTime,
+                                    t("timeLeave.shiftScheduling.create.endsNextDay"),
+                                  )}
+                                </span>
                                 <span>{shift.hours.toFixed(1)}h</span>
                                 {shift.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{shift.location}</span>}
                               </span>

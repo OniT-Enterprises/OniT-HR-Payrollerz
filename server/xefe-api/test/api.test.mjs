@@ -313,6 +313,34 @@ describe("xefe-api", () => {
     assert.equal(body.duration, 1);
   });
 
+  it("stores night hours for overnight attendance created through the API", async () => {
+    const db = admin.firestore();
+    await db.doc("tenants/tenant-a/shifts/night-api-test").set({
+      tenantId: "tenant-a",
+      employeeId: "emp-1",
+      date: "2026-08-10",
+      startTime: "22:00",
+      endTime: "06:00",
+      status: "published",
+    });
+
+    const response = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date: "2026-08-10",
+      clockIn: "22:00",
+      clockOut: "06:00",
+      recordedBy: "api-test",
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+
+    const created = await db.doc(`attendance/${body.id}`).get();
+    assert.equal(created.data()?.totalHours, 7);
+    assert.equal(created.data()?.nightHours, 7);
+    assert.equal(created.data()?.lateMinutes, 0);
+    assert.equal(created.data()?.earlyDepartureMinutes, 0);
+  });
+
   it("never approves a leave request belonging to another tenant", async () => {
     const response = await request(
       "/api/tenants/tenant-a/leave/requests/leave-b/approve",

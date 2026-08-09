@@ -129,6 +129,19 @@ export function getTodayTL(): string {
   return formatDateISO(new Date());
 }
 
+/** Current minutes after midnight in Timor-Leste, independent of viewer timezone. */
+export function getCurrentMinutesTL(date: Date = new Date()): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: TL_TIMEZONE,
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+  return hour * 60 + minute;
+}
+
 /**
  * Convert any date to an ISO date string (YYYY-MM-DD) in TL timezone.
  * Use this instead of `date.toISOString().split("T")[0]` to avoid UTC midnight shift.

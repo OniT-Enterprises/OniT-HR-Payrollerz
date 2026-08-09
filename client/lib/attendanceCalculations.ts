@@ -24,6 +24,12 @@ export const MAX_REASONABLE_ENTRY_HOURS = 16;
 /** Unpaid break assumed when none is recorded (only for entries of 6h+ raw) */
 export const DEFAULT_BREAK_MINUTES = 60;
 
+export interface ScheduledAttendanceExpectation {
+  employeeId?: string;
+  startTime?: string;
+  status?: string;
+}
+
 /**
  * Calculate hours between two time strings (end before start = overnight)
  */
@@ -133,6 +139,74 @@ export function calculateLateMinutes(clockIn: string, expectedStart: string = DE
   const expectedMinutes = expectedHour * 60 + expectedMin;
 
   return Math.max(0, clockMinutes - expectedMinutes);
+}
+
+/** Whether a scheduled/default start is late enough to need an attendance record. */
+export function isAttendanceStartDue(
+  startTime: string,
+  currentMinutes: number,
+  graceMinutes: number = LATE_GRACE_MINUTES,
+): boolean {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime)) return false;
+  if (!Number.isFinite(currentMinutes) || currentMinutes < 0 || currentMinutes >= 24 * 60) {
+    return false;
+  }
+  const [hour, minute] = startTime.split(':').map(Number);
+  return currentMinutes >= hour * 60 + minute + graceMinutes;
+}
+
+/**
+ * Count people whose attendance is genuinely due now.
+ *
+ * Published/confirmed shifts use their own start time. Draft shifts reserve the
+ * employee from the unscheduled/default bucket but do not create an attendance
+ * alert themselves; the draft schedule is already a separate action item.
+ */
+export function countMissingAttendanceDue({
+  activeEmployeeCount,
+  recordedEmployeeIds,
+  shifts,
+  currentMinutes,
+  defaultStartTime = DEFAULT_EXPECTED_START,
+}: {
+  activeEmployeeCount?: number;
+  recordedEmployeeIds: Iterable<string>;
+  shifts: ScheduledAttendanceExpectation[];
+  currentMinutes: number;
+  defaultStartTime?: string;
+}): number {
+  const recorded = new Set(recordedEmployeeIds);
+  const plannedEmployeeIds = new Set<string>();
+  const dueScheduledEmployeeIds = new Set<string>();
+
+  for (const shift of shifts) {
+    if (!shift.employeeId || shift.status === 'cancelled') continue;
+    plannedEmployeeIds.add(shift.employeeId);
+    if (
+      (shift.status === 'published' || shift.status === 'confirmed') &&
+      !recorded.has(shift.employeeId) &&
+      isAttendanceStartDue(shift.startTime ?? '', currentMinutes)
+    ) {
+      dueScheduledEmployeeIds.add(shift.employeeId);
+    }
+  }
+
+  if (
+    activeEmployeeCount === undefined ||
+    !isAttendanceStartDue(defaultStartTime, currentMinutes)
+  ) {
+    return dueScheduledEmployeeIds.size;
+  }
+
+  let recordedWithoutPlan = 0;
+  for (const employeeId of recorded) {
+    if (!plannedEmployeeIds.has(employeeId)) recordedWithoutPlan += 1;
+  }
+  const unscheduledMissing = Math.max(
+    0,
+    Math.floor(activeEmployeeCount) - plannedEmployeeIds.size - recordedWithoutPlan,
+  );
+  return dueScheduledEmployeeIds.size + unscheduledMissing;
 }
 
 /**

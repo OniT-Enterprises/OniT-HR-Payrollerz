@@ -13,6 +13,8 @@ import {
   calculateEarlyDeparture,
   determineStatus,
   calculateHoursBreakdown,
+  countMissingAttendanceDue,
+  isAttendanceStartDue,
   MAX_REASONABLE_ENTRY_HOURS,
 } from '../../client/lib/attendanceCalculations';
 
@@ -142,6 +144,48 @@ describe('shift-aware lateness', () => {
   it('computes early departure against the shift end', () => {
     expect(calculateEarlyDeparture('21:30', '22:00')).toBe(30);
     expect(calculateEarlyDeparture('22:00', '22:00')).toBe(0);
+  });
+});
+
+describe('schedule-aware missing attendance', () => {
+  it('does not flag a night worker before their shift starts', () => {
+    expect(countMissingAttendanceDue({
+      activeEmployeeCount: 1,
+      recordedEmployeeIds: [],
+      shifts: [{ employeeId: 'night-1', startTime: '22:00', status: 'published' }],
+      currentMinutes: 20 * 60,
+    })).toBe(0);
+  });
+
+  it('flags a published shift once its start and grace period have passed', () => {
+    expect(isAttendanceStartDue('22:00', 22 * 60 + 14)).toBe(false);
+    expect(isAttendanceStartDue('22:00', 22 * 60 + 15)).toBe(true);
+    expect(countMissingAttendanceDue({
+      recordedEmployeeIds: [],
+      shifts: [{ employeeId: 'night-1', startTime: '22:00', status: 'published' }],
+      currentMinutes: 22 * 60 + 15,
+    })).toBe(1);
+  });
+
+  it('keeps draft workers out of both missing-attendance buckets', () => {
+    expect(countMissingAttendanceDue({
+      activeEmployeeCount: 1,
+      recordedEmployeeIds: [],
+      shifts: [{ employeeId: 'night-1', startTime: '22:00', status: 'draft' }],
+      currentMinutes: 23 * 60,
+    })).toBe(0);
+  });
+
+  it('uses the normal start for unscheduled staff without double-counting records', () => {
+    expect(countMissingAttendanceDue({
+      activeEmployeeCount: 4,
+      recordedEmployeeIds: ['day-recorded'],
+      shifts: [
+        { employeeId: 'night-future', startTime: '22:00', status: 'published' },
+        { employeeId: 'day-due', startTime: '08:00', status: 'confirmed' },
+      ],
+      currentMinutes: 9 * 60,
+    })).toBe(2); // day-due + one other unscheduled employee
   });
 });
 

@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatShiftTimeRange } from "@/lib/shiftCalculations";
 import { calcShiftHours, type ShiftRecord, type ShiftSlot } from "@/services/shiftService";
 import type { WorkLocation } from "@/types/settings";
 
@@ -387,7 +388,11 @@ export default function LocationGridView({
                       </span>
                     </div>
                     <div className="text-[10px] text-muted-foreground/60 mt-0.5">
-                      {slot.startTime}–{slot.endTime}
+                      {formatShiftTimeRange(
+                        slot.startTime,
+                        slot.endTime,
+                        t("timeLeave.shiftScheduling.create.endsNextDay"),
+                      )}
                     </div>
                   </th>
                 ))}

@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { SquarePen, Loader2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatShiftTimeRange } from "@/lib/shiftCalculations";
 import type { ShiftSlot } from "@/services/shiftService";
 
 interface Employee {
@@ -80,7 +81,11 @@ export default function StaffAssignPopover({
             {t("timeLeave.shiftScheduling.locationView.slotShift", { slot: slotLabel })}
           </div>
           <div className="text-[10px] text-muted-foreground">
-            {date} &middot; {slot.startTime}–{slot.endTime} &middot; {location}
+            {date} &middot; {formatShiftTimeRange(
+              slot.startTime,
+              slot.endTime,
+              t("timeLeave.shiftScheduling.create.endsNextDay"),
+            )} &middot; {location}
           </div>
         </div>
         <div className="p-2 border-b">
