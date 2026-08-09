@@ -109,13 +109,15 @@ export function useCreateJob() {
     mutationFn: ({
       job,
       privateDetails,
+      requestId,
     }: {
       job: Omit<Job, 'id' | 'tenantId'>;
       privateDetails: Omit<
         JobPrivateDetails,
         'id' | 'tenantId' | 'jobId' | 'createdAt' | 'updatedAt'
       >;
-    }) => jobService.createJob(tenantId, job, privateDetails),
+      requestId?: string;
+    }) => jobService.createJob(tenantId, job, privateDetails, requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
     },

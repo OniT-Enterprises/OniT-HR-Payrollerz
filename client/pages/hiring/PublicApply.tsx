@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,8 @@ import { type Job } from "@/services/jobService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { jobApplicationService } from "@/services/jobApplicationService";
 import { useToast } from "@/hooks/use-toast";
+import { useUnsavedChangesWarning } from "@/hooks/useRecoverableFormDraft";
+import { useSlowOperation } from "@/hooks/useSlowOperation";
 
 /**
  * Public candidate application page.
@@ -32,7 +34,9 @@ export default function PublicApply() {
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const submissionInFlight = useRef(false);
   const [formStartedAt] = useState(() => Date.now());
+  const [applicationId] = useState(() => jobApplicationService.createApplicationId());
   const [website, setWebsite] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -43,6 +47,15 @@ export default function PublicApply() {
     referredBy: "",
   });
   const [resume, setResume] = useState<File | null>(null);
+  const formIsDirty = useMemo(
+    () => Boolean(resume || Object.values(form).some((value) => value.trim())),
+    [form, resume],
+  );
+  const savingSlowly = useSlowOperation(saving);
+  useUnsavedChangesWarning(
+    formIsDirty && !saving && !submitted,
+    "Leave this application with unsaved changes?",
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +123,10 @@ export default function PublicApply() {
       });
       return;
     }
+    // React paints the disabled state after this event. A synchronous ref
+    // closes the small window where two taps could start two CV uploads.
+    if (submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setSaving(true);
     let uploadedResumePath: string | null = null;
     try {
@@ -129,7 +146,6 @@ export default function PublicApply() {
       // The upload directory and Firestore application use the same random
       // id. Storage can then allow cleanup only while no application record
       // exists, preventing a submitted applicant from deleting their CV.
-      const applicationId = jobApplicationService.createApplicationId();
       const resumeExt = (resume.name.split(".").pop() || "pdf").toLowerCase();
       const basePath = `public/jobApplications/${job.tenantId}/${job.id}/${applicationId}`;
       const resumePath = await fileUploadService.uploadFileAndReturnPath(
@@ -166,6 +182,7 @@ export default function PublicApply() {
         variant: "destructive",
       });
     } finally {
+      submissionInFlight.current = false;
       setSaving(false);
     }
   };
@@ -286,7 +303,7 @@ export default function PublicApply() {
       : null;
 
   return (
-    <div className="min-h-screen bg-muted/20 py-10 px-6">
+    <div className="min-h-screen bg-muted/20 px-4 py-6 pb-24 sm:px-6 sm:py-10">
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
@@ -296,7 +313,7 @@ export default function PublicApply() {
               </div>
               <div className="flex-1">
                 <CardTitle className="text-2xl">{job.title}</CardTitle>
-                <CardDescription className="flex flex-wrap items-center gap-3 mt-2">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   {job.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5" />
@@ -311,7 +328,7 @@ export default function PublicApply() {
                       {salaryLabel}
                     </span>
                   )}
-                </CardDescription>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -333,7 +350,7 @@ export default function PublicApply() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="public-job-application" onSubmit={handleSubmit} className="space-y-4">
               <div className="hidden" aria-hidden="true">
                 <Label htmlFor="website">Website</Label>
                 <Input
@@ -439,11 +456,11 @@ export default function PublicApply() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                className="hidden w-full gap-2 sm:inline-flex"
               >
                 {saving ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
                     Submitting…
                   </>
                 ) : (
@@ -453,6 +470,14 @@ export default function PublicApply() {
                   </>
                 )}
               </Button>
+              {savingSlowly && (
+                <p
+                  className="hidden text-center text-sm text-muted-foreground sm:block"
+                  role="status"
+                >
+                  Still submitting — keep this page open.
+                </p>
+              )}
               <p className="text-xs text-center text-muted-foreground">
                 Your application is shared only with this employer. See our{" "}
                 <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
@@ -463,6 +488,32 @@ export default function PublicApply() {
               <p className="text-xs text-muted-foreground text-center">
                 By submitting you agree your details and CV will be reviewed by the hiring team.
               </p>
+
+              <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+                {savingSlowly && (
+                  <p className="mb-2 text-center text-xs text-muted-foreground" role="status">
+                    Still submitting — keep this page open.
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  form="public-job-application"
+                  disabled={saving}
+                  className="min-h-11 w-full gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                      Submitting…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Submit application
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

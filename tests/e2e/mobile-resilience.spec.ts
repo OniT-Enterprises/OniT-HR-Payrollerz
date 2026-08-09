@@ -3,7 +3,7 @@
  * path coverage misses:
  *
  *   signup → recover employee form → slow employee save → payroll draft →
- *   recover invoice form → offline save/resume → overnight shift in EN/PT/TET
+ *   recover money/job forms → public application → overnight shift in EN/PT/TET
  *
  * The deeper accounting and approval assertions remain in the full workflow
  * specs. This one stays deliberately compact enough to run often, at the
@@ -141,6 +141,13 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
   const tenantId = await findTenantIdByName(COMPANY);
   await markSetupComplete(tenantId);
   const vendor = await seedDomesticWithholdingVendor(tenantId);
+  const departmentRef = adminDb().collection("departments").doc();
+  await departmentRef.set({
+    tenantId,
+    name: "Operations",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
 
   // ── Employee recovery, leave warning, and slow save feedback ────────────
   await page.goto("/people/add");
@@ -390,6 +397,123 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
   await expectNoLocalDraft(page, ":recurring-invoice-new");
   expect(
     (await adminDb().collection(`tenants/${tenantId}/recurring_invoices`).get()).size,
+  ).toBe(1);
+
+  // ── Job recovery and one atomic public/private posting after retry ─────
+  await page.goto("/people/jobs/new");
+  await expectNoHorizontalScroll(page);
+  await page.getByLabel(/job title/i).fill("Payroll Assistant");
+  await page.getByLabel(/department/i).click();
+  await page.getByRole("option", { name: "Operations" }).click();
+  await page.getByLabel(/work location/i).fill("Dili");
+  await page
+    .getByLabel(/job description/i)
+    .fill("Support monthly payroll and employee records.");
+  await waitForLocalDraftValue(
+    page,
+    ":job-new",
+    ["data", "title"],
+    "Payroll Assistant",
+  );
+
+  await reloadPastUnsavedWarning(page);
+  await expect(page.getByText("Continue your unfinished form?")).toBeVisible();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByLabel(/job title/i)).toHaveValue("Payroll Assistant");
+  await expect(page.getByLabel(/department/i)).toContainText("Operations");
+  await expect(page.getByLabel(/job description/i)).toHaveValue(
+    "Support monthly payroll and employee records.",
+  );
+  await expect(page.getByLabel(/probation length/i)).toContainText("30 days");
+
+  const jobWarningMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.dismiss();
+    });
+  });
+  await page
+    .getByRole("button", { name: "Cancel", exact: true })
+    .last()
+    .click();
+  expect(await jobWarningMessage).toBe("Leave this form with unsaved changes?");
+  await expect(page).toHaveURL(/\/people\/jobs\/new$/);
+
+  await page.context().setOffline(true);
+  await page
+    .getByRole("button", { name: "Create Job", exact: true })
+    .last()
+    .evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
+  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(
+    "Still saving — keep this page open.",
+    { timeout: 15_000 },
+  );
+  await page.context().setOffline(false);
+  const shareJobDialog = page.getByRole("dialog", { name: "Share job post" });
+  await expect(shareJobDialog).toBeVisible({ timeout: 45_000 });
+  await expectNoLocalDraft(page, ":job-new");
+  const jobs = await adminDb()
+    .collection("jobs")
+    .where("tenantId", "==", tenantId)
+    .get();
+  const jobPrivateDetails = await adminDb()
+    .collection("jobPrivateDetails")
+    .where("tenantId", "==", tenantId)
+    .get();
+  expect(jobs.size).toBe(1);
+  expect(jobPrivateDetails.size).toBe(1);
+  expect(jobPrivateDetails.docs[0].id).toBe(jobs.docs[0].id);
+  await shareJobDialog.getByRole("button", { name: "Close" }).click();
+  await expect(page).toHaveURL(/\/people\/jobs\?job=/);
+
+  // ── Public applicant protection without persisting PII on the device ───
+  await page.goto(`/apply/${jobs.docs[0].id}`);
+  await expectNoHorizontalScroll(page);
+  await page.getByLabel(/full name/i).fill("Maria Candidate");
+  await page.getByLabel(/^email/i).fill(`candidate-${stamp}@e2e.test`);
+  await page.getByLabel(/mobile/i).fill("77123456");
+  await page.getByLabel(/cv \/ resume/i).setInputFiles({
+    name: "maria-cv.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n% E2E candidate CV\n"),
+  });
+
+  const applicationWarningMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.dismiss();
+    });
+  });
+  await page.getByRole("link", { name: "Privacy Policy" }).click();
+  expect(await applicationWarningMessage).toBe(
+    "Leave this application with unsaved changes?",
+  );
+  await expect(page).toHaveURL(new RegExp(`/apply/${jobs.docs[0].id}$`));
+
+  // The public form silently absorbs submissions completed in under one
+  // second as bots; cross that intentional threshold before the real submit.
+  await page.waitForTimeout(1_100);
+  await page
+    .getByRole("button", { name: "Submit application", exact: true })
+    .last()
+    .evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
+  await expect(
+    page.getByRole("heading", { name: "Application submitted" }),
+  ).toBeVisible({ timeout: 45_000 });
+  expect(
+    (
+      await adminDb()
+        .collection("jobApplications")
+        .where("tenantId", "==", tenantId)
+        .get()
+    ).size,
   ).toBe(1);
 
   // Only one tenant timestamp per first-use action: no actors, record IDs,

@@ -205,13 +205,21 @@ class JobService {
       JobPrivateDetails,
       "id" | "tenantId" | "jobId" | "createdAt" | "updatedAt"
     >,
+    requestId?: string,
   ): Promise<string> {
-    const docRef = doc(this.collectionRef);
+    const docRef = requestId
+      ? doc(this.collectionRef, requestId)
+      : doc(this.collectionRef);
+    const postedDate = new Date().toISOString();
+
+    // Job creation has no counters or accounting side effects, so a stable-ID
+    // batch is both offline-capable and retry-safe: every attempt converges on
+    // the same public job and matching private-details document.
     const batch = writeBatch(db);
     batch.set(docRef, {
       ...job,
       tenantId,
-      postedDate: new Date().toISOString(),
+      postedDate,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

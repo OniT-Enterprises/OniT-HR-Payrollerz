@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { RecoverableDraftAlert } from "@/components/forms/RecoverableDraftAlert";
+import {
+  useRecoverableFormDraft,
+  useUnsavedChangesWarning,
+} from "@/hooks/useRecoverableFormDraft";
+import { useSlowOperation } from "@/hooks/useSlowOperation";
+import { recoverableFormDraftKey } from "@/lib/recoverableFormDraft";
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -61,6 +68,19 @@ interface CreateJobFormData {
   permanentProbation: PermanentProbationOption;
 }
 
+const INITIAL_JOB_FORM_DATA: CreateJobFormData = {
+  title: "",
+  description: "",
+  department: "",
+  location: "",
+  employmentType: "Full-time",
+  salaryMin: "",
+  salaryMax: "",
+  contractType: "Permanent",
+  contractDurationMonths: "",
+  permanentProbation: "30_days",
+};
+
 function parseSalary(value: string): number {
   return value.trim() ? roundMoney(Number(value)) : 0;
 }
@@ -75,23 +95,43 @@ export default function CreateJobLocal() {
   const { data: departments = [], isLoading, error: deptError } = useDepartments(tenantId);
   const createJobMutation = useCreateJob();
 
-  const [formData, setFormData] = useState<CreateJobFormData>({
-    title: "",
-    description: "",
-    department: "",
-    location: "",
-    employmentType: "Full-time",
-    salaryMin: "",
-    salaryMax: "",
-    contractType: "Permanent",
-    contractDurationMonths: "",
-    permanentProbation: "30_days",
-  });
+  const [formData, setFormData] = useState<CreateJobFormData>(INITIAL_JOB_FORM_DATA);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+
+  const formIsDirty = useMemo(
+    () => JSON.stringify(formData) !== JSON.stringify(INITIAL_JOB_FORM_DATA),
+    [formData],
+  );
+  const draftStorageKey = recoverableFormDraftKey({
+    userId: session?.member.uid || "anonymous",
+    tenantId,
+    form: "job-new",
+  });
+  const {
+    availableDraft,
+    operationId: jobCreateOperationId,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+  } = useRecoverableFormDraft({
+    storageKey: draftStorageKey,
+    data: formData,
+    enabled: Boolean(session?.member.uid && tenantId && !isLoading),
+    shouldSave: formIsDirty && !createdJobId,
+    onRestore: (draft) => {
+      setFormData({ ...INITIAL_JOB_FORM_DATA, ...draft });
+      setCreatedJobId(null);
+    },
+  });
+  const savingSlowly = useSlowOperation(createJobMutation.isPending);
+  const confirmLeave = useUnsavedChangesWarning(
+    formIsDirty && !createJobMutation.isPending && !createdJobId,
+    t("common.unsavedChangesWarning"),
+  );
 
   const companyName =
     session?.config.tradingName || session?.config.legalName || session?.config.name || "Your Company";
@@ -192,7 +232,9 @@ export default function CreateJobLocal() {
           probationDays: probation.days,
           probationPeriod: probation.label,
         },
+        requestId: jobCreateOperationId,
       });
+      clearDraft();
       setCreatedJobId(jobId);
       toast({
         title: t("hiring.createJob.errors.createdTitle"),
@@ -276,7 +318,7 @@ export default function CreateJobLocal() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("hiring.createJob.title")}
@@ -385,7 +427,7 @@ export default function CreateJobLocal() {
 
   if (deptError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
@@ -406,10 +448,10 @@ export default function CreateJobLocal() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.jobs} />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-24 sm:px-6 sm:py-6">
         <PageHeader
           title={t("hiring.createJob.title")}
           subtitle={t("hiring.createJob.subtitle")}
@@ -417,10 +459,25 @@ export default function CreateJobLocal() {
           iconColor="text-blue-500"
         />
 
+        {availableDraft && (
+          <div className="mt-6">
+            <RecoverableDraftAlert
+              savedAt={availableDraft.updatedAt}
+              onRestore={restoreDraft}
+              onDiscard={discardDraft}
+            />
+          </div>
+        )}
+        {savingSlowly && (
+          <p className="mt-4 hidden text-sm text-muted-foreground sm:block" role="status">
+            {t("common.stillSaving")}
+          </p>
+        )}
+
         <div className="mt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Advert Basics — outward-facing only */}
-            <Card className="border-border/50 animate-fade-up stagger-1">
+            <Card className="border-border/50">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10">
@@ -459,7 +516,10 @@ export default function CreateJobLocal() {
                       value={formData.department}
                       onValueChange={(value) => handleInputChange("department", value)}
                     >
-                      <SelectTrigger className={errors.department ? "border-destructive" : ""}>
+                      <SelectTrigger
+                        id="department"
+                        className={errors.department ? "border-destructive" : ""}
+                      >
                         <SelectValue placeholder={t("hiring.createJob.placeholders.department")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -497,7 +557,7 @@ export default function CreateJobLocal() {
                       value={formData.employmentType}
                       onValueChange={(value) => handleInputChange("employmentType", value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="employmentType">
                         <SelectValue placeholder={t("hiring.createJob.placeholders.employmentType")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -562,7 +622,7 @@ export default function CreateJobLocal() {
             </Card>
 
             {/* Contract — internal, drives probation automatically */}
-            <Card className="border-border/50 animate-fade-up stagger-2">
+            <Card className="border-border/50">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10">
@@ -588,7 +648,7 @@ export default function CreateJobLocal() {
                         handleInputChange("contractType", value as ContractType)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="contractType">
                         <SelectValue placeholder={t("hiring.createJob.placeholders.contractType")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -629,7 +689,9 @@ export default function CreateJobLocal() {
                     </div>
                   ) : (
                     <div className="space-y-2 animate-fade-in">
-                      <Label className="text-sm font-medium">Probation length</Label>
+                      <Label htmlFor="permanentProbation" className="text-sm font-medium">
+                        Probation length
+                      </Label>
                       <Select
                         value={formData.permanentProbation}
                         onValueChange={(value) =>
@@ -639,7 +701,7 @@ export default function CreateJobLocal() {
                           )
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="permanentProbation">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -664,9 +726,9 @@ export default function CreateJobLocal() {
             </Card>
 
             {/* Description with AI assist */}
-            <Card className="border-border/50 animate-fade-up stagger-3">
+            <Card className="border-border/50">
               <CardHeader>
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
                   <div>
                     <CardTitle className="text-lg">
                       {t("hiring.createJob.labels.description")}
@@ -681,7 +743,7 @@ export default function CreateJobLocal() {
                     size="sm"
                     onClick={handleAiPolish}
                     disabled={isAiLoading}
-                    className="gap-2 shrink-0"
+                    className="min-h-11 gap-2 sm:min-h-0"
                   >
                     {isAiLoading ? (
                       <>
@@ -700,6 +762,7 @@ export default function CreateJobLocal() {
               <CardContent>
                 <Textarea
                   id="description"
+                  aria-label={t("hiring.createJob.labels.description")}
                   value={formData.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
                   placeholder="Drop a few bullet points — then click 'Write with AI' to turn it into a polished description."
@@ -709,13 +772,15 @@ export default function CreateJobLocal() {
               </CardContent>
             </Card>
 
-            <div className="flex items-center justify-end gap-3 pt-4 animate-fade-up stagger-4">
+            <div className="hidden items-center justify-end gap-3 pt-4 sm:flex">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/people/jobs")}
+                onClick={() => {
+                  if (confirmLeave()) navigate("/people/jobs");
+                }}
                 disabled={createJobMutation.isPending}
-                className="gap-2 shadow-sm"
+                className="gap-2"
               >
                 {t("hiring.createJob.buttons.cancel")}
               </Button>
@@ -724,7 +789,7 @@ export default function CreateJobLocal() {
                 variant="outline"
                 onClick={() => setShareOpen(true)}
                 disabled={!createdJobId}
-                className="gap-2 shadow-sm"
+                className="gap-2"
               >
                 <Share2 className="h-4 w-4" />
                 Share live post
@@ -732,7 +797,7 @@ export default function CreateJobLocal() {
               <Button
                 type="submit"
                 disabled={createJobMutation.isPending}
-                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                className="gap-2"
               >
                 {createJobMutation.isPending ? (
                   <>
@@ -746,6 +811,37 @@ export default function CreateJobLocal() {
                   </>
                 )}
               </Button>
+            </div>
+
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+              <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2">
+                {savingSlowly && (
+                  <p className="w-full text-center text-xs text-muted-foreground" role="status">
+                    {t("common.stillSaving")}
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={createJobMutation.isPending}
+                  className="min-h-11 flex-1"
+                  onClick={() => {
+                    if (confirmLeave()) navigate("/people/jobs");
+                  }}
+                >
+                  {t("hiring.createJob.buttons.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createJobMutation.isPending}
+                  className="min-h-11 flex-1"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {createJobMutation.isPending
+                    ? t("hiring.createJob.buttons.creating")
+                    : t("hiring.createJob.buttons.create")}
+                </Button>
+              </div>
             </div>
           </form>
         </div>
