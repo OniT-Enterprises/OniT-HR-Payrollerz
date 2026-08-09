@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 
@@ -26,8 +26,10 @@ export async function recordProductMilestone(
 
   try {
     const milestoneRef = doc(db, paths.productMilestone(tenantId, milestone));
-    if ((await getDoc(milestoneRef)).exists()) return;
-
+    // Queue the immutable write immediately. Reading first adds a network round
+    // trip during which a route change or tab close can discard the milestone.
+    // Firestore rules keep this create-only, so a repeated first action simply
+    // loses the race below and remains harmless to the business operation.
     await setDoc(milestoneRef, {
       milestone,
       schemaVersion: 1,
