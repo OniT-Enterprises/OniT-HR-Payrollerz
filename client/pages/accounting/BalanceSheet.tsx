@@ -43,7 +43,7 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getISODateParts, getTodayTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { addMoney } from "@/lib/currency";
 import { downloadCSVRows } from "@/lib/csvExport";
@@ -61,7 +61,7 @@ export default function BalanceSheet() {
 
   const reportQuery = useBalanceSheet(
     requestedReport?.asOfDate ?? asOfDate,
-    requestedReport?.fiscalYear ?? new Date(asOfDate).getFullYear(),
+    requestedReport?.fiscalYear ?? getISODateParts(asOfDate).year,
     !!requestedReport,
   );
 
@@ -72,7 +72,7 @@ export default function BalanceSheet() {
   const handleGenerate = async () => {
     const nextRequest = {
       asOfDate,
-      fiscalYear: new Date(asOfDate).getFullYear(),
+      fiscalYear: getISODateParts(asOfDate).year,
     };
     const isSameRequest = requestedReport
       && requestedReport.asOfDate === nextRequest.asOfDate

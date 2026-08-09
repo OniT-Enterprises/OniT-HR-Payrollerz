@@ -90,6 +90,13 @@ service cloud.firestore {
       return isAuthenticated() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.id == tenantId &&
+        // A self-service tenant is valid only when its initial owner is
+        // created in this same atomic operation. getAfter() sees the pending
+        // member write while exists() confirms there was no orphan member
+        // before bootstrap began.
+        !exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) &&
+        getAfter(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.uid == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role == 'owner' &&
         !request.resource.data.keys().hasAny([
           'stripeCustomerId', 'stripeSubscriptionId', 'subscriptionPaidUntil',
           'manualSubscription', 'monthlySubscriptionAmount',
@@ -104,8 +111,12 @@ service cloud.firestore {
     function canCreateInitialOwnerMembership(tenantId, memberId) {
       return isAuthenticated() &&
         memberId == request.auth.uid &&
-        exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
-        get(/databases/$(database)/documents/tenants/$(tenantId)).data.createdBy == request.auth.uid &&
+        // This must be a true bootstrap: the tenant did not exist before this
+        // atomic operation and its pending create belongs to this user. A
+        // removed historical creator therefore cannot recreate owner access.
+        !exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
+        getAfter(/databases/$(database)/documents/tenants/$(tenantId)).data.id == tenantId &&
+        getAfter(/databases/$(database)/documents/tenants/$(tenantId)).data.createdBy == request.auth.uid &&
         request.resource.data.uid == request.auth.uid &&
         request.resource.data.role == 'owner';
     }
@@ -319,6 +330,11 @@ service cloud.firestore {
 
       // Tenant members can read their tenant config
       allow read: if isTenantMember(tenantId);
+      // Self-service provisioning reads the candidate slug inside its atomic
+      // transaction. A missing document contains no tenant data to disclose;
+      // existing tenants remain readable only to their members.
+      allow get: if isAuthenticated() &&
+        !exists(/databases/$(database)/documents/tenants/$(tenantId));
 
       // Only tenant owners can update config — but never the billing/paywall
       // fields (only the Stripe webhook / superadmins set those; a tenant
@@ -351,14 +367,18 @@ service cloud.firestore {
 
         // Tenant members can read member list
         allow read: if isTenantMember(tenantId);
+        // Same bootstrap preflight as the tenant root, restricted to the
+        // caller's own would-be membership while the tenant is absent.
+        allow get: if isAuthenticated() &&
+          memberId == request.auth.uid &&
+          !exists(/databases/$(database)/documents/tenants/$(tenantId));
 
-        // Allow self-service signup to create the initial owner membership
-        allow create: if (isTenantAdmin(tenantId) && memberId != request.auth.uid) ||
-          canCreateInitialOwnerMembership(tenantId, memberId);
-
-        // Only tenant admins can manage other members
-        allow update: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
-        allow delete: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
+        // Allow self-service signup to create the initial owner membership.
+        // All later member management must go through addTenantMember,
+        // updateTenantMember, or removeTenantMember. Those callables keep the
+        // member doc, Auth claims, user profile, and audit history in sync, and
+        // enforce that only owners can grant, revoke, or remove owner access.
+        allow create: if canCreateInitialOwnerMembership(tenantId, memberId);
 
         // Users can update their own member record (allowlist ONLY).
         // employeeId is the identity isSelfEmployee() resolves from — letting a
@@ -778,6 +798,12 @@ service cloud.firestore {
             .affectedKeys().hasOnly([request.auth.uid]) &&
           request.resource.data.readBy[request.auth.uid] == request.time
         );
+      }
+
+      // Immutable server-side mail snapshots/idempotency markers. Browser
+      // clients never need the announcement outbox itself.
+      match /announcementMailOutboxes/{announcementId} {
+        allow read, write: if false;
       }
 
       // ============================================
@@ -2249,36 +2275,11 @@ service cloud.firestore {
     // EMAIL QUEUE (Firebase Trigger Email extension)
     // ============================================
     match /mail/{emailId} {
-      // Tenant admins AND managers can queue emails for their tenant
-      // (managers approve/reject leave, which emails the staff member).
-      // Accountants queue invoice/payslip emails.
-      // Recipients can't be fully validated in rules (per-address cross-collection
-      // lookups aren't feasible), so instead pin the shape the ONLY sanctioned
-      // writer — notificationService.queueEmail — produces: a purpose tag, a
-      // 'pending' status, and a bounded recipient list. This blocks a manager
-      // from hand-rolling an arbitrary blast and from injecting a non-pending
-      // status; the app layer remains the real recipient control.
-      allow create: if isSuperAdmin() || (
-        isAuthenticated() &&
-        request.resource.data.tenantId != null &&
-        (isTenantManagerOrAdmin(request.resource.data.tenantId) ||
-         isTenantFinanceAdmin(request.resource.data.tenantId)) &&
-        request.resource.data.status == 'pending' &&
-        request.resource.data.purpose is string &&
-        request.resource.data.purpose.size() > 0 &&
-        request.resource.data.to is list &&
-        request.resource.data.to.size() > 0 &&
-        request.resource.data.to.size() <= 50 &&
-        // Allowlist the fields notificationService.queueEmail produces. This
-        // rejects a client-supplied `from` (sender spoofing) and `cc`
-        // (unbounded extra recipients) at the boundary — the sender is
-        // derived server-side in sendQueuedEmail, never from the doc.
-        request.resource.data.keys().hasOnly([
-          'tenantId', 'subject', 'status', 'purpose', 'createdAt',
-          'text', 'html', 'replyTo', 'fromName', 'attachments',
-          'relatedId', 'createdBy', 'deliveryAttemptId', 'to'
-        ])
-      );
+      // Browsers never write the delivery queue. Sanctioned client requests go
+      // through queueTenantEmail, which authorizes the named purpose and binds
+      // recipients to authoritative tenant records before its Admin SDK write.
+      // Other trusted notification functions also use the Admin SDK.
+      allow create: if false;
 
       // Tenant admins can read email history for their tenant
       allow read: if isSuperAdmin() || (

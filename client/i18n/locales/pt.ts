@@ -1680,6 +1680,11 @@ const messages = {
         "Escolha agora uma função. Pode ajustar o acesso depois da adesão.",
       email: "Endereço de email",
       role: "Função",
+      managerDepartment: "Departamento do gestor",
+      chooseDepartment: "Escolha um departamento",
+      managerDepartmentHint: "Este gestor pode supervisionar a assiduidade deste departamento.",
+      managerDepartmentsError: "Não foi possível carregar os departamentos. Tente novamente.",
+      noManagerDepartments: "Crie um departamento antes de atribuir um gestor.",
       standardAccessHint:
         "A função começa com o acesso padrão para esse trabalho.",
       sendInvite: "Enviar convite",

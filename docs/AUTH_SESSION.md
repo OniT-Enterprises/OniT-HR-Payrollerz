@@ -1,6 +1,6 @@
 # Auth & session lifecycle — invariants
 
-_Last updated: 2026-08-04. Audience: anyone touching sign-in, sign-out, route
+_Last updated: 2026-08-09. Audience: anyone touching sign-in, sign-out, route
 guards, the host split, or lazy-chunk loading. Written after a day in which four
 separate defects in prod all came from the same two blind spots: assuming one
 origin can see another's session, and assuming a session always resolves._
@@ -84,13 +84,19 @@ listener brings it back.
 A read failure is never evidence of a missing account: both contexts route that
 to `SessionRecovery` (retry / use another account), never to onboarding.
 
-## Open item
+## Authority-request timeout
 
-**Time-box `loadUserState` in AuthContext.** When it hangs, `authResolved` never
-flips and `HomeRoute`'s own `loading || !authResolved` gate leaves `/` as a
-permanent skeleton — the app looks dead with no error and no retry. Making each
-caller defend itself (as `useAuthSettled` does for the auth screens) is a
-patch, not the fix: the timeout belongs in AuthContext, where a stalled read can
-resolve to `profileStatus: "error"` and surface the recovery card that already
-exists. Needs a deliberate decision about the timeout and what a partial
-resolution is allowed to render.
+`loadUserState` time-boxes the Firestore profile read and forced token refresh
+**independently at 12 seconds** through `client/lib/auth-session-timeout.ts`.
+Twelve seconds is deliberately much more generous than the 1.5-second sign-in
+recovery grace, so a slow Timor-Leste connection gets a real chance to restore,
+while still putting a human-scale ceiling on the otherwise permanent route
+skeleton.
+
+A timeout is represented as a rejected settled result; it does not cancel or
+reinterpret the other authority source. A current profile may therefore restore
+an ordinary user when token refresh times out. A current token may establish the
+superadmin claim when the profile times out, while the profile outcome remains
+`profileStatus: "error"` so ordinary users see `SessionRecovery`, never
+onboarding. The existing AuthContext request id rejects any late result from an
+obsolete auth transition.

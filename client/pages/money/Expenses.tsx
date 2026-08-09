@@ -987,7 +987,7 @@ export default function Expenses() {
                 )}
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="date">{t('common.date') || 'Date'} *</Label>
                 <DatePicker
@@ -1022,7 +1022,7 @@ export default function Expenses() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="category">{t('money.expenses.category') || 'Category'}</Label>
                 <Select

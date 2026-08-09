@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { FirebaseError } from "firebase/app";
 import type { User } from "firebase/auth";
 import { db, getFunctionsLazy } from "@/lib/firebase";
@@ -79,17 +79,26 @@ export interface ProvisionOrgParams {
  * profile (e.g. an invited member who has no tenant of their own yet) keeps
  * their existing tenant access instead of having it overwritten.
  *
- * Write order matters: tenant → member → user profile. Non-members can't read
- * other tenants, so the rejected create IS the slug-availability check (rules
+ * All three bootstrap documents commit atomically in a transaction. Non-members
+ * can't read other tenants, so a rejected commit IS the slug-availability check (rules
  * treat a write to an existing tenant as an update only its owner may make).
- * The profile is written last so a collision leaves no ghost tenantAccess
- * entry — which would lock the user out of onboarding and point TenantContext
- * at a tenant they can't read.
+ * Atomicity means a collision or denied member/profile write can never leave a
+ * partial tenant or tenantAccess entry behind.
  */
 export async function provisionOrganization(
   params: ProvisionOrgParams,
 ): Promise<string> {
-  return withTimeout(provisionOrgWrites(params));
+  const provisioned = await withTimeout(provisionOrgWrites(params));
+
+  // These are intentionally detached from the signup result. Once the atomic
+  // bootstrap commits, the organization exists and the UI may proceed; a slow
+  // welcome email or chart seed must not turn that success into a timeout that
+  // collides on retry.
+  void completeProvisioningSideEffects(provisioned).catch((err) => {
+    console.warn("Post-provisioning setup failed:", err);
+  });
+
+  return provisioned.tenantId;
 }
 
 async function provisionOrgWrites({
@@ -98,7 +107,11 @@ async function provisionOrgWrites({
   companyName,
   companySlug,
   accountantPartnerId,
-}: ProvisionOrgParams): Promise<string> {
+}: ProvisionOrgParams): Promise<{
+  tenantId: string;
+  tenantName: string;
+  accountantPartnerId?: AccountantPartnerId | null;
+}> {
   const name = companyName.trim();
   const slug = (companySlug || "").trim();
   const tenantId =
@@ -107,98 +120,137 @@ async function provisionOrgWrites({
     (displayName || "").trim() || user.displayName || user.email || null;
 
   const plan: TenantPlan = "free";
+  const tenantRef = doc(db, paths.tenant(tenantId));
+  const memberRef = doc(db, paths.member(tenantId, user.uid));
+  const userRef = doc(db, paths.user(user.uid));
+
   try {
-    await setDoc(doc(db, paths.tenant(tenantId)), {
-      id: tenantId,
-      name,
-      slug: slug || tenantId,
-      status: "active",
-      plan,
-      limits: PLAN_LIMITS[plan],
-      createdBy: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      branding: {},
-      features: {
-        hiring: true,
-        timeleave: true,
-        performance: true,
-        payroll: true,
-        money: true,
-        accounting: true,
-        reports: true,
-      },
-      settings: {
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        currency: "USD",
-        dateFormat: "YYYY-MM-DD",
-      },
-      ...(accountantPartnerId === PRIMOS_BOOT_PARTNER.id
-        ? {
-            accountantPartner: {
-              partnerId: PRIMOS_BOOT_PARTNER.id,
-              partnerName: PRIMOS_BOOT_PARTNER.name,
-              status: "selected",
-              selectedBy: user.uid,
-              selectedAt: serverTimestamp(),
-            },
-          }
-        : {}),
+    await runTransaction(db, async (transaction) => {
+      // Reading the profile inside the transaction makes concurrent invitations
+      // or provisioning attempts retry against the newest tenant access instead
+      // of overwriting it with a stale reconstruction.
+      const [tenantSnap, memberSnap, existingSnap] = await Promise.all([
+        transaction.get(tenantRef),
+        transaction.get(memberRef),
+        transaction.get(userRef),
+      ]);
+      const existing = existingSnap.exists() ? existingSnap.data() : {};
+      const isOwnRetry =
+        tenantSnap.exists() &&
+        memberSnap.exists() &&
+        tenantSnap.data()?.createdBy === user.uid &&
+        memberSnap.data()?.uid === user.uid &&
+        memberSnap.data()?.role === "owner";
+      if (tenantSnap.exists() && !isOwnRetry) {
+        throw new SlugTakenError(tenantId);
+      }
+      if (!tenantSnap.exists() && memberSnap.exists()) {
+        throw new SlugTakenError(tenantId);
+      }
+      const existingIds: string[] = Array.isArray(existing.tenantIds)
+        ? existing.tenantIds
+        : [];
+      const existingAccess =
+        existing.tenantAccess && typeof existing.tenantAccess === "object"
+          ? existing.tenantAccess
+          : {};
+
+      if (!isOwnRetry) {
+        transaction.set(tenantRef, {
+          id: tenantId,
+          name,
+          slug: slug || tenantId,
+          status: "active",
+          plan,
+          limits: PLAN_LIMITS[plan],
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          branding: {},
+          features: {
+            hiring: true,
+            timeleave: true,
+            performance: true,
+            payroll: true,
+            money: true,
+            accounting: true,
+            reports: true,
+          },
+          settings: {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            currency: "USD",
+            dateFormat: "YYYY-MM-DD",
+          },
+          ...(accountantPartnerId === PRIMOS_BOOT_PARTNER.id
+            ? {
+                accountantPartner: {
+                  partnerId: PRIMOS_BOOT_PARTNER.id,
+                  partnerName: PRIMOS_BOOT_PARTNER.name,
+                  status: "selected",
+                  selectedBy: user.uid,
+                  selectedAt: serverTimestamp(),
+                },
+              }
+            : {}),
+        });
+
+        transaction.set(memberRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: resolvedName,
+          role: "owner",
+          modules: [...OWNER_MODULES],
+          joinedAt: serverTimestamp(),
+          lastActiveAt: serverTimestamp(),
+          permissions: {
+            admin: true,
+            write: true,
+            read: true,
+          },
+        });
+      }
+
+      transaction.set(
+        userRef,
+        {
+          uid: user.uid,
+          email: user.email,
+          displayName: resolvedName,
+          tenantIds: existingIds.includes(tenantId)
+            ? existingIds
+            : [...existingIds, tenantId],
+          tenantAccess: {
+            ...existingAccess,
+            [tenantId]: { name, role: "owner" },
+          },
+          ...(existingSnap.exists()
+            ? {}
+            : { isSuperAdmin: false, createdAt: serverTimestamp() }),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
     });
   } catch (err) {
+    if (err instanceof SlugTakenError) throw err;
     if (err instanceof FirebaseError && err.code === "permission-denied") {
       throw new SlugTakenError(tenantId);
     }
     throw err;
   }
 
-  await setDoc(doc(db, paths.member(tenantId, user.uid)), {
-    uid: user.uid,
-    email: user.email,
-    displayName: resolvedName,
-    role: "owner",
-    modules: [...OWNER_MODULES],
-    joinedAt: serverTimestamp(),
-    lastActiveAt: serverTimestamp(),
-    permissions: {
-      admin: true,
-      write: true,
-      read: true,
-    },
-  });
+  return { tenantId, tenantName: name, accountantPartnerId };
+}
 
-  // Merge into any existing user profile (don't clobber prior tenant access).
-  const userRef = doc(db, paths.user(user.uid));
-  const existingSnap = await getDoc(userRef);
-  const existing = existingSnap.exists() ? existingSnap.data() : {};
-  const existingIds: string[] = Array.isArray(existing.tenantIds)
-    ? existing.tenantIds
-    : [];
-  const existingAccess =
-    existing.tenantAccess && typeof existing.tenantAccess === "object"
-      ? existing.tenantAccess
-      : {};
-
-  await setDoc(
-    userRef,
-    {
-      uid: user.uid,
-      email: user.email,
-      displayName: resolvedName,
-      isSuperAdmin: existing.isSuperAdmin === true,
-      tenantIds: existingIds.includes(tenantId)
-        ? existingIds
-        : [...existingIds, tenantId],
-      tenantAccess: {
-        ...existingAccess,
-        [tenantId]: { name, role: "owner" },
-      },
-      ...(existingSnap.exists() ? {} : { createdAt: serverTimestamp() }),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
-
+async function completeProvisioningSideEffects({
+  tenantId,
+  tenantName: name,
+  accountantPartnerId,
+}: {
+  tenantId: string;
+  tenantName: string;
+  accountantPartnerId?: AccountantPartnerId | null;
+}): Promise<void> {
   // Seed the standard TL chart of accounts so invoices, bills, and expenses
   // post journals from day one. Non-fatal: the owner can still initialize it
   // from the Chart of Accounts page if this write is rejected.
@@ -247,6 +299,4 @@ async function provisionOrgWrites({
       forgetAccountantPartner();
     }
   }
-
-  return tenantId;
 }

@@ -34,6 +34,13 @@ const request = (path, method, body) => fetch(`${baseUrl}${path}`, {
   body: body === undefined ? undefined : JSON.stringify(body),
 });
 
+const disabledPayrollMutation = {
+  success: false,
+  code: "LEGACY_PAYROLL_MUTATION_DISABLED",
+  retryable: false,
+  message: "Legacy payroll mutations are disabled. Use the canonical Xefe payroll workflow.",
+};
+
 describe("xefe-api", () => {
   before(async () => {
     const db = admin.firestore();
@@ -41,7 +48,30 @@ describe("xefe-api", () => {
     await db.doc("tenants/tenant-a/employees/emp-1").set({
       status: "active",
       personalInfo: { firstName: "Maria", lastName: "Ximenes" },
-      jobDetails: { departmentId: "ops", position: "Barista" },
+      jobDetails: { departmentId: "ops", position: "Barista", salary: 600 },
+    });
+    await db.doc("tenants/tenant-a/payruns/202608").set({
+      periodStart: "2026-08-01",
+      periodEnd: "2026-08-31",
+      payDate: "2026-08-31",
+      status: "processing",
+    });
+    await db.doc("tenants/tenant-a/payrollRuns/legacy-draft").set({
+      status: "draft",
+      createdBy: "creator@example.com",
+    });
+    await db.doc("tenants/tenant-a/payrollRuns/legacy-approved").set({
+      status: "approved",
+      createdBy: "creator@example.com",
+    });
+    await db.doc("tenants/tenant-a/payrollRuns/legacy-writing").set({
+      status: "writing_records",
+      expectedRecordCount: 1,
+      createdBy: "creator@example.com",
+    });
+    await db.doc("tenants/tenant-a/payrollRecords/sentinel").set({
+      payrollRunId: "unrelated-run",
+      netPay: 500,
     });
     await db.doc("tenants/tenant-b").set({ id: "tenant-b", name: "Tenant B" });
     await db.doc("tenants/tenant-b/employees/emp-9").set({
@@ -136,6 +166,99 @@ describe("xefe-api", () => {
     const names = JSON.stringify(body.data ?? body.employees ?? body);
     assert.match(names, /Ximenes/);
     assert.doesNotMatch(names, /Secret Person/);
+  });
+
+  it("preserves canonical payroll reads and the calculation-only preview", async () => {
+    const runsResponse = await get("/api/tenants/tenant-a/payroll/runs", {
+      "x-api-key": "test-api-key",
+    });
+    assert.equal(runsResponse.status, 200);
+    const runsBody = await runsResponse.json();
+    assert.equal(runsBody.runs[0].id, "202608");
+
+    const legacyRuns = admin.firestore().collection("tenants/tenant-a/payrollRuns");
+    const legacyRecords = admin.firestore().collection("tenants/tenant-a/payrollRecords");
+    const beforeRunCount = (await legacyRuns.get()).size;
+    const beforeRecordCount = (await legacyRecords.get()).size;
+
+    const previewResponse = await request(
+      "/api/tenants/tenant-a/payroll/calculate",
+      "POST",
+      {
+        periodStart: "2026-08-01",
+        periodEnd: "2026-08-31",
+        payDate: "2026-08-31",
+      },
+    );
+    assert.equal(previewResponse.status, 200);
+    const previewBody = await previewResponse.json();
+    assert.equal(previewBody.success, true);
+    assert.equal(previewBody.summary.employeeCount, 1);
+    assert.equal((await legacyRuns.get()).size, beforeRunCount);
+    assert.equal((await legacyRecords.get()).size, beforeRecordCount);
+  });
+
+  it("fails every legacy payroll mutation closed without writing or bypassing status", async () => {
+    const db = admin.firestore();
+    const legacyRuns = db.collection("tenants/tenant-a/payrollRuns");
+    const legacyRecords = db.collection("tenants/tenant-a/payrollRecords");
+    const auditLogs = db.collection("tenants/tenant-a/auditLogs");
+    const beforeRunCount = (await legacyRuns.get()).size;
+    const beforeRecordCount = (await legacyRecords.get()).size;
+    const beforeAuditCount = (await auditLogs.get()).size;
+
+    const mutations = [
+      {
+        path: "/api/tenants/tenant-a/payroll/runs",
+        method: "POST",
+        body: {
+          payrollRun: {
+            periodStart: "2026-09-01",
+            periodEnd: "2026-09-30",
+            payDate: "2026-09-30",
+            status: "approved",
+          },
+          records: [{ employeeId: "emp-1", netPay: 999999 }],
+          createdBy: "bot",
+        },
+      },
+      {
+        path: "/api/tenants/tenant-a/payroll/runs/legacy-draft/approve",
+        method: "PUT",
+        body: { approvedBy: "different-user@example.com" },
+      },
+      {
+        path: "/api/tenants/tenant-a/payroll/runs/legacy-draft/reject",
+        method: "PUT",
+        body: { rejectedBy: "bot", reason: "unsafe legacy transition" },
+      },
+      {
+        path: "/api/tenants/tenant-a/payroll/runs/legacy-approved/mark-paid",
+        method: "PUT",
+        body: { paidBy: "bot" },
+      },
+      {
+        path: "/api/tenants/tenant-a/payroll/runs/legacy-writing/repair",
+        method: "POST",
+        body: {},
+      },
+    ];
+
+    for (const mutation of mutations) {
+      const response = await request(mutation.path, mutation.method, mutation.body);
+      assert.equal(response.status, 503, mutation.path);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.deepEqual(await response.json(), disabledPayrollMutation);
+    }
+
+    assert.equal((await legacyRuns.get()).size, beforeRunCount);
+    assert.equal((await legacyRecords.get()).size, beforeRecordCount);
+    assert.equal((await auditLogs.get()).size, beforeAuditCount);
+    assert.equal((await legacyRuns.doc("legacy-draft").get()).data()?.status, "draft");
+    const approved = await legacyRuns.doc("legacy-approved").get();
+    assert.equal(approved.data()?.status, "approved");
+    assert.equal(approved.data()?.paidAt, undefined);
+    assert.equal((await legacyRuns.doc("legacy-writing").get()).data()?.status, "writing_records");
   });
 
   it("reads canonical leave and attendance records without crossing tenants", async () => {

@@ -81,7 +81,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { getISODateParts, getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { SEARCH_FETCH_LIMIT } from "@/lib/queryCache";
 
@@ -151,8 +151,9 @@ export default function JournalEntries() {
     (option) => option.value === sourceFilter,
   )?.labelKey;
   const [searchTerm, setSearchTerm] = useState("");
+  const currentFiscalYear = getISODateParts(getTodayTL()).year;
   const [yearFilter, setYearFilter] = useState(
-    new Date().getFullYear().toString(),
+    currentFiscalYear.toString(),
   );
   const fiscalYear = parseInt(yearFilter, 10);
   const statusQuery =
@@ -524,8 +525,7 @@ export default function JournalEntries() {
 
     submitInFlight.current = true;
     try {
-      const year = new Date(entryDate).getFullYear();
-      const month = new Date(entryDate).getMonth() + 1;
+      const { year, month } = getISODateParts(entryDate);
 
       const lines: JournalEntryLine[] = validLines.map((line, index) => ({
         lineNumber: index + 1,
@@ -1118,7 +1118,7 @@ export default function JournalEntries() {
                   <SelectContent>
                     {Array.from(
                       { length: 5 },
-                      (_, i) => new Date().getFullYear() - i,
+                      (_, i) => currentFiscalYear - i,
                     ).map((y) => (
                       <SelectItem key={y} value={y.toString()}>
                         {y}

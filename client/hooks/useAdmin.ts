@@ -195,6 +195,7 @@ export function useAddTenantMember() {
       userEmail: string;
       role: TenantRole;
       modules?: ModulePermission[];
+      departmentId?: string;
     }) => adminService.addTenantMember(params),
     onSuccess: (_, { tenantId }) => invalidate(tenantId),
   });
@@ -208,6 +209,7 @@ export function useUpdateTenantMember() {
       memberUid: string;
       role?: TenantRole;
       modules?: ModulePermission[];
+      departmentId?: string | null;
     }) => adminService.updateTenantMember(params),
     onSuccess: (_, { tenantId }) => invalidate(tenantId),
   });

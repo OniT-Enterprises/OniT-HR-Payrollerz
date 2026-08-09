@@ -90,6 +90,30 @@ export function parseDateISO(dateString: string): Date {
 }
 
 /**
+ * Read a calendar-only ISO date without passing it through the host timezone.
+ * `new Date("YYYY-MM-DD").getFullYear()` returns the previous year west of
+ * UTC, which can put accounting entries in the wrong fiscal period.
+ */
+export function getISODateParts(dateString: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (!match) throw new Error(`Invalid ISO calendar date: ${dateString}`);
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (month < 1 || month > 12 || day < 1 || day > lastDay) {
+    throw new Error(`Invalid ISO calendar date: ${dateString}`);
+  }
+
+  return { year, month, day };
+}
+
+/**
  * Add days to a date value and return a new Date instance
  */
 export function addDays(date: Date | string, days: number): Date {
@@ -135,4 +159,3 @@ export function getWeekStartTL(dateStr?: string): string {
   d.setUTCDate(d.getUTCDate() - daysSinceMonday);
   return formatDateISO(d);
 }
-

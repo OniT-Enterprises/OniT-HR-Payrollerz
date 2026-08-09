@@ -119,7 +119,7 @@ export function ReportPage({
   navigation = reportsNavConfig,
 }: ReportPageProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <MainNavigation />
       {navigation && <ModuleSectionNav config={navigation} />}
       <div
@@ -161,7 +161,7 @@ export function ReportPageSkeleton({
   showHeaderAction = false,
 }: ReportPageSkeletonProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
       <div

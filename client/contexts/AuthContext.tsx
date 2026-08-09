@@ -10,6 +10,10 @@ import {
 } from "@/lib/queryCache";
 import { UserProfile } from "@/types/user";
 import { paths } from "@/lib/paths";
+import {
+  isFreshTokenSuperAdmin,
+  settleAuthAuthorityRequests,
+} from "@/lib/auth-session-timeout";
 
 interface AuthContextType {
   user: User | null;
@@ -160,10 +164,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const loadUserState = useCallback(async (firebaseUser: User) => {
-    return Promise.allSettled([
+    return settleAuthAuthorityRequests(
       fetchUserProfile(firebaseUser),
       getIdTokenResult(firebaseUser, true),
-    ] as const);
+    );
   }, [fetchUserProfile]);
 
   const applySuccessfulProfile = useCallback((
@@ -224,7 +228,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         console.error("Failed to refresh user profile:", profileResult.reason);
         setUserProfile(cached?.profile ?? null);
-        setIsSuperAdmin(tokenAdminState ?? (cached?.isSuperAdmin === true));
+        setIsSuperAdmin(isFreshTokenSuperAdmin(tokenAdminState));
         setProfileStatus("error");
         setProfileError(
           profileResult.reason instanceof Error
@@ -302,7 +306,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             } else {
               console.error("Failed to load user profile:", profileResult.reason);
               setUserProfile(cached?.profile ?? null);
-              setIsSuperAdmin(tokenAdminState ?? (cached?.isSuperAdmin === true));
+              setIsSuperAdmin(isFreshTokenSuperAdmin(tokenAdminState));
               setProfileStatus("error");
               setProfileError(
                 profileResult.reason instanceof Error

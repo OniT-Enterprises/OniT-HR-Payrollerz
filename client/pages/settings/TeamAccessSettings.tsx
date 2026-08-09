@@ -46,6 +46,7 @@ import {
   useUpdateTenantMember,
 } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import { useDepartments } from "@/hooks/useDepartments";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   DEFAULT_ROLE_PERMISSIONS,
@@ -83,6 +84,7 @@ export default function TeamAccessSettings() {
   const { session } = useTenant();
   const tenantId = session?.tid;
   const membersQuery = useTenantMembers(tenantId);
+  const departmentsQuery = useDepartments(tenantId || "", 100);
   const addMember = useAddTenantMember();
   const updateMember = useUpdateTenantMember();
   const removeMember = useRemoveTenantMember();
@@ -91,9 +93,11 @@ export default function TeamAccessSettings() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<TenantRole>("viewer");
+  const [inviteDepartmentId, setInviteDepartmentId] = useState("");
   const [editing, setEditing] = useState<TenantMember | null>(null);
   const [editRole, setEditRole] = useState<TenantRole>("viewer");
   const [editModules, setEditModules] = useState<ModulePermission[]>([]);
+  const [editDepartmentId, setEditDepartmentId] = useState("");
   const [removing, setRemoving] = useState<TenantMember | null>(null);
 
   const availableRoles = useMemo(
@@ -120,10 +124,12 @@ export default function TeamAccessSettings() {
         tenantName: session.config.name || tenantId,
         userEmail: inviteEmail.trim(),
         role: inviteRole,
+        ...(inviteRole === "manager" ? { departmentId: inviteDepartmentId } : {}),
       });
       setShowInvite(false);
       setInviteEmail("");
       setInviteRole("viewer");
+      setInviteDepartmentId("");
       toast({
         title: t("settings.access.invitedTitle"),
         description: t("settings.access.invitedDescription"),
@@ -137,6 +143,7 @@ export default function TeamAccessSettings() {
     setEditing(member);
     setEditRole(member.role);
     setEditModules([...(member.modules || DEFAULT_ROLE_PERMISSIONS[member.role])]);
+    setEditDepartmentId(member.departmentId || "");
   };
 
   const handleUpdate = async () => {
@@ -147,6 +154,7 @@ export default function TeamAccessSettings() {
         memberUid: editing.uid,
         role: editRole,
         modules: editModules,
+        departmentId: editRole === "manager" ? editDepartmentId : null,
       });
       setEditing(null);
       toast({ title: t("settings.access.updatedTitle") });
@@ -281,7 +289,7 @@ export default function TeamAccessSettings() {
       </div>
 
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-md overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
           <DialogHeader>
             <DialogTitle>{t("settings.access.inviteTitle")}</DialogTitle>
             <DialogDescription>{t("settings.access.inviteDescription")}</DialogDescription>
@@ -299,7 +307,13 @@ export default function TeamAccessSettings() {
             </div>
             <div className="space-y-2">
               <Label>{t("settings.access.role")}</Label>
-              <Select value={inviteRole} onValueChange={(value: TenantRole) => setInviteRole(value)}>
+              <Select
+                value={inviteRole}
+                onValueChange={(value: TenantRole) => {
+                  setInviteRole(value);
+                  if (value !== "manager") setInviteDepartmentId("");
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {availableRoles.map((role) => (
@@ -311,12 +325,55 @@ export default function TeamAccessSettings() {
                 {t("settings.access.standardAccessHint")}
               </p>
             </div>
+            {inviteRole === "manager" && (
+              <div className="space-y-2">
+                <Label htmlFor="invite-manager-department">
+                  {t("settings.access.managerDepartment")}
+                </Label>
+                <Select
+                  value={inviteDepartmentId}
+                  onValueChange={setInviteDepartmentId}
+                  disabled={
+                    departmentsQuery.isLoading ||
+                    (departmentsQuery.isError && !departmentsQuery.data?.length) ||
+                    !departmentsQuery.data?.length
+                  }
+                >
+                  <SelectTrigger
+                    id="invite-manager-department"
+                    aria-describedby="invite-manager-department-help"
+                  >
+                    <SelectValue placeholder={t("settings.access.chooseDepartment")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(departmentsQuery.data || []).map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="invite-manager-department-help" className="text-xs text-muted-foreground">
+                  {departmentsQuery.isLoading
+                    ? t("common.loading")
+                    : departmentsQuery.isError && !departmentsQuery.data?.length
+                      ? t("settings.access.managerDepartmentsError")
+                      : (departmentsQuery.data || []).length === 0
+                        ? t("settings.access.noManagerDepartments")
+                        : t("settings.access.managerDepartmentHint")}
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInvite(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => void handleInvite()}
-              disabled={addMember.isPending || !inviteEmail.trim()}
+              disabled={
+                addMember.isPending ||
+                !inviteEmail.trim() ||
+                (inviteRole === "manager" && !inviteDepartmentId)
+              }
             >
               {addMember.isPending ? t("common.saving") : t("settings.access.sendInvite")}
             </Button>
@@ -325,7 +382,7 @@ export default function TeamAccessSettings() {
       </Dialog>
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-lg overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
           <DialogHeader>
             <DialogTitle>{t("settings.access.editTitle")}</DialogTitle>
             <DialogDescription>{editing?.email || ""}</DialogDescription>
@@ -338,6 +395,7 @@ export default function TeamAccessSettings() {
                 onValueChange={(value: TenantRole) => {
                   setEditRole(value);
                   setEditModules([...DEFAULT_ROLE_PERMISSIONS[value]]);
+                  if (value !== "manager") setEditDepartmentId("");
                 }}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -354,6 +412,45 @@ export default function TeamAccessSettings() {
                 {editModules.map(moduleLabel).join(" · ") || t("settings.access.noModules")}
               </p>
             </div>
+            {editRole === "manager" && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-manager-department">
+                  {t("settings.access.managerDepartment")}
+                </Label>
+                <Select
+                  value={editDepartmentId}
+                  onValueChange={setEditDepartmentId}
+                  disabled={
+                    departmentsQuery.isLoading ||
+                    (departmentsQuery.isError && !departmentsQuery.data?.length) ||
+                    !departmentsQuery.data?.length
+                  }
+                >
+                  <SelectTrigger
+                    id="edit-manager-department"
+                    aria-describedby="edit-manager-department-help"
+                  >
+                    <SelectValue placeholder={t("settings.access.chooseDepartment")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(departmentsQuery.data || []).map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="edit-manager-department-help" className="text-xs text-muted-foreground">
+                  {departmentsQuery.isLoading
+                    ? t("common.loading")
+                    : departmentsQuery.isError && !departmentsQuery.data?.length
+                      ? t("settings.access.managerDepartmentsError")
+                      : (departmentsQuery.data || []).length === 0
+                        ? t("settings.access.noManagerDepartments")
+                        : t("settings.access.managerDepartmentHint")}
+                </p>
+              </div>
+            )}
             {/* Picking the role already sets the right areas. Fine-tuning them
                 is the rare case, so it stays one tap away. */}
             <MoreDetailsSection title={t("settings.access.customAccessTitle") || "Change what they can open"}>
@@ -384,7 +481,13 @@ export default function TeamAccessSettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>
-            <Button onClick={() => void handleUpdate()} disabled={updateMember.isPending}>
+            <Button
+              onClick={() => void handleUpdate()}
+              disabled={
+                updateMember.isPending ||
+                (editRole === "manager" && !editDepartmentId)
+              }
+            >
               {updateMember.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>

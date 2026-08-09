@@ -56,15 +56,13 @@ interface EmailRecord {
   createdAt?: Timestamp;
   createdBy: string;
   // Tracking metadata
-  purpose: "payslip" | "document_alert" | "notification" | "other";
-  relatedId?: string; // e.g., payrollRunId, employeeId
+  purpose: "payslip";
+  relatedId?: string; // Saved payrollRecord id for recipient binding
 }
 
 interface EmailAttachment {
   filename: string;
-  content?: string; // base64 encoded
   contentType: string;
-  path?: string; // Storage path
   url?: string; // Download URL
 }
 
@@ -165,6 +163,9 @@ async function sendPayslipEmail(
   if (!employeeEmail) {
     return { success: false, error: "Employee has no email address" };
   }
+  if (!record.id) {
+    return { success: false, error: "Payroll record must be saved before emailing its payslip" };
+  }
 
   try {
     // Generate payslip PDF
@@ -234,7 +235,9 @@ async function sendPayslipEmail(
         },
       ],
       purpose: "payslip",
-      relatedId: payrollRun.id,
+      // The callable resolves the employee and payroll run from this record;
+      // a run id alone cannot bind one recipient to one payslip.
+      relatedId: record.id,
       createdBy: userId,
     });
 
@@ -314,5 +317,3 @@ export async function sendBulkPayslipEmails(
 
   return result;
 }
-
-

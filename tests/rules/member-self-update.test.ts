@@ -100,8 +100,8 @@ describe('Member self-update allowlist (identity-field escalation)', () => {
     );
   });
 
-  it('still lets a tenant admin manage another member’s employeeId', async () => {
-    await assertSucceeds(
+  it('requires a tenant admin to use the synchronized member-management callable', async () => {
+    await assertFails(
       updateDoc(doc(ownerDb(), 'tenants/tenant-a/members/viewer-a'), {
         employeeId: 'emp-reassigned',
       }),

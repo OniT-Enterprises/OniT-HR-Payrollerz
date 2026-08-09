@@ -166,8 +166,16 @@ export default function Announcements() {
   /**
    * Email the announcement to all active staff via the shared notification
    * service (per-recipient fan-out — addresses never leak). Returns count.
+   *
+   * The callable re-derives the audience, subject and body from the saved
+   * announcement (including the bilingual footer) and emails it once only, so
+   * what is passed here is a request, not the delivered content.
    */
-  const emailAnnouncementToStaff = async (title: string, body: string): Promise<number> => {
+  const emailAnnouncementToStaff = async (
+    announcementId: string,
+    title: string,
+    body: string,
+  ): Promise<number> => {
     const emails = await notificationService.getActiveStaffEmails(tenantId);
     if (emails.length === 0) return 0;
 
@@ -180,6 +188,7 @@ export default function Announcements() {
       subject: `📢 ${companyName}: ${title}`,
       text: [body, "", notificationService.bilingualFooter({ senderName, companyName })].join("\n"),
       purpose: "announcement",
+      relatedId: announcementId,
     });
   };
 
@@ -265,6 +274,7 @@ export default function Announcements() {
       if (sendEmailCopy) {
         try {
           const count = await emailAnnouncementToStaff(
+            announcementRef.id,
             formData.title.trim(),
             formData.body.trim(),
           );

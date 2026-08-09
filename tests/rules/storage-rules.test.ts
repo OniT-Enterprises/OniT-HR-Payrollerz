@@ -37,7 +37,13 @@ const OWNER_B = 'owner-b';
 const OUTSIDER_A = 'outsider-a';
 // A member linked to emp-1, used to prove self-access to own docs/payslips.
 const SELF_A = 'self-a';
+const SELF_OTHER_A = 'self-other-a';
 const MONEY_A = 'money-a';
+const PAYROLL_A = 'payroll-a';
+const ACCOUNTING_A = 'accounting-a';
+const ACCOUNTANT_A = 'accountant-a';
+const MANAGER_A = 'manager-a';
+const OTHER_MANAGER_A = 'other-manager-a';
 
 describe('Storage rules', () => {
   let testEnv: RulesTestEnvironment;
@@ -89,10 +95,43 @@ describe('Storage rules', () => {
         modules: ['timeleave'],
         employeeId: 'emp-1',
       });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${SELF_OTHER_A}`), {
+        uid: SELF_OTHER_A,
+        role: 'viewer',
+        modules: ['timeleave'],
+        employeeId: 'emp-2',
+      });
       await setDoc(doc(adminDb, `tenants/tenant-a/members/${MONEY_A}`), {
         uid: MONEY_A,
         role: 'viewer',
         modules: ['money'],
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${PAYROLL_A}`), {
+        uid: PAYROLL_A,
+        role: 'viewer',
+        modules: ['payroll'],
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${ACCOUNTING_A}`), {
+        uid: ACCOUNTING_A,
+        role: 'viewer',
+        modules: ['accounting'],
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${ACCOUNTANT_A}`), {
+        uid: ACCOUNTANT_A,
+        role: 'accountant',
+        modules: ['money', 'accounting', 'payroll'],
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${MANAGER_A}`), {
+        uid: MANAGER_A,
+        role: 'manager',
+        modules: ['timeleave'],
+        departmentId: 'dept-a',
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${OTHER_MANAGER_A}`), {
+        uid: OTHER_MANAGER_A,
+        role: 'manager',
+        modules: ['timeleave'],
+        departmentId: 'dept-b',
       });
       await setDoc(doc(adminDb, 'tenants/tenant-b'), { id: 'tenant-b', name: 'Tenant B' });
       await setDoc(doc(adminDb, `tenants/tenant-b/members/${OWNER_B}`), {
@@ -188,6 +227,31 @@ describe('Storage rules', () => {
 
     it('another tenant cannot read payslips', async () => {
       await assertFails(getBytes(ref(storageAs(OWNER_B), payslip)));
+    });
+
+    it('lets finance-power users create immutable PDF payslips', async () => {
+      const accountantPayslip =
+        'tenants/tenant-a/payslips/run-2/emp-1_1700000000001.pdf';
+      const accountantRef = ref(storageAs(ACCOUNTANT_A), accountantPayslip);
+      await assertSucceeds(uploadString(accountantRef, 'payslip', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertFails(uploadString(accountantRef, 'replacement', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertFails(deleteObject(accountantRef));
+      await assertFails(uploadString(
+        ref(storageAs(PAYROLL_A), 'tenants/tenant-a/payslips/run-2/emp-2_file.pdf'),
+        'payslip',
+        undefined,
+        { contentType: 'application/pdf' },
+      ));
+      await assertFails(uploadString(
+        ref(storageAs(ACCOUNTANT_A), 'tenants/tenant-a/payslips/run-2/emp-3_file.jpg'),
+        'not-a-pdf',
+        undefined,
+        { contentType: 'image/jpeg' },
+      ));
     });
   });
 
@@ -318,6 +382,195 @@ describe('Storage rules', () => {
         });
       });
       await assertFails(deleteObject(target));
+    });
+  });
+
+  describe('sensitive finance evidence', () => {
+    const expensePath = 'tenants/tenant-a/expenses/expense-1/receipts/receipt-1.jpg';
+    const billPath = 'tenants/tenant-a/bills/bill-1/attachments/vendor-invoice.pdf';
+    const remittancePath = 'tenants/tenant-a/supplier-withholding/remit-1/proof.pdf';
+    const clearancePath = 'tenants/tenant-a/tax-clearance/request-1/certificate.pdf';
+    const advancePath = 'tenants/tenant-a/cash-advances/advance-1/issue-proof.pdf';
+
+    const uploadDocument = (
+      uid: string,
+      path: string,
+      contentType = 'application/pdf',
+      customMetadata?: Record<string, string>,
+    ) => uploadString(ref(storageAs(uid), path), 'document-bytes', undefined, {
+      contentType,
+      ...(customMetadata ? { customMetadata } : {}),
+    });
+
+    it('keeps employee receipt submission and self-read bound to immutable metadata', async () => {
+      await assertSucceeds(uploadDocument(SELF_A, expensePath, 'image/jpeg', {
+        uploaderId: SELF_A,
+        employeeId: 'emp-1',
+      }));
+
+      await assertSucceeds(getBytes(ref(storageAs(SELF_A), expensePath)));
+      await assertSucceeds(getBytes(ref(storageAs(MANAGER_A), expensePath)));
+      await assertSucceeds(getBytes(ref(storageAs(ACCOUNTANT_A), expensePath)));
+      await assertFails(getBytes(ref(storageAs(SELF_OTHER_A), expensePath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), expensePath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), expensePath)));
+    });
+
+    it('rejects forged or missing self-receipt metadata while retaining manager uploads', async () => {
+      const forgedPath = 'tenants/tenant-a/expenses/expense-forged/receipts/receipt.jpg';
+      await assertFails(uploadDocument(SELF_A, forgedPath, 'image/jpeg'));
+      await assertFails(uploadDocument(SELF_A, forgedPath, 'image/jpeg', {
+        uploaderId: SELF_A,
+        employeeId: 'emp-2',
+      }));
+      await assertFails(uploadDocument(SELF_OTHER_A, forgedPath, 'image/jpeg', {
+        uploaderId: SELF_A,
+        employeeId: 'emp-2',
+      }));
+      await assertSucceeds(uploadDocument(
+        MANAGER_A,
+        'tenants/tenant-a/expenses/expense-manager/receipts/receipt.jpg',
+        'image/jpeg',
+      ));
+    });
+
+    it('limits bill attachments to Money readers and finance-power creates', async () => {
+      await assertSucceeds(uploadDocument(ACCOUNTANT_A, billPath));
+      await assertSucceeds(getBytes(ref(storageAs(MONEY_A), billPath)));
+      await assertSucceeds(getBytes(ref(storageAs(ACCOUNTING_A), billPath)));
+      await assertFails(getBytes(ref(storageAs(PAYROLL_A), billPath)));
+      await assertFails(getBytes(ref(storageAs(MANAGER_A), billPath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), billPath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), billPath)));
+      await assertFails(uploadDocument(MONEY_A, 'tenants/tenant-a/bills/bill-2/attachments/file.pdf'));
+    });
+
+    it('limits supplier-withholding evidence to Money or Payroll readers', async () => {
+      await assertSucceeds(uploadDocument(ACCOUNTANT_A, remittancePath));
+      await assertSucceeds(getBytes(ref(storageAs(MONEY_A), remittancePath)));
+      await assertSucceeds(getBytes(ref(storageAs(PAYROLL_A), remittancePath)));
+      await assertFails(getBytes(ref(storageAs(MANAGER_A), remittancePath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), remittancePath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), remittancePath)));
+      await assertFails(uploadDocument(PAYROLL_A,
+        'tenants/tenant-a/supplier-withholding/remit-2/proof.pdf'));
+    });
+
+    it('limits tax-clearance evidence to Accounting readers', async () => {
+      await assertSucceeds(uploadDocument(ACCOUNTANT_A, clearancePath));
+      await assertSucceeds(getBytes(ref(storageAs(ACCOUNTING_A), clearancePath)));
+      await assertFails(getBytes(ref(storageAs(MONEY_A), clearancePath)));
+      await assertFails(getBytes(ref(storageAs(PAYROLL_A), clearancePath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), clearancePath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), clearancePath)));
+      await assertFails(uploadDocument(ACCOUNTING_A,
+        'tenants/tenant-a/tax-clearance/request-2/certificate.pdf'));
+    });
+
+    it('limits cash-advance evidence to Money readers', async () => {
+      await assertSucceeds(uploadDocument(ACCOUNTANT_A, advancePath));
+      await assertSucceeds(getBytes(ref(storageAs(MONEY_A), advancePath)));
+      await assertSucceeds(getBytes(ref(storageAs(ACCOUNTING_A), advancePath)));
+      await assertFails(getBytes(ref(storageAs(PAYROLL_A), advancePath)));
+      await assertFails(getBytes(ref(storageAs(MANAGER_A), advancePath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), advancePath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), advancePath)));
+      await assertFails(uploadDocument(MONEY_A,
+        'tenants/tenant-a/cash-advances/advance-2/proof.pdf'));
+    });
+
+    it.each([
+      ['expense receipt', 'tenants/tenant-a/expenses/overwrite-expense/receipts/receipt.jpg', 'image/jpeg', {
+        uploaderId: SELF_A,
+        employeeId: 'emp-1',
+      }],
+      ['bill attachment', 'tenants/tenant-a/bills/overwrite-bill/attachments/file.pdf', 'application/pdf', undefined],
+      ['withholding proof', 'tenants/tenant-a/supplier-withholding/overwrite-remittance/proof.pdf', 'application/pdf', undefined],
+      ['tax-clearance certificate', 'tenants/tenant-a/tax-clearance/overwrite-request/certificate.pdf', 'application/pdf', undefined],
+      ['cash-advance proof', 'tenants/tenant-a/cash-advances/overwrite-advance/proof.pdf', 'application/pdf', undefined],
+    ] as const)('blocks authorized and cross-user overwrite of %s', async (
+      _label,
+      path,
+      contentType,
+      metadata,
+    ) => {
+      const creator = metadata ? SELF_A : ACCOUNTANT_A;
+      await assertSucceeds(uploadDocument(creator, path, contentType, metadata));
+      await assertFails(uploadDocument(creator, path, contentType, metadata));
+      await assertFails(uploadDocument(OWNER_B, path, contentType, metadata));
+      await assertFails(deleteObject(ref(storageAs(creator), path)));
+    });
+  });
+
+  describe('attendance photo evidence', () => {
+    const attendancePhoto = 'attendance_photos/tenant-a/2026-08-09/batch-1.jpg';
+    const metadata = {
+      uploaderId: MANAGER_A,
+      departmentId: 'dept-a',
+    };
+
+    const uploadAttendancePhoto = (
+      uid: string,
+      path = attendancePhoto,
+      customMetadata: Record<string, string> = metadata,
+    ) => uploadString(ref(storageAs(uid), path), 'jpeg-bytes', undefined, {
+      contentType: 'image/jpeg',
+      customMetadata,
+    });
+
+    it('allows a manager to create a photo only for their own department', async () => {
+      await assertSucceeds(uploadAttendancePhoto(MANAGER_A));
+      await assertFails(uploadAttendancePhoto(OTHER_MANAGER_A,
+        'attendance_photos/tenant-a/2026-08-09/batch-2.jpg'));
+      await assertFails(uploadAttendancePhoto(MANAGER_A,
+        'attendance_photos/tenant-a/2026-08-09/batch-cross-department.jpg', {
+          uploaderId: MANAGER_A,
+          departmentId: 'dept-b',
+        }));
+      await assertFails(uploadAttendancePhoto(MANAGER_A,
+        'attendance_photos/tenant-a/2026-08-09/batch-3.jpg', {
+          ...metadata,
+          uploaderId: OTHER_MANAGER_A,
+        }));
+      await assertFails(uploadAttendancePhoto(VIEWER_A,
+        'attendance_photos/tenant-a/2026-08-09/batch-4.jpg', {
+          ...metadata,
+          uploaderId: VIEWER_A,
+        }));
+      await assertFails(uploadAttendancePhoto(OWNER_B,
+        'attendance_photos/tenant-a/2026-08-09/batch-5.jpg', {
+          ...metadata,
+          uploaderId: OWNER_B,
+        }));
+    });
+
+    it('limits direct Storage reads to attendance admins and the department manager', async () => {
+      const readPhoto = 'attendance_photos/tenant-a/2026-08-09/batch-read.jpg';
+      await assertSucceeds(uploadAttendancePhoto(MANAGER_A, readPhoto));
+      await assertSucceeds(getBytes(ref(storageAs(OWNER_A), readPhoto)));
+      await assertSucceeds(getBytes(ref(storageAs(ACCOUNTANT_A), readPhoto)));
+      await assertSucceeds(getBytes(ref(storageAs(MANAGER_A), readPhoto)));
+      // Employees receive this bearer URL through their own Firestore-guarded
+      // attendance record; a manager-controlled metadata list cannot grant
+      // them direct Storage access to arbitrary crew photos.
+      await assertFails(getBytes(ref(storageAs(SELF_A), readPhoto)));
+      await assertFails(getBytes(ref(storageAs(OTHER_MANAGER_A), readPhoto)));
+      await assertFails(getBytes(ref(storageAs(SELF_OTHER_A), readPhoto)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), readPhoto)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), readPhoto)));
+      await assertFails(getBytes(ref(anonStorage(), readPhoto)));
+    });
+
+    it('blocks same-manager and cross-manager overwrite or deletion', async () => {
+      const overwritePhoto = 'attendance_photos/tenant-a/2026-08-09/batch-overwrite.jpg';
+      await assertSucceeds(uploadAttendancePhoto(MANAGER_A, overwritePhoto));
+      await assertFails(uploadAttendancePhoto(MANAGER_A, overwritePhoto));
+      await assertFails(uploadAttendancePhoto(OTHER_MANAGER_A, overwritePhoto, {
+        ...metadata,
+        uploaderId: OTHER_MANAGER_A,
+        departmentId: 'dept-b',
+      }));
+      await assertFails(deleteObject(ref(storageAs(MANAGER_A), overwritePhoto)));
     });
   });
 

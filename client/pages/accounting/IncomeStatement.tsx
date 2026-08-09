@@ -44,7 +44,7 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
+import { formatDateTL, getISODateParts, getTodayTL, parseDateISO } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { downloadCSVRows } from "@/lib/csvExport";
 import { ReportEmptyState } from "@/components/reports/ReportLayout";
@@ -94,7 +94,7 @@ export default function IncomeStatement() {
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
-    const year = new Date().getFullYear();
+    const year = getISODateParts(getTodayTL()).year;
     return `${year}-01-01`;
   });
   const [periodEnd, setPeriodEnd] = useState<string>(() => getTodayTL());
@@ -107,7 +107,7 @@ export default function IncomeStatement() {
   const reportQuery = useIncomeStatement(
     requestedReport?.periodStart ?? periodStart,
     requestedReport?.periodEnd ?? periodEnd,
-    requestedReport?.fiscalYear ?? new Date(periodEnd).getFullYear(),
+    requestedReport?.fiscalYear ?? getISODateParts(periodEnd).year,
     !!requestedReport,
   );
 
@@ -119,7 +119,9 @@ export default function IncomeStatement() {
   const isPotentialInstallmentPeriod = !!requestedReport
     && (isCompleteCalendarMonth(requestedStart, requestedEnd)
       || isCompleteCalendarQuarter(requestedStart, requestedEnd));
-  const priorTaxYear = (requestedReport?.fiscalYear ?? new Date().getFullYear()) - 1;
+  const priorTaxYear = (
+    requestedReport?.fiscalYear ?? getISODateParts(getTodayTL()).year
+  ) - 1;
   const priorYearTurnoverQuery = useQuery({
     queryKey: ['tenants', tenantId, 'accounting', 'installmentTaxTurnover', priorTaxYear],
     queryFn: async () => {
@@ -159,7 +161,7 @@ export default function IncomeStatement() {
     const nextRequest = {
       periodStart,
       periodEnd,
-      fiscalYear: new Date(periodEnd).getFullYear(),
+      fiscalYear: getISODateParts(periodEnd).year,
     };
     const isSameRequest = requestedReport
       && requestedReport.periodStart === nextRequest.periodStart

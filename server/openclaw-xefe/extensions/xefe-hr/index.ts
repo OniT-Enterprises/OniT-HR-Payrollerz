@@ -1347,7 +1347,7 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "calculate_payroll",
     description:
-      "Calculate payroll for a period WITHOUT posting. Returns summary and per-employee breakdown with warnings. Use this first, then confirm with the user before calling run_payroll.",
+      "Calculate payroll for a period WITHOUT posting. Returns summary and per-employee breakdown with warnings. Preview only — the run itself is created and approved in the Xefe app.",
     parameters: Type.Object({
       periodStart: Type.String({ description: "Period start date (YYYY-MM-DD)" }),
       periodEnd: Type.String({ description: "Period end date (YYYY-MM-DD)" }),
@@ -1393,7 +1393,7 @@ export default function register(api: OpenclawPluginApi) {
           text += "\n";
         }
 
-        text += `Say **"confirm"** to create this payroll run, or ask me to adjust.`;
+        text += `These are preview figures. Create and approve the run in the Xefe app — payroll is not posted from here.`;
         return textResult(text);
       } catch (error: any) {
         return errorResult("calculating payroll", error);
@@ -1401,177 +1401,13 @@ export default function register(api: OpenclawPluginApi) {
     },
   });
 
-  api.registerTool({
-    name: "run_payroll",
-    description:
-      "Post a calculated payroll run to the system. Creates payroll records and run entry. Only call AFTER calculate_payroll and user confirmation.",
-    parameters: Type.Object({
-      periodStart: Type.String({ description: "Period start date" }),
-      periodEnd: Type.String({ description: "Period end date" }),
-      payDate: Type.String({ description: "Pay date" }),
-      payFrequency: Type.Optional(Type.String({ description: "monthly, biweekly, weekly" })),
-      createdBy: Type.String({ description: "Email of the person authorizing" }),
-      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
-    }),
-    async execute(_id, params) {
-      try {
-        // First calculate to get the records
-        const calc = await callApi("/payroll/calculate", {
-          method: "POST",
-          body: {
-            periodStart: params.periodStart,
-            periodEnd: params.periodEnd,
-            payDate: params.payDate,
-            payFrequency: params.payFrequency || "monthly",
-          },
-          tenantId: params.tenantId,
-        });
-
-        if (!calc.records?.length) {
-          return textResult("No employees to process. Check that employees have salary configured.");
-        }
-
-        // Build payroll run and records for storage
-        const payrollRun = {
-          periodStart: params.periodStart,
-          periodEnd: params.periodEnd,
-          payDate: params.payDate,
-          payFrequency: params.payFrequency || "monthly",
-          totalGrossPay: calc.summary.totalGross,
-          totalNetPay: calc.summary.totalNet,
-          totalDeductions: calc.summary.totalGross - calc.summary.totalNet,
-          totalEmployerTaxes: calc.summary.totalINSSEmployer,
-          employeeCount: calc.summary.employeeCount,
-        };
-
-        const records = calc.records.map((r: any) => ({
-          employeeId: r.employeeId,
-          employeeName: r.employeeName,
-          employeeNumber: r.employeeNumber,
-          department: r.department,
-          position: r.position,
-          totalGrossPay: r.grossPay,
-          netPay: r.netPay,
-          totalDeductions: r.totalDeductions,
-          earnings: [
-            { type: "regular", description: "Base Salary", amount: r.grossPay, isTaxable: true, isINSSBase: true },
-          ],
-          deductions: [
-            { type: "income_tax", description: "WIT (10%)", amount: r.witAmount, isPreTax: false, isPercentage: true, percentage: 10 },
-            { type: "inss_employee", description: "INSS Employee (4%)", amount: r.inssEmployee, isPreTax: false, isPercentage: true, percentage: 4 },
-            ...r.deductionLines,
-          ],
-          employerTaxes: [
-            { type: "inss_employer", description: "INSS Employer (6%)", amount: r.inssEmployer },
-          ],
-          totalEmployerTaxes: r.inssEmployer,
-        }));
-
-        const result = await callApi("/payroll/runs", {
-          method: "POST",
-          body: { payrollRun, records, createdBy: params.createdBy },
-          tenantId: params.tenantId,
-        });
-
-        let text = `Payroll run created (ID: ${result.runId})\n`;
-        text += `- ${result.recordIds.length} employee records written\n`;
-        text += `- Status: ${result.status} (needs approval)\n`;
-        text += `- Total net pay: ${fmtMoney(calc.summary.totalNet)}\n`;
-        return textResult(text);
-      } catch (error: any) {
-        return errorResult("creating payroll run", error);
-      }
-    },
-  });
-
-  api.registerTool({
-    name: "approve_payroll",
-    description:
-      "Approve a payroll run. The approver must be a different person than the creator (two-person rule).",
-    parameters: Type.Object({
-      runId: Type.String({ description: "Payroll run ID" }),
-      approvedBy: Type.String({ description: "Email of the approver (must differ from creator)" }),
-      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
-    }),
-    async execute(_id, params) {
-      try {
-        await callApi(`/payroll/runs/${params.runId}/approve`, {
-          method: "PUT",
-          body: { approvedBy: params.approvedBy },
-          tenantId: params.tenantId,
-        });
-        return textResult(`Payroll run ${params.runId} approved by ${params.approvedBy}.`);
-      } catch (error: any) {
-        return errorResult("approving payroll", error);
-      }
-    },
-  });
-
-  api.registerTool({
-    name: "reject_payroll",
-    description: "Reject a payroll run. Requires a reason.",
-    parameters: Type.Object({
-      runId: Type.String({ description: "Payroll run ID" }),
-      rejectedBy: Type.String({ description: "Email of the person rejecting" }),
-      reason: Type.String({ description: "Reason for rejection" }),
-      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
-    }),
-    async execute(_id, params) {
-      try {
-        await callApi(`/payroll/runs/${params.runId}/reject`, {
-          method: "PUT",
-          body: { rejectedBy: params.rejectedBy, reason: params.reason },
-          tenantId: params.tenantId,
-        });
-        return textResult(`Payroll run ${params.runId} rejected: ${params.reason}`);
-      } catch (error: any) {
-        return errorResult("rejecting payroll", error);
-      }
-    },
-  });
-
-  api.registerTool({
-    name: "mark_payroll_paid",
-    description: "Mark an approved payroll run as paid.",
-    parameters: Type.Object({
-      runId: Type.String({ description: "Payroll run ID" }),
-      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
-    }),
-    async execute(_id, params) {
-      try {
-        await callApi(`/payroll/runs/${params.runId}/mark-paid`, {
-          method: "PUT",
-          body: {},
-          tenantId: params.tenantId,
-        });
-        return textResult(`Payroll run ${params.runId} marked as paid.`);
-      } catch (error: any) {
-        return errorResult("marking payroll as paid", error);
-      }
-    },
-  });
-
-  api.registerTool({
-    name: "repair_payroll_run",
-    description:
-      "Repair a stuck payroll run (status: writing_records). Checks how many records were written and either finalizes or deletes the run.",
-    parameters: Type.Object({
-      runId: Type.String({ description: "Payroll run ID that is stuck" }),
-      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
-    }),
-    async execute(_id, params) {
-      try {
-        const result = await callApi(`/payroll/runs/${params.runId}/repair`, {
-          method: "POST",
-          body: {},
-          tenantId: params.tenantId,
-        });
-        return textResult(`Repair result: ${result.message}`);
-      } catch (error: any) {
-        return errorResult("repairing payroll run", error);
-      }
-    },
-  });
+  // The payroll WRITE tools (run_payroll, approve_payroll, reject_payroll,
+  // mark_payroll_paid, repair_payroll_run) were removed when the Xefe API
+  // stopped accepting legacy payrollRuns/payrollRecords mutations. They wrote a
+  // parallel payroll that skipped the canonical engine's subscription gate,
+  // fresh-figure check, two-person approval, settlement journal and payment
+  // evidence. calculate_payroll still previews the figures; finalising a run is
+  // deliberately a job for the app until this API delegates to that engine.
 
   // ============================================================================
   // READ TOOLS — Accounting Reports (3)
@@ -1991,7 +1827,7 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "verify_payroll",
     description:
-      "Verify a payroll run: checks record count, totals match, tax math is correct. Use after run_payroll to self-audit.",
+      "Verify a payroll run: checks record count, totals match, tax math is correct. Use to self-audit a run created in the app.",
     parameters: Type.Object({
       runId: Type.String({ description: "Payroll run ID to verify" }),
       tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),

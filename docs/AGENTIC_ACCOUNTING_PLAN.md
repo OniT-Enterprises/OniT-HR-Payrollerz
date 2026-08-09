@@ -143,6 +143,17 @@ function auditWrite(action, entityType) {
 
 ### 1.1 Payroll Endpoints
 
+> **Current safety boundary:** the legacy Xefe API payroll mutation routes
+> (`POST /payroll/runs` plus approve, reject, mark-paid, and repair) return HTTP
+> 503 with code `LEGACY_PAYROLL_MUTATION_DISABLED`. They must remain fail-closed
+> until they delegate to the canonical payroll engine and its lifecycle,
+> settlement, audit, and idempotency guarantees. Payroll reads and the
+> calculation-only preview remain available. The five OpenClaw write tools that
+> called these paths (`run_payroll`, `approve_payroll`, `reject_payroll`,
+> `mark_payroll_paid`, `repair_payroll_run`) were removed with them, so the bot
+> no longer offers a capability it cannot deliver. Restoring any of them means
+> restoring the endpoint on top of the canonical engine first.
+
 ```
 POST /api/tenants/:tenantId/payroll/calculate
   Body: { employees: [...], periodStart, periodEnd, payDate, payFrequency }

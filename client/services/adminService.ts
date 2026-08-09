@@ -1249,6 +1249,7 @@ class AdminService {
     userEmail: string;
     role: TenantRole;
     modules?: ModulePermission[];
+    departmentId?: string;
   }): Promise<void> {
     const { httpsCallable } = await import("firebase/functions");
     const callable = httpsCallable<
@@ -1263,6 +1264,7 @@ class AdminService {
     memberUid: string;
     role?: TenantRole;
     modules?: ModulePermission[];
+    departmentId?: string | null;
   }): Promise<void> {
     const { httpsCallable } = await import("firebase/functions");
     const callable = httpsCallable<
