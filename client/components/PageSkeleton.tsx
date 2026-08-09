@@ -185,7 +185,7 @@ export function PageSkeleton({
     : "lg:grid-cols-4";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       {showNavigation && (
         <React.Suspense fallback={<div className="h-16 border-b border-border/50" />}>
           <MainNavigation />

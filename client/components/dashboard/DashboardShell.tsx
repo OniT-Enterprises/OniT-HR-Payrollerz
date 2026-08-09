@@ -40,7 +40,7 @@ export default function DashboardShell({
   // page-label slot. Sub-pages still do, via their own PageHeader components.
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className={cn("relative border-b", theme.bgSubtle)}>
         <AmbientOrbs />
         <div className="relative mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">

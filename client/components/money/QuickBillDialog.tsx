@@ -744,7 +744,7 @@ export default function QuickBillDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t("common.amount") || "Amount"} *</Label>
               <Input
@@ -779,7 +779,7 @@ export default function QuickBillDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t("money.bills.billDate") || "Bill Date"}</Label>
               <DatePicker

@@ -19,6 +19,16 @@ describe("interface guardrails", () => {
     expect(read("client/components/ui/button.tsx")).toContain("min-h-11");
     expect(read("client/components/ui/select.tsx")).toContain("h-11");
     expect(read("client/components/ui/textarea.tsx")).toContain("text-base");
+
+    const calendar = read("client/components/ui/calendar.tsx");
+    expect(calendar).not.toMatch(/button_(previous|next):[\s\S]*?h-7 w-7/);
+    expect(calendar.match(/h-11 w-11/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(calendar.match(/md:h-11 md:min-h-11/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(calendar).toContain('className={cn("p-1 sm:p-3", className)}');
+
+    const datePicker = read("client/components/ui/date-picker.tsx");
+    expect(datePicker).toContain('max-w-[calc(100vw-0.5rem)]');
+    expect(datePicker).toContain('align="center"');
   });
 
   it("gives every icon-only button an explicit accessible name", () => {
@@ -73,6 +83,28 @@ describe("interface guardrails", () => {
     const source = read("client/pages/staff/AddEmployee.tsx");
     expect(source).not.toMatch(/className="grid grid-cols-[234]\b/);
     expect(source).not.toContain('type="checkbox"');
+  });
+
+  it("keeps high-use money entry forms single-column on phones", () => {
+    for (const path of [
+      "client/components/money/QuickBillDialog.tsx",
+      "client/pages/money/Expenses.tsx",
+      "client/pages/money/Customers.tsx",
+    ]) {
+      const source = read(path);
+      expect(source).not.toContain('className="grid grid-cols-2 gap-4"');
+      expect(source).toContain("grid grid-cols-1 gap-4 sm:grid-cols-2");
+    }
+  });
+
+  it("leaves authenticated page height and scrolling to AppLayout", () => {
+    for (const path of [
+      "client/components/dashboard/DashboardShell.tsx",
+      "client/components/reports/ReportLayout.tsx",
+      "client/components/PageSkeleton.tsx",
+    ]) {
+      expect(read(path)).not.toContain("min-h-screen");
+    }
   });
 
   it("keeps module dashboards compact and chart-free", () => {
