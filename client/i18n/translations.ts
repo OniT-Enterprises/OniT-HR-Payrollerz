@@ -7557,6 +7557,8 @@ export const translations = {
           "absentToday": "absent today",
           "attendanceMissing": "staff member has no attendance record yet",
           "attendanceMissingPlural": "staff members have no attendance record yet",
+          "overnightAttendance": "overnight attendance record needs attention",
+          "overnightAttendances": "overnight attendance records need attention",
           "draftShift": "draft shift waiting to be published",
           "draftShifts": "draft shifts waiting to be published"
         },
@@ -15558,6 +15560,8 @@ export const translations = {
           "absentToday": "ausente ohin",
           "attendanceMissing": "staf ida seidauk iha rejistu prezensa",
           "attendanceMissingPlural": "staf sira seidauk iha rejistu prezensa",
+          "overnightAttendance": "rejistu prezensa turnu kalan presiza atensaun",
+          "overnightAttendances": "rejistu prezensa turnu kalan sira presiza atensaun",
           "draftShift": "turnu rascunhu ida hein atu publika",
           "draftShifts": "turnu rascunhu sira hein atu publika"
         },
@@ -23559,6 +23563,8 @@ export const translations = {
           "absentToday": "ausentes hoje",
           "attendanceMissing": "funcionário ainda sem registo de presença",
           "attendanceMissingPlural": "funcionários ainda sem registo de presença",
+          "overnightAttendance": "registo de presença noturna precisa de atenção",
+          "overnightAttendances": "registos de presença noturna precisam de atenção",
           "draftShift": "turno em rascunho por publicar",
           "draftShifts": "turnos em rascunho por publicar"
         },

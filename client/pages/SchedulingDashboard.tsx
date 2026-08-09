@@ -17,7 +17,10 @@ import {
   getTodayTL,
   getWeekStartTL,
 } from "@/lib/dateUtils";
-import { countMissingAttendanceDue } from "@/lib/attendanceCalculations";
+import {
+  countMissingAttendanceDue,
+  countOvernightAttendanceNeedingAttention,
+} from "@/lib/attendanceCalculations";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCurrentEmployeeId, useTenant } from "@/contexts/TenantContext";
 import {
@@ -95,8 +98,10 @@ export default function SchedulingDashboard() {
   const canReadEmployeeDirectory =
     role === "owner" || role === "hr-admin" || role === "accountant";
   const today = getTodayTL();
+  const yesterday = addDaysISO(today, -1);
   const weekStart = getWeekStartTL(today);
   const weekEnd = addDaysISO(weekStart, 6);
+  const shiftRangeStart = addDaysISO(weekStart, -1);
   const leaveScope = role === "manager"
     ? session?.member.departmentId
       ? { departmentId: session.member.departmentId }
@@ -127,8 +132,14 @@ export default function SchedulingDashboard() {
     canReadAttendance,
     managerDepartmentId,
   );
+  const previousAttendanceQuery = useAttendanceByDate(
+    yesterday,
+    attendanceEmployeeId,
+    canReadAttendance,
+    managerDepartmentId,
+  );
   const shiftsQuery = useShiftsByRange(
-    weekStart,
+    shiftRangeStart,
     weekEnd,
     canReadShifts,
     managerDepartmentId,
@@ -137,6 +148,7 @@ export default function SchedulingDashboard() {
     ...(canReadEmployeeDirectory ? [employeeSummaryQuery] : []),
     ...(canReadLeave ? [leaveStatsQuery] : []),
     ...(canReadAttendance ? [attendanceQuery] : []),
+    ...(canReadAttendance ? [previousAttendanceQuery] : []),
     ...(canReadShifts ? [shiftsQuery] : []),
   ];
 
@@ -163,6 +175,7 @@ export default function SchedulingDashboard() {
   const employeeSummary = employeeSummaryQuery.data;
   const leaveStats = leaveStatsQuery.data;
   const todayAttendance = attendanceQuery.data;
+  const previousAttendance = previousAttendanceQuery.data;
   const shifts = shiftsQuery.data ?? [];
 
   const activeEmployees = employeeSummary?.active ?? 0;
@@ -174,6 +187,7 @@ export default function SchedulingDashboard() {
   const recordedEmployeeIds = new Set(records.map((record) => record.employeeId));
   const recordedToday = recordedEmployeeIds.size;
   const todayShifts = shifts.filter((shift) => shift.date === today);
+  const previousShifts = shifts.filter((shift) => shift.date === yesterday);
   const notRecordedToday = canReadShifts
     ? countMissingAttendanceDue({
         activeEmployeeCount: canReadEmployeeDirectory ? activeEmployees : undefined,
@@ -182,7 +196,18 @@ export default function SchedulingDashboard() {
         currentMinutes,
       })
     : 0;
-  const weekShifts = shifts.filter((shift) => shift.status !== "cancelled");
+  const overnightAttendanceAttention = canReadShifts
+    ? countOvernightAttendanceNeedingAttention(
+        previousShifts,
+        previousAttendance ?? [],
+      )
+    : 0;
+  const weekShifts = shifts.filter(
+    (shift) =>
+      shift.date >= weekStart &&
+      shift.date <= weekEnd &&
+      shift.status !== "cancelled",
+  );
   const draftShifts = weekShifts.filter((shift) => shift.status === "draft").length;
 
   // Triage: only what needs a decision today (count > 0)
@@ -198,6 +223,18 @@ export default function SchedulingDashboard() {
       path: "/time-leave/leave",
       icon: CalendarDays,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
+    },
+    {
+      show: canManageTimeLeave && overnightAttendanceAttention > 0,
+      count: overnightAttendanceAttention,
+      label: t(
+        overnightAttendanceAttention === 1
+          ? "moduleDashboards.scheduling.attention.overnightAttendance"
+          : "moduleDashboards.scheduling.attention.overnightAttendances",
+      ),
+      path: "/time-leave/attendance",
+      icon: Clock,
+      tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
       show: lateToday > 0,

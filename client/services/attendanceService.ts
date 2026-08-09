@@ -34,9 +34,11 @@ import {
   classifyWorkedHours,
   determineStatus,
   calculateHoursBreakdown,
+  selectAttendanceExpectation,
   DEFAULT_EXPECTED_START,
   DEFAULT_EXPECTED_END,
   MAX_REASONABLE_ENTRY_HOURS,
+  type ScheduledAttendanceExpectation,
   type WorkedDayHours,
 } from "@/lib/attendanceCalculations";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
@@ -247,21 +249,17 @@ class AttendanceService {
             where("departmentId", "==", departmentId),
             where("employeeId", "==", employeeId),
             where("date", "==", date),
-            limit(1),
           )
         : query(
             shiftsRef,
             where("employeeId", "==", employeeId),
             where("date", "==", date),
-            limit(1),
           );
       const snap = await getDocs(q);
-      if (!snap.empty) {
-        const shift = snap.docs[0].data();
-        if (shift.startTime && shift.endTime && shift.status !== "cancelled") {
-          return { start: shift.startTime, end: shift.endTime };
-        }
-      }
+      const expected = selectAttendanceExpectation(
+        snap.docs.map((document) => document.data()),
+      );
+      if (expected) return expected;
     } catch {
       // Shift lookup is best-effort — fall back to defaults
     }
@@ -605,10 +603,12 @@ class AttendanceService {
     const lateMinutes = calculateLateMinutes(
       data.clockIn || "",
       expected.start,
+      expected.end,
     );
     const earlyDepartureMinutes = calculateEarlyDeparture(
       data.clockOut || "",
       expected.end,
+      expected.start,
     );
 
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
@@ -757,10 +757,15 @@ class AttendanceService {
       newClockOut || "",
       totalHours,
     );
-    const lateMinutes = calculateLateMinutes(newClockIn || "", expected.start);
+    const lateMinutes = calculateLateMinutes(
+      newClockIn || "",
+      expected.start,
+      expected.end,
+    );
     const earlyDepartureMinutes = calculateEarlyDeparture(
       newClockOut || "",
       expected.end,
+      expected.start,
     );
 
     await updateDoc(docRef, {
@@ -856,6 +861,7 @@ class AttendanceService {
 
     // Prefetch scheduled shifts for the range so lateness is judged against
     // each employee's actual shift, not the default day-shift start
+    const shiftCandidatesByKey = new Map<string, ScheduledAttendanceExpectation[]>();
     const expectedByKey = new Map<string, { start: string; end: string }>();
     try {
       const shiftsSnapshot = await getDocs(
@@ -867,17 +873,15 @@ class AttendanceService {
       );
       for (const d of shiftsSnapshot.docs) {
         const s = d.data();
-        if (
-          s.employeeId &&
-          s.startTime &&
-          s.endTime &&
-          s.status !== "cancelled"
-        ) {
-          expectedByKey.set(`${s.employeeId}:${s.date}`, {
-            start: s.startTime,
-            end: s.endTime,
-          });
-        }
+        if (!s.employeeId || !s.date) continue;
+        const key = `${s.employeeId}:${s.date}`;
+        const candidates = shiftCandidatesByKey.get(key) ?? [];
+        candidates.push(s);
+        shiftCandidatesByKey.set(key, candidates);
+      }
+      for (const [key, candidates] of shiftCandidatesByKey) {
+        const expected = selectAttendanceExpectation(candidates);
+        if (expected) expectedByKey.set(key, expected);
       }
     } catch {
       // Best-effort — records fall back to default expected times
@@ -926,6 +930,7 @@ class AttendanceService {
         const lateMinutes = calculateLateMinutes(
           record.clockIn || "",
           expected.start,
+          expected.end,
         );
         const status = determineStatus(
           record.clockIn,
@@ -945,6 +950,7 @@ class AttendanceService {
           earlyDepartureMinutes: calculateEarlyDeparture(
             record.clockOut || "",
             expected.end,
+            expected.start,
           ),
           breakMinutes,
           totalHours,

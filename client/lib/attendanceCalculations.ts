@@ -27,7 +27,39 @@ export const DEFAULT_BREAK_MINUTES = 60;
 export interface ScheduledAttendanceExpectation {
   employeeId?: string;
   startTime?: string;
+  endTime?: string;
   status?: string;
+}
+
+export interface AttendanceAttentionRecord {
+  employeeId: string;
+  clockIn?: string;
+  clockOut?: string;
+}
+
+function parseClockMinutes(value: string | undefined): number | null {
+  if (!value || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+  const [hour, minute] = value.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+/** Pick the deterministic published shift that attendance is allowed to trust. */
+export function selectAttendanceExpectation(
+  shifts: ScheduledAttendanceExpectation[],
+): { start: string; end: string } | null {
+  const candidates = shifts
+    .filter((shift) =>
+      (shift.status === 'published' || shift.status === 'confirmed') &&
+      parseClockMinutes(shift.startTime) !== null &&
+      parseClockMinutes(shift.endTime) !== null)
+    .sort((left, right) => {
+      const byStart = left.startTime!.localeCompare(right.startTime!);
+      if (byStart !== 0) return byStart;
+      if (left.status === right.status) return 0;
+      return left.status === 'confirmed' ? -1 : 1;
+    });
+  const selected = candidates[0];
+  return selected ? { start: selected.startTime!, end: selected.endTime! } : null;
 }
 
 /**
@@ -129,16 +161,21 @@ export function calculateNightHours(
 /**
  * Calculate late minutes based on expected start time
  */
-export function calculateLateMinutes(clockIn: string, expectedStart: string = DEFAULT_EXPECTED_START): number {
-  if (!clockIn) return 0;
+export function calculateLateMinutes(
+  clockIn: string,
+  expectedStart: string = DEFAULT_EXPECTED_START,
+  expectedEnd: string = DEFAULT_EXPECTED_END,
+): number {
+  const actual = parseClockMinutes(clockIn);
+  const start = parseClockMinutes(expectedStart);
+  const end = parseClockMinutes(expectedEnd);
+  if (actual === null || start === null || end === null) return 0;
 
-  const [clockHour, clockMin] = clockIn.split(':').map(Number);
-  const [expectedHour, expectedMin] = expectedStart.split(':').map(Number);
-
-  const clockMinutes = clockHour * 60 + clockMin;
-  const expectedMinutes = expectedHour * 60 + expectedMin;
-
-  return Math.max(0, clockMinutes - expectedMinutes);
+  const overnight = end < start;
+  const adjustedActual = overnight && Math.abs(actual + 24 * 60 - start) < Math.abs(actual - start)
+    ? actual + 24 * 60
+    : actual;
+  return Math.max(0, adjustedActual - start);
 }
 
 /** Whether a scheduled/default start is late enough to need an attendance record. */
@@ -209,19 +246,50 @@ export function countMissingAttendanceDue({
   return dueScheduledEmployeeIds.size + unscheduledMissing;
 }
 
+/** Previous-day overnight shifts whose attendance is absent or still open. */
+export function countOvernightAttendanceNeedingAttention(
+  shifts: ScheduledAttendanceExpectation[],
+  records: AttendanceAttentionRecord[],
+): number {
+  const recordsByEmployee = new Map(records.map((record) => [record.employeeId, record]));
+  const employeeIds = new Set<string>();
+  for (const shift of shifts) {
+    if (
+      !shift.employeeId ||
+      (shift.status !== 'published' && shift.status !== 'confirmed') ||
+      parseClockMinutes(shift.startTime) === null ||
+      parseClockMinutes(shift.endTime) === null ||
+      shift.endTime! >= shift.startTime!
+    ) {
+      continue;
+    }
+    const record = recordsByEmployee.get(shift.employeeId);
+    if (!record || Boolean(record.clockIn) !== Boolean(record.clockOut)) {
+      employeeIds.add(shift.employeeId);
+    }
+  }
+  return employeeIds.size;
+}
+
 /**
  * Calculate early departure minutes based on expected end time
  */
-export function calculateEarlyDeparture(clockOut: string, expectedEnd: string = DEFAULT_EXPECTED_END): number {
-  if (!clockOut) return 0;
+export function calculateEarlyDeparture(
+  clockOut: string,
+  expectedEnd: string = DEFAULT_EXPECTED_END,
+  expectedStart: string = DEFAULT_EXPECTED_START,
+): number {
+  const actual = parseClockMinutes(clockOut);
+  const end = parseClockMinutes(expectedEnd);
+  const start = parseClockMinutes(expectedStart);
+  if (actual === null || start === null || end === null) return 0;
 
-  const [clockHour, clockMin] = clockOut.split(':').map(Number);
-  const [expectedHour, expectedMin] = expectedEnd.split(':').map(Number);
-
-  const clockMinutes = clockHour * 60 + clockMin;
-  const expectedMinutes = expectedHour * 60 + expectedMin;
-
-  return Math.max(0, expectedMinutes - clockMinutes);
+  const overnight = end < start;
+  const adjustedEnd = overnight ? end + 24 * 60 : end;
+  const adjustedActual = overnight && Math.abs(actual + 24 * 60 - adjustedEnd) < Math.abs(actual - adjustedEnd)
+    ? actual + 24 * 60
+    : actual;
+  return Math.max(0, adjustedEnd - adjustedActual);
 }
 
 /**

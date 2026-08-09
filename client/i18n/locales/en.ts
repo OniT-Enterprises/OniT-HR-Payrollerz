@@ -8200,6 +8200,8 @@ const messages = {
         absentToday: "absent today",
         attendanceMissing: "staff member has no attendance record yet",
         attendanceMissingPlural: "staff members have no attendance record yet",
+        overnightAttendance: "overnight attendance record needs attention",
+        overnightAttendances: "overnight attendance records need attention",
         draftShift: "draft shift waiting to be published",
         draftShifts: "draft shifts waiting to be published",
       },

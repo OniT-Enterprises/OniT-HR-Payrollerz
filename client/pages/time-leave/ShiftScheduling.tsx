@@ -58,6 +58,7 @@ import { useAllDepartments } from "@/hooks/useDepartments";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useLeaveRequests } from "@/hooks/useLeaveRequests";
 import { useSettings } from "@/hooks/useSettings";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import {
   useCopyWeekShifts,
   useCreateShift,
@@ -146,13 +147,16 @@ export default function ShiftScheduling() {
   const isManager = role === "manager";
   const managerDepartmentId = isManager ? session?.member.departmentId : undefined;
   const canLoadSchedule = !isManager || Boolean(managerDepartmentId);
+  const isMobile = useIsMobile();
 
   const [weekStart, setWeekStart] = useState(() => getWeekStartTL(getTodayTL()));
   const weekEnd = addDaysISO(weekStart, 6);
   // Coverage grid (site × shift-slot) is the default — a flat list of hundreds
   // of shifts can't answer "is every post covered?". The list stays as a
   // fallback for anyone who wants the raw per-day view.
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    () => isMobile ? "list" : "grid",
+  );
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);

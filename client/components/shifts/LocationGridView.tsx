@@ -188,7 +188,10 @@ export default function LocationGridView({
   const getCellShifts = useCallback(
     (dateStr: string, slotId: string) => {
       return locationShifts.filter(
-        (s) => s.date === dateStr && getSlotForShift(s)?.id === slotId
+        (s) =>
+          s.status !== "cancelled" &&
+          s.date === dateStr &&
+          getSlotForShift(s)?.id === slotId
       );
     },
     [locationShifts, getSlotForShift]
@@ -369,8 +372,8 @@ export default function LocationGridView({
           </Button>
         </div>
       ) : (
-        <div className="border border-border/50 rounded-xl overflow-hidden bg-card shadow-sm">
-          <table className="w-full border-collapse table-fixed">
+        <div className="overflow-x-auto rounded-xl border border-border/50 bg-card shadow-sm">
+          <table className="w-full min-w-[36rem] border-collapse table-fixed">
             <thead>
               <tr className="bg-muted/50">
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border/30 w-24">

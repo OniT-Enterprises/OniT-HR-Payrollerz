@@ -341,6 +341,68 @@ describe("xefe-api", () => {
     assert.equal(created.data()?.earlyDepartureMinutes, 0);
   });
 
+  it("uses only published schedules and calculates lateness across midnight", async () => {
+    const db = admin.firestore();
+    const date = "2026-08-11";
+    await Promise.all([
+      db.doc("tenants/tenant-a/shifts/a-cancelled-api-test").set({
+        tenantId: "tenant-a", employeeId: "emp-1", date,
+        startTime: "08:00", endTime: "17:00", status: "cancelled",
+      }),
+      db.doc("tenants/tenant-a/shifts/b-draft-api-test").set({
+        tenantId: "tenant-a", employeeId: "emp-1", date,
+        startTime: "20:00", endTime: "04:00", status: "draft",
+      }),
+      db.doc("tenants/tenant-a/shifts/z-published-api-test").set({
+        tenantId: "tenant-a", employeeId: "emp-1", date,
+        startTime: "22:00", endTime: "06:00", status: "published",
+      }),
+    ]);
+
+    const response = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date,
+      clockIn: "00:30",
+      clockOut: "06:00",
+      recordedBy: "api-test",
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const created = await db.doc(`attendance/${body.id}`).get();
+    assert.equal(created.data()?.lateMinutes, 150);
+    assert.equal(created.data()?.earlyDepartureMinutes, 0);
+  });
+
+  it("calculates an early clock-out on the start night", async () => {
+    const db = admin.firestore();
+    const date = "2026-08-12";
+    await db.doc("tenants/tenant-a/shifts/night-early-api-test").set({
+      tenantId: "tenant-a", employeeId: "emp-1", date,
+      startTime: "22:00", endTime: "06:00", status: "confirmed",
+    });
+    const response = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date,
+      clockIn: "22:00",
+      clockOut: "23:00",
+      recordedBy: "api-test",
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const created = await db.doc(`attendance/${body.id}`).get();
+    assert.equal(created.data()?.earlyDepartureMinutes, 420);
+  });
+
+  it("rejects impossible attendance calendar dates", async () => {
+    const response = await request("/api/tenants/tenant-a/attendance", "POST", {
+      employeeId: "emp-1",
+      date: "2026-99-99",
+      clockIn: "08:00",
+      clockOut: "17:00",
+    });
+    assert.equal(response.status, 400);
+  });
+
   it("never approves a leave request belonging to another tenant", async () => {
     const response = await request(
       "/api/tenants/tenant-a/leave/requests/leave-b/approve",

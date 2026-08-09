@@ -14,7 +14,9 @@ import {
   determineStatus,
   calculateHoursBreakdown,
   countMissingAttendanceDue,
+  countOvernightAttendanceNeedingAttention,
   isAttendanceStartDue,
+  selectAttendanceExpectation,
   MAX_REASONABLE_ENTRY_HOURS,
 } from '../../client/lib/attendanceCalculations';
 
@@ -145,6 +147,34 @@ describe('shift-aware lateness', () => {
     expect(calculateEarlyDeparture('21:30', '22:00')).toBe(30);
     expect(calculateEarlyDeparture('22:00', '22:00')).toBe(0);
   });
+
+  it('normalizes late arrivals and early departures across midnight', () => {
+    expect(calculateLateMinutes('00:30', '22:00', '06:00')).toBe(150);
+    expect(calculateLateMinutes('21:50', '22:00', '06:00')).toBe(0);
+    expect(calculateEarlyDeparture('23:00', '06:00', '22:00')).toBe(420);
+    expect(calculateEarlyDeparture('05:30', '06:00', '22:00')).toBe(30);
+    expect(calculateEarlyDeparture('07:00', '06:00', '22:00')).toBe(0);
+  });
+});
+
+describe('attendance shift selection', () => {
+  it('ignores cancelled and private draft shifts', () => {
+    expect(selectAttendanceExpectation([
+      { startTime: '08:00', endTime: '17:00', status: 'cancelled' },
+      { startTime: '20:00', endTime: '04:00', status: 'draft' },
+      { startTime: '22:00', endTime: '06:00', status: 'published' },
+    ])).toEqual({ start: '22:00', end: '06:00' });
+    expect(selectAttendanceExpectation([
+      { startTime: '20:00', endTime: '04:00', status: 'draft' },
+    ])).toBeNull();
+  });
+
+  it('chooses deterministically when legacy data has multiple active shifts', () => {
+    expect(selectAttendanceExpectation([
+      { startTime: '14:00', endTime: '18:00', status: 'published' },
+      { startTime: '08:00', endTime: '12:00', status: 'confirmed' },
+    ])).toEqual({ start: '08:00', end: '12:00' });
+  });
 });
 
 describe('schedule-aware missing attendance', () => {
@@ -186,6 +216,38 @@ describe('schedule-aware missing attendance', () => {
       ],
       currentMinutes: 9 * 60,
     })).toBe(2); // day-due + one other unscheduled employee
+  });
+});
+
+describe('overnight attendance carryover', () => {
+  const nightShift = {
+    employeeId: 'night-1',
+    startTime: '22:00',
+    endTime: '06:00',
+    status: 'published',
+  };
+
+  it('keeps a missing or open previous-night record visible', () => {
+    expect(countOvernightAttendanceNeedingAttention([nightShift], [])).toBe(1);
+    expect(countOvernightAttendanceNeedingAttention(
+      [nightShift],
+      [{ employeeId: 'night-1', clockIn: '22:00' }],
+    )).toBe(1);
+  });
+
+  it('clears completed/absent records and ignores drafts and daytime shifts', () => {
+    expect(countOvernightAttendanceNeedingAttention(
+      [nightShift],
+      [{ employeeId: 'night-1', clockIn: '22:00', clockOut: '06:00' }],
+    )).toBe(0);
+    expect(countOvernightAttendanceNeedingAttention(
+      [nightShift],
+      [{ employeeId: 'night-1' }],
+    )).toBe(0);
+    expect(countOvernightAttendanceNeedingAttention([
+      { ...nightShift, status: 'draft' },
+      { ...nightShift, employeeId: 'day-1', startTime: '08:00', endTime: '17:00' },
+    ], [])).toBe(0);
   });
 });
 

@@ -410,6 +410,28 @@ function timeToMinutes(value) {
   return hours * 60 + minutes;
 }
 
+function selectAttendanceShift(shifts) {
+  return shifts
+    .filter((shift) =>
+      ['published', 'confirmed'].includes(shift?.status) &&
+      Number.isFinite(timeToMinutes(shift?.startTime)) &&
+      Number.isFinite(timeToMinutes(shift?.endTime)))
+    .sort((left, right) => {
+      const byStart = left.startTime.localeCompare(right.startTime);
+      if (byStart !== 0) return byStart;
+      if (left.status === right.status) return 0;
+      return left.status === 'confirmed' ? -1 : 1;
+    })[0] || null;
+}
+
+function timeNearestAnchor(time, anchor, overnight) {
+  if (!overnight) return time;
+  const followingDay = time + 24 * 60;
+  return Math.abs(followingDay - anchor) < Math.abs(time - anchor)
+    ? followingDay
+    : time;
+}
+
 function calculateAttendanceValues(clockIn, clockOut, expectedStart = '08:00', expectedEnd = '17:00') {
   const inMinutes = timeToMinutes(clockIn);
   const outMinutes = timeToMinutes(clockOut);
@@ -429,8 +451,20 @@ function calculateAttendanceValues(clockIn, clockOut, expectedStart = '08:00', e
 
   const expectedStartMinutes = timeToMinutes(expectedStart) ?? 8 * 60;
   const expectedEndMinutes = timeToMinutes(expectedEnd) ?? 17 * 60;
-  const lateMinutes = inMinutes == null ? 0 : Math.max(0, inMinutes - expectedStartMinutes);
-  const earlyDepartureMinutes = outMinutes == null ? 0 : Math.max(0, expectedEndMinutes - outMinutes);
+  const expectedOvernight = expectedEndMinutes < expectedStartMinutes;
+  const adjustedExpectedEnd = expectedOvernight
+    ? expectedEndMinutes + 24 * 60
+    : expectedEndMinutes;
+  const adjustedIn = inMinutes == null
+    ? null
+    : timeNearestAnchor(inMinutes, expectedStartMinutes, expectedOvernight);
+  const adjustedAttendanceOut = outMinutes == null
+    ? null
+    : timeNearestAnchor(outMinutes, adjustedExpectedEnd, expectedOvernight);
+  const lateMinutes = adjustedIn == null ? 0 : Math.max(0, adjustedIn - expectedStartMinutes);
+  const earlyDepartureMinutes = adjustedAttendanceOut == null
+    ? 0
+    : Math.max(0, adjustedExpectedEnd - adjustedAttendanceOut);
   const regularHours = Math.min(totalHours, 8);
   const overtimeHours = Math.max(0, totalHours - 8);
   let nightMinutes = 0;
@@ -3339,7 +3373,7 @@ router.post('/attendance', async (req, res) => {
     if (!employeeId || !date) {
       return res.status(400).json({ success: false, message: 'employeeId and date are required' });
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!parseValidISODate(date)) {
       return res.status(400).json({ success: false, message: 'date must be YYYY-MM-DD' });
     }
 
@@ -3353,14 +3387,15 @@ router.post('/attendance', async (req, res) => {
     const shiftSnapshot = await tenantCol(tid, 'shifts')
       .where('employeeId', '==', employeeId)
       .where('date', '==', date)
-      .limit(1)
       .get();
-    const scheduledShift = shiftSnapshot.empty ? null : shiftSnapshot.docs[0].data();
+    const scheduledShift = selectAttendanceShift(
+      shiftSnapshot.docs.map((document) => document.data()),
+    );
     const attendance = calculateAttendanceValues(
       clockIn,
       clockOut,
-      scheduledShift?.status !== 'cancelled' ? scheduledShift?.startTime : undefined,
-      scheduledShift?.status !== 'cancelled' ? scheduledShift?.endTime : undefined,
+      scheduledShift?.startTime,
+      scheduledShift?.endTime,
     );
     const allowedStatuses = ['present', 'late', 'absent', 'half_day', 'leave', 'holiday'];
     if (status && !allowedStatuses.includes(status)) {

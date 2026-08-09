@@ -909,7 +909,9 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   ).toBeVisible();
 
   // The schedule screen stays compact: one contextual guide link and a
-  // conditional next-day hint are enough to explain overnight entry.
+  // conditional next-day hint are enough to explain overnight entry. Phones
+  // open on the calmer list instead of squeezing the coverage table.
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/time-leave/shifts");
   await expect(
     page.getByRole("heading", { name: /shift scheduling/i }),
@@ -917,6 +919,8 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await expect(
     page.getByRole("link", { name: /help with this page/i }),
   ).toHaveAttribute("href", "/help/guide/time-and-leave#shifts");
+  await expect(page.getByRole("button", { name: /^list$/i }))
+    .toHaveAttribute("aria-pressed", "true");
   await page
     .getByRole("button", { name: /^create shift$/i })
     .first()
@@ -931,6 +935,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await shiftDialog.getByRole("button", { name: "Done", exact: true }).click();
   await expect(shiftDialog.getByText(/ends next day/i)).toBeVisible();
   await shiftDialog.getByRole("button", { name: /^cancel$/i }).click();
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   await page.goto("/help");
 

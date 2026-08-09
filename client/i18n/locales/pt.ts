@@ -8332,6 +8332,8 @@ const messages = {
         absentToday: "ausentes hoje",
         attendanceMissing: "funcionário ainda sem registo de presença",
         attendanceMissingPlural: "funcionários ainda sem registo de presença",
+        overnightAttendance: "registo de presença noturna precisa de atenção",
+        overnightAttendances: "registos de presença noturna precisam de atenção",
         draftShift: "turno em rascunho por publicar",
         draftShifts: "turnos em rascunho por publicar",
       },

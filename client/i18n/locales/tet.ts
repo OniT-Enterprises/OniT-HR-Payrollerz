@@ -8181,6 +8181,8 @@ const messages = {
         absentToday: "ausente ohin",
         attendanceMissing: "staf ida seidauk iha rejistu prezensa",
         attendanceMissingPlural: "staf sira seidauk iha rejistu prezensa",
+        overnightAttendance: "rejistu prezensa turnu kalan presiza atensaun",
+        overnightAttendances: "rejistu prezensa turnu kalan sira presiza atensaun",
         draftShift: "turnu rascunhu ida hein atu publika",
         draftShifts: "turnu rascunhu sira hein atu publika",
       },
