@@ -889,6 +889,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // Audit evidence is part of the workflow contract, not an optional side
   // effect. These are written by server-authenticated callables.
   const auditActions = await waitForAuditActions(tenantId, [
+    "payroll.run",
     "payroll.approve",
     "payroll.pay",
     "tax.payment_recorded",
@@ -896,6 +897,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   ]);
   expect(auditActions).toEqual(
     expect.arrayContaining([
+      "payroll.run",
       "payroll.approve",
       "payroll.pay",
       "tax.payment_recorded",

@@ -151,6 +151,15 @@ export interface PaginatedAuditLogs {
   hasMore: boolean;
 }
 
+function isRetryableAuditError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    code === "functions/internal" ||
+    code === "functions/unavailable" ||
+    code === "functions/deadline-exceeded"
+  );
+}
+
 // ============================================
 // COLLECTION REFERENCE
 // ============================================
@@ -241,6 +250,7 @@ export const auditLogService = {
     tenantId: string; // Required for tenant-scoped logging
     description?: string;
     severity?: AuditSeverity;
+    eventId?: string;
   }): Promise<string> {
     try {
       const [{ httpsCallable }, functions] = await Promise.all([
@@ -251,7 +261,7 @@ export const auditLogService = {
         Omit<AuditLogEntry, "id" | "timestamp" | "userId" | "userEmail" | "userName" | "module" | "severity">,
         { id: string }
       >(functions, "recordTenantAuditEvent");
-      const result = await recordAuditEvent({
+      const payload = {
         action: params.action,
         description:
           params.description ||
@@ -263,7 +273,18 @@ export const auditLogService = {
         newValue: params.newValue,
         changes: params.changes,
         metadata: params.metadata,
-      });
+        eventId: params.eventId,
+      };
+      let result;
+      try {
+        result = await recordAuditEvent(payload);
+      } catch (error) {
+        // Payroll lifecycle events have deterministic IDs. A callable response
+        // can be lost after the server commits, so retry those transient
+        // failures once; the server returns the existing matching event.
+        if (!params.eventId || !isRetryableAuditError(error)) throw error;
+        result = await recordAuditEvent(payload);
+      }
       return result.data.id;
     } catch (error) {
       console.error("Failed to log audit entry:", error);
@@ -320,6 +341,12 @@ export const auditLogService = {
       entityId: params.payrollRunId,
       entityType: "payroll_run",
       entityName: params.period,
+      // Export is intentionally repeatable; each lifecycle state transition is
+      // singular and safe to retry through its deterministic audit ID.
+      eventId:
+        params.action === "payroll.export"
+          ? undefined
+          : `payroll:${params.action.slice("payroll.".length)}:${params.payrollRunId}`,
     });
   },
 

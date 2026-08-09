@@ -94,6 +94,14 @@ function optionalString(value, maxLength = 500) {
     }
     return value.trim();
 }
+function optionalEventId(value) {
+    const eventId = optionalString(value, 256);
+    if (eventId !== undefined &&
+        !/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(eventId)) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid audit event ID");
+    }
+    return eventId;
+}
 function sanitizeValue(value, depth = 0) {
     if (value === null || typeof value === "boolean" || typeof value === "number")
         return value;
@@ -135,7 +143,8 @@ exports.recordTenantAuditEvent = (0, https_1.onCall)(async (request) => {
     if (!(await (0, authz_1.isSuperAdmin)(auth.uid, auth.token))) {
         await (0, authz_1.requireTenantAdmin)(tenantId, auth.uid);
     }
-    const docRef = await db.collection(`tenants/${tenantId}/auditLogs`).add(withoutUndefined({
+    const eventId = optionalEventId(data.eventId);
+    const event = withoutUndefined({
         userId: auth.uid,
         userEmail: typeof auth.token.email === "string" ? auth.token.email : "",
         userName: typeof auth.token.name === "string" ? auth.token.name : undefined,
@@ -151,8 +160,28 @@ exports.recordTenantAuditEvent = (0, https_1.onCall)(async (request) => {
         changes: data.changes === undefined ? undefined : sanitizeValue(data.changes),
         metadata: data.metadata === undefined ? undefined : sanitizeValue(data.metadata),
         severity: getTenantAuditSeverity(action),
-    }));
-    return { id: docRef.id };
+    });
+    const auditLogs = db.collection(`tenants/${tenantId}/auditLogs`);
+    if (!eventId) {
+        const docRef = await auditLogs.add(event);
+        return { id: docRef.id };
+    }
+    const docRef = auditLogs.doc(eventId);
+    await db.runTransaction(async (transaction) => {
+        const existing = await transaction.get(docRef);
+        if (!existing.exists) {
+            transaction.create(docRef, event);
+            return;
+        }
+        const saved = existing.data();
+        if ((saved === null || saved === void 0 ? void 0 : saved.userId) !== event.userId ||
+            (saved === null || saved === void 0 ? void 0 : saved.action) !== event.action ||
+            (saved === null || saved === void 0 ? void 0 : saved.entityId) !== event.entityId ||
+            (saved === null || saved === void 0 ? void 0 : saved.description) !== event.description) {
+            throw new https_1.HttpsError("already-exists", "Audit event ID is already used by a different event");
+        }
+    });
+    return { id: eventId };
 });
 /** Writes platform audit events with a server-derived superadmin identity. */
 exports.recordAdminAuditEvent = (0, https_1.onCall)(async (request) => {
