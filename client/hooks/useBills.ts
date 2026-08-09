@@ -12,6 +12,7 @@ import {
 } from '@/services/billService';
 import type { Bill, BillFormData, BillPaymentFormData } from '@/types/money';
 import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
+import { recordProductMilestone } from '@/services/productMilestoneService';
 
 export const billKeys = {
   all: (tenantId: string) => ['bills', tenantId] as const,
@@ -117,6 +118,7 @@ export function useCreateBill() {
     mutationFn: ({ data, preGeneratedId }: { data: BillFormData; preGeneratedId?: string }) =>
       billService.createBill(tenantId, data, undefined, preGeneratedId),
     onSuccess: () => {
+      void recordProductMilestone(tenantId, 'first_bill_created');
       queryClient.invalidateQueries({ queryKey: billKeys.all(tenantId) });
     },
   });

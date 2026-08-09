@@ -38,6 +38,7 @@ import { isTenantSubscribed } from '@/lib/packagePricing';
 import { addMoney, subtractMoney } from '@/lib/currency';
 import { accountService, journalEntryService } from './accountingService';
 import { auditLogService } from './auditLogService';
+import { recordProductMilestone } from './productMilestoneService';
 import type { AuditContext } from './employeeService';
 import type {
   PayrollRun,
@@ -307,6 +308,13 @@ class PayrollRunService {
       updatedAt: serverTimestamp(),
       ...(targetStatus !== 'draft' ? { committedAt: serverTimestamp() } : {}),
     });
+    const milestoneTenantId = payrollRun.tenantId || audit?.tenantId;
+    if (milestoneTenantId) {
+      void recordProductMilestone(
+        milestoneTenantId,
+        'first_payroll_run_created',
+      );
+    }
 
     // Log to audit trail if context provided
     if (audit) {

@@ -1485,6 +1485,29 @@ service cloud.firestore {
         allow delete: if isSuperAdmin();
       }
 
+      // One immutable timestamp per first-use milestone. This collection is
+      // intentionally unable to hold people, entity IDs, amounts, or arbitrary
+      // event payloads, keeping product feedback useful without surveillance.
+      match /productMilestones/{milestoneId} {
+        allow read: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow create: if (isSuperAdmin() || isTenantFinanceAdmin(tenantId)) &&
+          milestoneId in [
+            'signup_completed',
+            'first_employee_created',
+            'first_payroll_run_created',
+            'first_invoice_created',
+            'first_bill_created',
+            'first_recurring_invoice_created'
+          ] &&
+          request.resource.data.keys().hasOnly([
+            'milestone', 'schemaVersion', 'reachedAt'
+          ]) &&
+          request.resource.data.milestone == milestoneId &&
+          request.resource.data.schemaVersion == 1 &&
+          request.resource.data.reachedAt == request.time;
+        allow update, delete: if false;
+      }
+
       // Saved custom report configs (Reports > Custom Reports). These are
       // report DEFINITIONS only — name, data source, column keys, filter
       // values — never employee data; the data itself is fetched live under

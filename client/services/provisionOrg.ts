@@ -4,6 +4,7 @@ import type { User } from "firebase/auth";
 import { db, getFunctionsLazy } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
+import { recordProductMilestone } from "./productMilestoneService";
 import {
   forgetAccountantPartner,
   PRIMOS_BOOT_PARTNER,
@@ -89,6 +90,11 @@ export async function provisionOrganization(
   params: ProvisionOrgParams,
 ): Promise<string> {
   const provisioned = await withTimeout(provisionOrgWrites(params));
+
+  void recordProductMilestone(
+    provisioned.tenantId,
+    'signup_completed',
+  );
 
   // These are intentionally detached from the signup result. Once the atomic
   // bootstrap commits, the organization exists and the UI may proceed; a slow

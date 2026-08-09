@@ -8,7 +8,6 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -137,7 +136,15 @@ class RecurringInvoiceService {
   async create(
     tenantId: string,
     data: RecurringInvoiceFormData,
+    requestId?: string,
   ): Promise<string> {
+    const recurringRef = requestId
+      ? doc(this.collectionRef(tenantId), requestId)
+      : doc(this.collectionRef(tenantId));
+    if (requestId && (await getDoc(recurringRef)).exists()) {
+      return recurringRef.id;
+    }
+
     // Get customer info
     const customer = await customerService.getCustomerById(
       tenantId,
@@ -147,10 +154,10 @@ class RecurringInvoiceService {
       throw new Error("Customer not found");
     }
 
-    // Add IDs to items
+    // Stable item IDs make a recovered create byte-for-byte predictable.
     const items: InvoiceItem[] = data.items.map((item, index) => ({
       ...item,
-      id: `item-${Date.now()}-${index}`,
+      id: `item-${recurringRef.id}-${index}`,
     }));
 
     const recurring: Omit<RecurringInvoice, "id"> = {
@@ -174,13 +181,19 @@ class RecurringInvoiceService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef(tenantId), {
-      ...recurring,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const existing = await transaction.get(recurringRef);
+      if (existing.exists()) {
+        return;
+      }
+      transaction.set(recurringRef, {
+        ...recurring,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
 
-    return docRef.id;
+    return recurringRef.id;
   }
 
   /**

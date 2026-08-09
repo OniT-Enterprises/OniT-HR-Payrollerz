@@ -16,6 +16,7 @@ import {
   closeAdmin,
   findTenantIdByName,
   markSetupComplete,
+  seedDomesticWithholdingVendor,
   waitForEmulators,
 } from "./helpers/admin";
 
@@ -139,6 +140,7 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
 
   const tenantId = await findTenantIdByName(COMPANY);
   await markSetupComplete(tenantId);
+  const vendor = await seedDomesticWithholdingVendor(tenantId);
 
   // ── Employee recovery, leave warning, and slow save feedback ────────────
   await page.goto("/people/add");
@@ -237,9 +239,17 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
     .getByRole("button", { name: /submit for approval/i })
     .last()
     .click();
-  await expect(page.getByText(/draft|submitted|success/i).first()).toBeVisible({
-    timeout: 30_000,
+  await expect(page).toHaveURL(/\/payroll\/history$/, {
+    timeout: 45_000,
   });
+  expect(
+    (
+      await adminDb()
+        .collection("payrollRuns")
+        .where("tenantId", "==", tenantId)
+        .get()
+    ).size,
+  ).toBe(1);
 
   // ── Invoice recovery and a real offline resume ──────────────────────────
   await page.goto("/money/invoices/new");
@@ -296,6 +306,109 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
       await adminDb().doc(`tenants/${tenantId}/settings/invoice_settings`).get()
     ).data()?.nextNumber,
   ).toBe(2);
+
+  // ── Bill recovery and one stable payable after an offline double tap ───
+  await page.goto("/money/bills/new");
+  await expectNoHorizontalScroll(page);
+  await page.getByRole("combobox").first().click();
+  await page.getByRole("option", { name: vendor.name }).click();
+  await page.getByPlaceholder(/what is this bill for/i).fill("Mobile data plan");
+  await page.locator('input[name="amount"]').fill("42");
+  await waitForLocalDraftValue(
+    page,
+    ":bill-new",
+    ["data", "description"],
+    "Mobile data plan",
+  );
+
+  await reloadPastUnsavedWarning(page);
+  await expect(page.getByText("Continue your unfinished form?")).toBeVisible();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByPlaceholder(/what is this bill for/i)).toHaveValue(
+    "Mobile data plan",
+  );
+  await expect(page.getByRole("combobox").first()).toContainText(vendor.name);
+
+  await page.context().setOffline(true);
+  await page.getByRole("button", { name: "Save", exact: true }).last().evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(
+    "Still saving — keep this page open.",
+    { timeout: 15_000 },
+  );
+  await page.context().setOffline(false);
+  await expect(page).toHaveURL(/\/money\/bills\/[^/]+$/, { timeout: 45_000 });
+  await expectNoLocalDraft(page, ":bill-new");
+  expect(
+    (await adminDb().collection(`tenants/${tenantId}/bills`).get()).size,
+  ).toBe(1);
+
+  // ── Recurring invoice recovery, stable retry, and thumb-reach save ─────
+  await page.goto("/money/invoices/recurring/new");
+  await expectNoHorizontalScroll(page);
+  await page.getByRole("combobox").first().click();
+  await page.getByRole("option", { name: CUSTOMER }).click();
+  await page
+    .getByPlaceholder(/service or product description/i)
+    .fill("Monthly payroll support");
+  await page.locator('input[name="items.0.unitPrice"]').fill("90");
+  await waitForLocalDraftValue(
+    page,
+    ":recurring-invoice-new",
+    ["data", "items", 0, "description"],
+    "Monthly payroll support",
+  );
+
+  await reloadPastUnsavedWarning(page);
+  await expect(page.getByText("Continue your unfinished form?")).toBeVisible();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(
+    page.getByPlaceholder(/service or product description/i),
+  ).toHaveValue("Monthly payroll support");
+  await expect(page.getByRole("combobox").first()).toContainText(CUSTOMER);
+
+  await page.context().setOffline(true);
+  await page
+    .getByRole("button", { name: "Create Recurring", exact: true })
+    .last()
+    .evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
+  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(
+    "Still saving — keep this page open.",
+    { timeout: 15_000 },
+  );
+  await page.context().setOffline(false);
+  await expect(page).toHaveURL(/\/money\/invoices\/recurring$/, {
+    timeout: 45_000,
+  });
+  await expectNoLocalDraft(page, ":recurring-invoice-new");
+  expect(
+    (await adminDb().collection(`tenants/${tenantId}/recurring_invoices`).get()).size,
+  ).toBe(1);
+
+  // Only one tenant timestamp per first-use action: no actors, record IDs,
+  // money, page views, or other behavioural payloads.
+  await expect
+    .poll(async () => {
+      const snapshot = await adminDb()
+        .collection(`tenants/${tenantId}/productMilestones`)
+        .get();
+      return snapshot.docs.map((entry) => entry.id).sort();
+    })
+    .toEqual([
+      "first_bill_created",
+      "first_employee_created",
+      "first_invoice_created",
+      "first_payroll_run_created",
+      "first_recurring_invoice_created",
+      "signup_completed",
+    ]);
 
   // ── Overnight shifts and the same 24-hour control in all app languages ─
   await page.goto("/time-leave/shifts");

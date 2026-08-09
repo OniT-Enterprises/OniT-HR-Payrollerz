@@ -24,6 +24,7 @@ import type { ForeignWorkerData } from "@/types/tax-filing";
 import { auditLogService } from "./auditLogService";
 import { firestoreEmployeeSchema } from "@/lib/validations";
 import { sumMoney } from "@/lib/currency";
+import { recordProductMilestone } from "./productMilestoneService";
 import {
   buildEmployeeComplianceSnapshot,
   type EmployeeComplianceSnapshot,
@@ -678,6 +679,8 @@ class EmployeeService {
     } else {
       await setDoc(employeeRef, data);
     }
+
+    void recordProductMilestone(tenantId, 'first_employee_created');
 
     // Log to audit trail if context provided
     if (audit) {

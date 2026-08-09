@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { useActiveCustomers } from '@/hooks/useCustomers';
 import { useInvoiceSettings } from '@/hooks/useInvoices';
@@ -41,6 +42,13 @@ import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from 
 import type { RecurringFrequency, InvoiceSettings } from '@/types/money';
 import { getTodayTL } from '@/lib/dateUtils';
 import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
+import { RecoverableDraftAlert } from '@/components/forms/RecoverableDraftAlert';
+import {
+  useRecoverableFormDraft,
+  useUnsavedChangesWarning,
+} from '@/hooks/useRecoverableFormDraft';
+import { useSlowOperation } from '@/hooks/useSlowOperation';
+import { recoverableFormDraftKey } from '@/lib/recoverableFormDraft';
 import { DatePicker } from "@/components/ui/date-picker";
 import {
   Repeat,
@@ -63,6 +71,8 @@ export default function RecurringInvoiceForm() {
   const { id } = useParams();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   const isEditMode = !!id;
 
@@ -113,7 +123,7 @@ export default function RecurringInvoiceForm() {
     handleSubmit,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<RecurringInvoiceFormSchemaData>({
     resolver: zodResolver(recurringInvoiceFormSchema),
     defaultValues: {
@@ -142,19 +152,44 @@ export default function RecurringInvoiceForm() {
   const formData = watch();
   const endType = watch('endType');
 
+  const recurringDraftStorageKey = recoverableFormDraftKey({
+    userId: session?.member.uid || 'anonymous',
+    tenantId,
+    form: isEditMode ? `recurring-invoice-edit-${id}` : 'recurring-invoice-new',
+  });
+  const {
+    availableDraft,
+    operationId: recurringCreateOperationId,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+  } = useRecoverableFormDraft({
+    storageKey: recurringDraftStorageKey,
+    data: formData,
+    enabled: Boolean(session?.member.uid && tenantId && !loading),
+    shouldSave: isDirty,
+    onRestore: (draft) => reset(draft, { keepDefaultValues: true }),
+  });
+  const savingSlowly = useSlowOperation(saving);
+  const confirmLeave = useUnsavedChangesWarning(
+    isDirty && !saving,
+    t('common.unsavedChangesWarning'),
+  );
+
   // Apply invoice settings defaults for new mode
+  const defaultsApplied = useRef(false);
   useEffect(() => {
-    if (!isEditMode && invoiceSettings) {
-      const s = invoiceSettings as Partial<InvoiceSettings>;
-      reset((prev) => ({
-        ...prev,
-        taxRate: s.defaultTaxRate || 0,
-        notes: s.defaultNotes || '',
-        terms: s.defaultTerms || '',
-        dueDays: s.defaultDueDays || 30,
-      }));
-    }
-  }, [isEditMode, invoiceSettings, reset]);
+    if (isEditMode || !invoiceSettings || defaultsApplied.current || isDirty) return;
+    defaultsApplied.current = true;
+    const s = invoiceSettings as Partial<InvoiceSettings>;
+    reset((prev) => ({
+      ...prev,
+      taxRate: s.defaultTaxRate || 0,
+      notes: s.defaultNotes || '',
+      terms: s.defaultTerms || '',
+      dueDays: s.defaultDueDays || 30,
+    }));
+  }, [isEditMode, invoiceSettings, isDirty, reset]);
 
   // Populate form when editing an existing recurring invoice
   useEffect(() => {
@@ -249,10 +284,14 @@ export default function RecurringInvoiceForm() {
         await updateMutation.mutateAsync({ id, data });
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.updated') || 'Recurring invoice updated' });
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync({
+          data,
+          requestId: recurringCreateOperationId,
+        });
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.created') || 'Recurring invoice created' });
       }
 
+      clearDraft();
       navigate('/money/invoices/recurring');
     } catch (error) {
       toast({
@@ -442,7 +481,7 @@ export default function RecurringInvoiceForm() {
       />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-24 sm:px-6 sm:py-6">
         <PageHeader
           title={isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
           subtitle={t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}
@@ -450,11 +489,16 @@ export default function RecurringInvoiceForm() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <Button variant="ghost" onClick={() => navigate('/money/invoices/recurring')}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (confirmLeave()) navigate('/money/invoices/recurring');
+                }}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('money.recurringInvoiceForm.back') || 'Back'}
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={handleSave} disabled={saving} className="hidden bg-purple-600 hover:bg-purple-700 md:inline-flex">
                 {saving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -467,6 +511,18 @@ export default function RecurringInvoiceForm() {
         />
 
         <div className="space-y-6">
+          {availableDraft && (
+            <RecoverableDraftAlert
+              savedAt={availableDraft.updatedAt}
+              onRestore={restoreDraft}
+              onDiscard={discardDraft}
+            />
+          )}
+          {savingSlowly && (
+            <p className="hidden text-sm text-muted-foreground md:block" role="status">
+              {t('common.stillSaving')}
+            </p>
+          )}
           {/* Customer & Schedule */}
           <Card>
             <CardHeader>
@@ -815,16 +871,32 @@ export default function RecurringInvoiceForm() {
           </Card>
         </div>
 
-        {/* Bottom Save Button (mobile) */}
-        <div className="mt-6 flex justify-end md:hidden">
-          <Button onClick={handleSave} disabled={saving} className="w-full bg-purple-600 hover:bg-purple-700">
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2">
+            {savingSlowly && (
+              <p className="w-full text-center text-xs text-muted-foreground" role="status">
+                {t('common.stillSaving')}
+              </p>
             )}
-            {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
-          </Button>
+            <Button
+              variant="ghost"
+              disabled={saving}
+              className="min-h-11 flex-1"
+              onClick={() => {
+                if (confirmLeave()) navigate('/money/invoices/recurring');
+              }}
+            >
+              {t('common.cancel') || 'Cancel'}
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="min-h-11 flex-1 bg-purple-600 hover:bg-purple-700">
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

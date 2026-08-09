@@ -180,6 +180,9 @@ export const paths = {
   // Analytics and reports
   analytics: (tid: string) => `tenants/${tid}/analytics`,
   analytic: (tid: string, docId: string) => `tenants/${tid}/analytics/${docId}`,
+  productMilestones: (tid: string) => `tenants/${tid}/productMilestones`,
+  productMilestone: (tid: string, milestone: string) =>
+    `tenants/${tid}/productMilestones/${milestone}`,
   
   // Contract templates (global, superadmin-managed, readable by all tenants)
   contractTemplates: () => 'contractTemplates',

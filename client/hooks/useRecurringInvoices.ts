@@ -7,6 +7,7 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import type { RecurringInvoiceFormData } from '@/services/recurringInvoiceService';
 import { invoiceKeys } from './useInvoices';
+import { recordProductMilestone } from '@/services/productMilestoneService';
 
 const recurringInvoiceKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'recurringInvoices'] as const,
@@ -38,9 +39,10 @@ export function useCreateRecurringInvoice() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: (data: RecurringInvoiceFormData) =>
-      recurringInvoiceService.create(tenantId, data),
+    mutationFn: ({ data, requestId }: { data: RecurringInvoiceFormData; requestId: string }) =>
+      recurringInvoiceService.create(tenantId, data, requestId),
     onSuccess: () => {
+      void recordProductMilestone(tenantId, 'first_recurring_invoice_created');
       queryClient.invalidateQueries({ queryKey: recurringInvoiceKeys.all(tenantId) });
     },
   });

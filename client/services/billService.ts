@@ -9,7 +9,6 @@ import {
   getDocs,
   getDoc,
   addDoc,
-  setDoc,
   updateDoc,
   query,
   where,
@@ -579,6 +578,13 @@ class BillService {
     /** Pre-generated Firestore document ID (used when attachments were uploaded before save) */
     preGeneratedId?: string
   ): Promise<string> {
+    const requestedBillRef = preGeneratedId
+      ? doc(this.collectionRef(tenantId), preGeneratedId)
+      : null;
+    if (requestedBillRef && (await getDoc(requestedBillRef)).exists()) {
+      return requestedBillRef.id;
+    }
+
     // Get vendor info
     const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
     if (!vendor) {
@@ -636,10 +642,12 @@ class BillService {
       };
 
       // ATOMIC: Create bill + journal entry in a single transaction.
-      const billDocRef = preGeneratedId
-        ? doc(this.collectionRef(tenantId), preGeneratedId)
-        : doc(this.collectionRef(tenantId));
+      const billDocRef = requestedBillRef || doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
+        const existingBill = await transaction.get(billDocRef);
+        if (existingBill.exists()) {
+          return;
+        }
         // Journal entry (only transaction.get for entry number, writes journal + GL)
         const journalEntryId = await journalEntryService.createFromBill(
           tenantId,
@@ -660,14 +668,19 @@ class BillService {
     }
 
     // No accounting setup — just create bill
-    if (preGeneratedId) {
-      const docRef = doc(this.collectionRef(tenantId), preGeneratedId);
-      await setDoc(docRef, {
-        ...bill,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+    if (requestedBillRef) {
+      await runTransaction(db, async (transaction) => {
+        const existingBill = await transaction.get(requestedBillRef);
+        if (existingBill.exists()) {
+          return;
+        }
+        transaction.set(requestedBillRef, {
+          ...bill,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       });
-      return preGeneratedId;
+      return requestedBillRef.id;
     }
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...bill,

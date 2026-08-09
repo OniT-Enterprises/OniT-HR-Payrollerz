@@ -10,6 +10,7 @@ import {
   type InvoiceFilters,
 } from '@/services/invoiceService';
 import type { InvoiceFormData, InvoiceSettings, InvoiceTemplateId } from '@/types/money';
+import { recordProductMilestone } from '@/services/productMilestoneService';
 
 export const invoiceKeys = {
   all: (tenantId: string) => ['invoices', tenantId] as const,
@@ -58,6 +59,7 @@ export function useCreateInvoice() {
     mutationFn: ({ data, requestId }: { data: InvoiceFormData; requestId: string }) =>
       invoiceService.createInvoice(tenantId, data, session?.member.uid, requestId),
     onSuccess: () => {
+      void recordProductMilestone(tenantId, 'first_invoice_created');
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },
   });

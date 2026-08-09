@@ -49,9 +49,13 @@ import {
 } from '@/hooks/useBills';
 import { findDuplicateBills } from '@/lib/money/duplicate-bill';
 import { fileUploadService } from '@/services/fileUploadService';
-import { doc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { paths } from '@/lib/paths';
+import { RecoverableDraftAlert } from '@/components/forms/RecoverableDraftAlert';
+import {
+  useRecoverableFormDraft,
+  useUnsavedChangesWarning,
+} from '@/hooks/useRecoverableFormDraft';
+import { useSlowOperation } from '@/hooks/useSlowOperation';
+import { recoverableFormDraftKey } from '@/lib/recoverableFormDraft';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
@@ -121,7 +125,7 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { canManage } = useTenant();
+  const { canManage, session } = useTenant();
   const tenantId = useTenantId();
   const canManageTenant = canManage();
   const showAdvancedTax = useAdvancedTax();
@@ -178,7 +182,7 @@ export default function BillForm() {
     handleSubmit,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BillFormSchemaData>({
     resolver: zodResolver(billFormSchema),
     defaultValues: {
@@ -197,6 +201,30 @@ export default function BillForm() {
 
   // Watch form values for summary calculation
   const formData = watch();
+
+  const billDraftStorageKey = recoverableFormDraftKey({
+    userId: session?.member.uid || 'anonymous',
+    tenantId,
+    form: isNew ? 'bill-new' : `bill-edit-${id}`,
+  });
+  const {
+    availableDraft,
+    operationId: billCreateOperationId,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+  } = useRecoverableFormDraft({
+    storageKey: billDraftStorageKey,
+    data: formData,
+    enabled: Boolean(session?.member.uid && tenantId && !loading),
+    shouldSave: isDirty || attachmentFiles.length > 0,
+    onRestore: (draft) => reset(draft, { keepDefaultValues: true }),
+  });
+  const savingSlowly = useSlowOperation(saving);
+  const confirmLeave = useUnsavedChangesWarning(
+    (isDirty || attachmentFiles.length > 0) && !saving,
+    t('common.unsavedChangesWarning'),
+  );
 
   // Same guard as the quick-add dialog: nothing else stops one invoice being
   // recorded twice, and a second bill queues the supplier to be paid twice.
@@ -322,8 +350,9 @@ export default function BillForm() {
       };
 
       if (isNew) {
-        // Pre-generate the bill ID so attachment storage paths match the final document
-        const billId = doc(collection(db, paths.bills(tenantId))).id;
+        // A recovered draft keeps this ID, so an uncertain network retry
+        // converges on the same bill and the same attachment paths.
+        const billId = billCreateOperationId;
         if (attachmentFiles.length > 0) {
           const urls = await uploadAttachments(billId);
           if (!urls) return;
@@ -337,6 +366,7 @@ export default function BillForm() {
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
+        clearDraft();
         navigate(`/money/bills/${newId}`);
       } else if (id) {
         if (attachmentFiles.length > 0) {
@@ -349,6 +379,7 @@ export default function BillForm() {
           title: t('common.success') || 'Success',
           description: t('money.bills.updated') || 'Bill updated',
         });
+        clearDraft();
         navigate(`/money/bills/${id}`);
       }
     } catch (error) {
@@ -952,7 +983,7 @@ export default function BillForm() {
       />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-24 sm:px-6 sm:py-6">
         <PageHeader
           title={isNew ? t('money.bills.createBill') || 'New Bill' : t('money.bills.editBill') || 'Edit Bill'}
           subtitle={t('money.bills.formDescription') || 'Enter bill details'}
@@ -960,14 +991,19 @@ export default function BillForm() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <Button variant="ghost" onClick={() => navigate('/money/bills')}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (confirmLeave()) navigate('/money/bills');
+                }}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('common.back') || 'Back'}
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="hidden bg-indigo-600 hover:bg-indigo-700 sm:inline-flex"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {saving
@@ -977,6 +1013,22 @@ export default function BillForm() {
             </>
           }
         />
+
+        {availableDraft && (
+          <div className="mb-6">
+            <RecoverableDraftAlert
+              savedAt={availableDraft.updatedAt}
+              filesNeedReattaching
+              onRestore={restoreDraft}
+              onDiscard={discardDraft}
+            />
+          </div>
+        )}
+        {savingSlowly && (
+          <p className="mb-4 hidden text-sm text-muted-foreground sm:block" role="status">
+            {t('common.stillSaving')}
+          </p>
+        )}
 
         <div className="grid gap-6 md:grid-cols-3">
           {/* Main Form */}
@@ -1242,6 +1294,34 @@ export default function BillForm() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+          <div className="mx-auto flex max-w-screen-2xl flex-wrap gap-2">
+            {savingSlowly && (
+              <p className="w-full text-center text-xs text-muted-foreground" role="status">
+                {t('common.stillSaving')}
+              </p>
+            )}
+            <Button
+              variant="ghost"
+              disabled={saving}
+              className="min-h-11 flex-1"
+              onClick={() => {
+                if (confirmLeave()) navigate('/money/bills');
+              }}
+            >
+              {t('common.cancel') || 'Cancel'}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="min-h-11 flex-1 bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {saving ? t('common.saving') || 'Saving...' : t('common.save') || 'Save'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
