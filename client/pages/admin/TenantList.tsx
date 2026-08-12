@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { isTenantComplimentary, isTenantSubscribed } from "@/lib/packagePricing";
+import { summarizeTenantModules } from "@/lib/tenant-modules";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,36 +49,58 @@ const statusColors: Record<TenantStatus, string> = {
   cancelled: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
 };
 
-// Every module the platform offers; enabled ones get a colored fill, the rest stay grey.
-const MODULE_PILLS: { key: keyof NonNullable<TenantConfig["features"]>; label: string }[] = [
-  { key: "people", label: "People" },
-  { key: "hiring", label: "Hiring" },
-  { key: "timeleave", label: "Time" },
-  { key: "performance", label: "Perf" },
-  { key: "payroll", label: "Payroll" },
-  { key: "money", label: "Money" },
-  { key: "accounting", label: "Acct" },
-  { key: "reports", label: "Reports" },
-];
-
-function ModulePillGrid({ features }: { features: TenantConfig["features"] }) {
+// One chip, one place. Both grids below used to carry their own copy of these
+// classes; keeping them separate is how they drift.
+function ModuleChip({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "on" | "off" | "accent";
+}) {
+  const toneClass =
+    tone === "accent"
+      ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
+      : tone === "on"
+        ? "bg-primary/15 text-primary"
+        : "bg-muted text-muted-foreground/50";
   return (
-    <div className="grid grid-cols-4 gap-1 w-fit">
-      {MODULE_PILLS.map((module) => {
-        const enabled = features?.[module.key] !== false;
-        return (
-          <span
-            key={module.key}
-            className={`rounded px-1.5 py-0.5 text-center text-[10px] font-medium leading-4 ${
-              enabled
-                ? "bg-primary/15 text-primary"
-                : "bg-muted text-muted-foreground/50"
-            }`}
-          >
-            {module.label}
-          </span>
-        );
-      })}
+    <span
+      className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-medium leading-4 ${toneClass}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+// Modules by EXCEPTION: one chip when nothing is switched off, otherwise the
+// count plus only the modules that ARE off. This replaced eight per-module pills
+// per row, which restated "everything is on" for nearly every tenant AND broke
+// their own layout — they sat in a `grid-cols-4` whose minmax(0,1fr) tracks
+// shrank below each label inside the squeezed table column, so the text spilled
+// across its neighbours ("PeopleHiringTime…").
+const MAX_OFF_CHIPS = 3;
+
+function TenantModuleSummary({ features }: { features: TenantConfig["features"] }) {
+  const summary = summarizeTenantModules(features);
+
+  if (summary.allOn) {
+    return <ModuleChip label="All modules" tone="on" />;
+  }
+
+  const shown = summary.offLabels.slice(0, MAX_OFF_CHIPS);
+  const hidden = summary.offLabels.length - shown.length;
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1 max-w-[220px]"
+      title={`Off: ${summary.offLabels.join(", ")}`}
+    >
+      <ModuleChip label={`${summary.enabledCount}/${summary.total}`} tone="on" />
+      {shown.map((label) => (
+        <ModuleChip key={label} label={`${label} off`} tone="off" />
+      ))}
+      {hidden > 0 && <ModuleChip label={`+${hidden} off`} tone="off" />}
     </div>
   );
 }
@@ -97,18 +120,11 @@ function AccountantCapabilityGrid({ tenant }: { tenant: TenantConfig }) {
   return (
     <div className="flex flex-wrap gap-1 max-w-[220px]">
       {chips.map((chip) => (
-        <span
+        <ModuleChip
           key={chip.label}
-          className={`rounded px-1.5 py-0.5 text-center text-[10px] font-medium leading-4 ${
-            chip.accent
-              ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
-              : chip.on
-                ? "bg-primary/15 text-primary"
-                : "bg-muted text-muted-foreground/50"
-          }`}
-        >
-          {chip.label}
-        </span>
+          label={chip.label}
+          tone={chip.accent ? "accent" : chip.on ? "on" : "off"}
+        />
       ))}
     </div>
   );
@@ -145,7 +161,7 @@ function AccountantBadge() {
 function TenantModules({ tenant }: { tenant: TenantConfig }) {
   return isAccountantPartnerTenant(tenant.id)
     ? <AccountantCapabilityGrid tenant={tenant} />
-    : <ModulePillGrid features={tenant.features} />;
+    : <TenantModuleSummary features={tenant.features} />;
 }
 
 function TenantUsersCell({ tenant }: { tenant: TenantConfig }) {
@@ -306,8 +322,7 @@ export default function TenantList() {
     {
       tenant: (tenant) => tenant.name,
       status: (tenant) => tenant.status,
-      modules: (tenant) =>
-        MODULE_PILLS.filter((module) => tenant.features?.[module.key] !== false).length,
+      modules: (tenant) => summarizeTenantModules(tenant.features).enabledCount,
       users: (tenant) => (tenant.currentAdminCount ?? 0) + (tenant.currentEmployeeCount ?? 0),
       created: (tenant) => toSortableDate(tenant.createdAt),
       paidUntil: (tenant) => toSortableDate(tenant.subscriptionPaidUntil),
