@@ -946,7 +946,7 @@ class AdminService {
     input: { months: number; reason: string },
     actorUid: string,
     actorEmail: string,
-  ): Promise<void> {
+  ): Promise<{ emailedTo: string | null }> {
     if (!db) throw new Error("Database not available");
 
     const months = Math.floor(input.months);
@@ -1003,6 +1003,30 @@ class AdminService {
       updatedAt: serverTimestamp(),
     });
 
+    // Tell the tenant they have access. Non-fatal: the grant is already written,
+    // and an email failure must never make a successful grant look failed. The
+    // callable composes the wording and picks the recipient from the tenant
+    // record — this only names the tenant and a best-known address.
+    let emailedTo: string | null = null;
+    const contact =
+      (tenantSnap.data()?.billingEmail as string | undefined)?.trim() ||
+      (tenantSnap.data()?.ownerEmail as string | undefined)?.trim() ||
+      "";
+    if (contact) {
+      try {
+        const queued = await notificationService.queueEmail({
+          tenantId,
+          to: [contact],
+          subject: "Your Xefe account has full access — free of charge",
+          text: "Your Xefe account has full access at no charge.",
+          purpose: "billing-access-granted",
+        });
+        if (queued > 0) emailedTo = contact;
+      } catch (error) {
+        console.error("Complimentary access email failed to queue:", error);
+      }
+    }
+
     await this.logAdminAction({
       action: "complimentary_subscription_granted",
       actorUid,
@@ -1016,9 +1040,12 @@ class AdminService {
         activeEmployees,
         amountReceived: 0,
         paidUntil: paidUntil.toISOString(),
+        emailedTo,
       },
       timestamp: Timestamp.now(),
     });
+
+    return { emailedTo };
   }
 
   /** End a manual subscription (paid-until stays for the record; gate closes). */

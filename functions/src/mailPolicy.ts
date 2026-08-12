@@ -13,6 +13,7 @@ export const CLIENT_MAIL_PURPOSES = [
   "receipt",
   "payslip",
   "billing-invoice-request",
+  "billing-access-granted",
   "leave-decision",
   "announcement",
   "interview-invitation",
@@ -385,6 +386,12 @@ export function memberCanRequestClientMail(
   }
   if (purpose === "billing-invoice-request") {
     return role === "owner" || role === "hr-admin";
+  }
+  // Complimentary access is granted BY the platform, so no tenant role may
+  // request this mail. Superadmins short-circuit this check in
+  // authorizeClientMail; everyone else is refused here.
+  if (purpose === "billing-access-granted") {
+    return false;
   }
   if (purpose === "leave-decision") {
     return role === "owner" || role === "hr-admin" || role === "manager";

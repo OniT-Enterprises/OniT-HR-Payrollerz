@@ -196,14 +196,19 @@ export default function TenantDetail() {
   const handleGrantComplimentary = async () => {
     if (!tenant || !user) return;
     try {
-      await grantCompMutation.mutateAsync({
+      const result = await grantCompMutation.mutateAsync({
         tenantId: tenant.id,
         months: Number(compMonths),
         reason: compReason,
         actorUid: user.uid,
         actorEmail: user.email || "",
       });
-      toast.success(`Free access granted for ${compMonths} month${compMonths === "1" ? "" : "s"}`);
+      const months = `${compMonths} month${compMonths === "1" ? "" : "s"}`;
+      toast.success(
+        result?.emailedTo
+          ? `Free access granted for ${months} — ${result.emailedTo} notified`
+          : `Free access granted for ${months} (no email on file, so nobody was notified)`,
+      );
       setCompOpen(false);
     } catch (error) {
       console.error(error);
@@ -524,6 +529,18 @@ export default function TenantDetail() {
               Gives {tenant?.name} the full paid plan — including finalizing payroll runs —
               at no charge. Nothing is billed and no invoice is expected. Access ends on its
               own at the paid-until date.
+              {tenant?.billingEmail || tenant?.ownerEmail ? (
+                <>
+                  {" "}
+                  We email{" "}
+                  <span className="font-medium">
+                    {tenant.billingEmail || tenant.ownerEmail}
+                  </span>{" "}
+                  to tell them.
+                </>
+              ) : (
+                " This tenant has no billing or owner email on file, so nobody will be told."
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

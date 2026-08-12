@@ -182,6 +182,30 @@ describe("client mail policy", () => {
     expect(memberCanRequestClientMail("application-outcome", "viewer", ["hiring"])).toBe(true);
   });
 
+  it("lets NO tenant role announce complimentary access", () => {
+    // The platform grants a comp, not the tenant. Only a superadmin may send
+    // this purpose, and superadmins bypass this check in authorizeClientMail —
+    // so every role here must be refused, including the owner.
+    for (const role of ["owner", "hr-admin", "accountant", "manager", "viewer"]) {
+      expect(memberCanRequestClientMail("billing-access-granted", role, [])).toBe(false);
+    }
+    expect(
+      memberCanRequestClientMail("billing-access-granted", "owner", ["payroll", "money"]),
+    ).toBe(false);
+  });
+
+  it("accepts a billing-access-granted request structurally", () => {
+    expect(
+      validateClientMailInput({
+        tenantId: "tenant-a",
+        to: "owner@example.com",
+        subject: "Your Xefe account has full access",
+        text: "Full access at no charge.",
+        purpose: "billing-access-granted",
+      }).purpose,
+    ).toBe("billing-access-granted");
+  });
+
   it("keeps manager leave mail inside the manager's department", () => {
     expect(memberCanNotifyDepartment("owner", undefined, "dept-b")).toBe(true);
     expect(memberCanNotifyDepartment("manager", "dept-a", "dept-a")).toBe(true);

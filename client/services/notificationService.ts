@@ -38,6 +38,7 @@ export type EmailPurpose =
   | 'receipt'
   | 'payslip'
   | 'billing-invoice-request'
+  | 'billing-access-granted'
   | 'leave-decision'
   | 'announcement'
   | 'interview-invitation'

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { isTenantComplimentary, isTenantSubscribed } from "@/lib/packagePricing";
 import { summarizeTenantModules } from "@/lib/tenant-modules";
@@ -80,6 +80,22 @@ function ModuleChip({
 // shrank below each label inside the squeezed table column, so the text spilled
 // across its neighbours ("PeopleHiringTime…").
 const MAX_OFF_CHIPS = 3;
+
+// Whole-row navigation without swallowing the row's own controls. One guard on
+// the way out beats stopPropagation on every button: anything interactive — the
+// action buttons, the name link, a portalled dialog's contents — keeps its own
+// click. Dragging to select text must not navigate either.
+function clickShouldNavigate(event: React.MouseEvent<HTMLElement>): boolean {
+  const target = event.target as HTMLElement | null;
+  if (
+    target?.closest(
+      'a, button, input, select, textarea, [role="dialog"], [role="menu"], [role="menuitem"], [data-radix-popper-content-wrapper]',
+    )
+  ) {
+    return false;
+  }
+  return !window.getSelection()?.toString();
+}
 
 function TenantModuleSummary({ features }: { features: TenantConfig["features"] }) {
   const summary = summarizeTenantModules(features);
@@ -513,14 +529,27 @@ export default function TenantList() {
               <>
                 <div className="space-y-3 md:hidden">
                   {filteredTenants.map((tenant) => (
-                    <Card key={tenant.id} className="border-border/50">
+                    <Card
+                      key={tenant.id}
+                      className="cursor-pointer border-border/50"
+                      onClick={(event) => {
+                        if (clickShouldNavigate(event)) {
+                          navigate(`/admin/tenants/${tenant.id}`);
+                        }
+                      }}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <TenantIcon tenantId={tenant.id} />
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium">{tenant.name}</p>
+                                <Link
+                                  to={`/admin/tenants/${tenant.id}`}
+                                  className="rounded font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  {tenant.name}
+                                </Link>
                                 {isAccountantPartnerTenant(tenant.id) && <AccountantBadge />}
                               </div>
                               <p className="text-sm text-muted-foreground">
@@ -583,13 +612,26 @@ export default function TenantList() {
                   </TableHeader>
                   <TableBody>
                     {sortedTenants.map((tenant) => (
-                      <TableRow key={tenant.id} className="hover:bg-muted/50">
+                      <TableRow
+                        key={tenant.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={(event) => {
+                          if (clickShouldNavigate(event)) {
+                            navigate(`/admin/tenants/${tenant.id}`);
+                          }
+                        }}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <TenantIcon tenantId={tenant.id} />
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium">{tenant.name}</p>
+                                <Link
+                                  to={`/admin/tenants/${tenant.id}`}
+                                  className="rounded font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  {tenant.name}
+                                </Link>
                                 {isAccountantPartnerTenant(tenant.id) && <AccountantBadge />}
                               </div>
                               <p className="text-sm text-muted-foreground">

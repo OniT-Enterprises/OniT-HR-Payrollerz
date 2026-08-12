@@ -33,6 +33,7 @@ import {
   normalizeEmailRecipients,
   recipientsAreSubset,
   sameRecipients,
+  BILINGUAL_FOOTER,
   validateClientMailInput,
   type ValidatedClientMailInput,
 } from "./mailPolicy";
@@ -227,6 +228,72 @@ async function resolveRecipients(
         recipients: [BILLING_SUPPORT_EMAIL],
         replaceSubmittedRecipients: true,
       };
+    case "billing-access-granted": {
+      // Composed entirely from the tenant record: the browser supplies neither
+      // the address nor the wording, so this mail cannot announce free access
+      // that was not actually granted, nor to someone who is not the tenant's
+      // billing contact.
+      const tenantDoc = await db.doc(`tenants/${input.tenantId}`).get();
+      const data = (tenantDoc.data() || {}) as Record<string, unknown>;
+      if (data.subscriptionComped !== true || data.stripeSubscriptionId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "This tenant does not have complimentary access",
+        );
+      }
+      const paidUntil = data.subscriptionPaidUntil as
+        | { toMillis?: () => number }
+        | undefined;
+      if (typeof paidUntil?.toMillis !== "function") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Complimentary access has no end date",
+        );
+      }
+      const until = new Date(paidUntil.toMillis()).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Dili",
+      });
+      const name =
+        typeof data.name === "string" && data.name.trim()
+          ? data.name.trim()
+          : input.tenantId;
+      const contacts = [
+        ...recordEmail(data, "billingEmail"),
+        ...recordEmail(data, "ownerEmail"),
+      ];
+      if (contacts.length === 0) {
+        throw new HttpsError(
+          "failed-precondition",
+          "No billing or owner email on file for this tenant",
+        );
+      }
+      return {
+        recipients: [contacts[0]],
+        replaceSubmittedRecipients: true,
+        subject: "Your Xefe account has full access — free of charge",
+        text: [
+          `Hi ${name},`,
+          "",
+          `Your Xefe account has full access until ${until}, at no charge.`,
+          "",
+          "That includes finalizing payroll runs — the one thing a paid",
+          "subscription normally unlocks. Everything else in Xefe was already",
+          "free and stays that way.",
+          "",
+          "There is nothing to pay and no invoice coming. We will be in touch",
+          "before the date above.",
+          "",
+          "Sign in: https://app.xefe.tl",
+          "",
+          "— The Xefe team",
+          "",
+          BILINGUAL_FOOTER,
+        ].join("\n"),
+      };
+    }
     case "announcement": {
       const employees = await db
         .collection(`tenants/${input.tenantId}/employees`)
