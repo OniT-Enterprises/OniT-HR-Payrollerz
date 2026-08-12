@@ -34,6 +34,7 @@ import {
   recipientsAreSubset,
   sameRecipients,
   BILINGUAL_FOOTER,
+  billingContactCandidates,
   validateClientMailInput,
   type ValidatedClientMailInput,
 } from "./mailPolicy";
@@ -260,10 +261,15 @@ async function resolveRecipients(
         typeof data.name === "string" && data.name.trim()
           ? data.name.trim()
           : input.tenantId;
-      const contacts = [
-        ...recordEmail(data, "billingEmail"),
-        ...recordEmail(data, "ownerEmail"),
-      ];
+      // companyDetails.email (settings/config) is what the tenant edits and what
+      // the admin console displays, so it must be considered first — the tenant
+      // root doc alone is often empty.
+      const settingsDoc = await db
+        .doc(`tenants/${input.tenantId}/settings/config`)
+        .get();
+      const companyDetails = ((settingsDoc.data() || {}).companyDetails ||
+        {}) as Record<string, unknown>;
+      const contacts = billingContactCandidates(data, companyDetails);
       if (contacts.length === 0) {
         throw new HttpsError(
           "failed-precondition",

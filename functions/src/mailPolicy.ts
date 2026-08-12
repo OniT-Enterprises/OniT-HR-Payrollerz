@@ -373,6 +373,33 @@ export function recipientsAreSubset(
 }
 
 /** Mirrors the Firestore capability needed to reach each linked record. */
+/**
+ * Where a tenant's billing contact actually lives, in precedence order.
+ *
+ * `companyDetails.email` in tenants/{tid}/settings/config wins, because that is
+ * what the tenant edits and what the admin console DISPLAYS (see the enrichment
+ * in adminService.getTenants). Reading only the tenant root doc found nothing
+ * for a tenant whose address was set through Company Details — the admin console
+ * showed a billing email while the grant reported "no email on file".
+ */
+export function billingContactCandidates(
+  tenantRoot: Record<string, unknown>,
+  companyDetails: Record<string, unknown>,
+): string[] {
+  const pick = (value: unknown): string[] => {
+    if (typeof value !== "string") return [];
+    const trimmed = value.trim().toLowerCase();
+    return trimmed ? [trimmed] : [];
+  };
+  return [
+    ...new Set([
+      ...pick(companyDetails.email),
+      ...pick(tenantRoot.billingEmail),
+      ...pick(tenantRoot.ownerEmail),
+    ]),
+  ];
+}
+
 export function memberCanRequestClientMail(
   purpose: Exclude<ClientMailPurpose, "notification">,
   role: string | undefined,
