@@ -89,6 +89,7 @@ purpose or recipient escape hatch.
 | Leave decision                                                     | `leave-decision`                        | employee                         |
 | Announcement broadcast (opt-in checkbox)                           | `announcement`                          | all active staff (per-recipient) |
 | Billing invoice request                                            | `billing-invoice-request`               | info@naroman.tl                  |
+| Complimentary access granted (superadmin only)                     | `billing-access-granted`                | tenant billing/owner contact     |
 | Interview invitation / reminder / reschedule / decision            | `interview-*`                           | candidate                        |
 | Application verified/rejected                                      | `application-outcome`                   | applicant                        |
 | Performance review submitted / completed                           | `review-submitted` / `review-completed` | employee                         |

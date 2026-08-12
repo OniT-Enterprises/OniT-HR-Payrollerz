@@ -188,6 +188,15 @@ Deliberate choices:
 - **Not a role.** A comp changes billing only — it never grants admin,
   superadmin, or any extra feature. All features are free anyway; the comp buys
   the one paywalled action.
+- **The tenant is told.** The grant queues a `billing-access-granted` email to
+  the tenant's billing (or owner) contact. Both the recipient and the wording are
+  composed server-side in `resolveRecipients` from the tenant record, and the
+  callable REFUSES to send unless that record actually shows an unexpired comp —
+  so this mail cannot announce free access that was not granted, and the browser
+  cannot redirect it. No tenant role may request the purpose; only a superadmin,
+  who short-circuits `memberCanRequestClientMail` in `authorizeClientMail`.
+  Sending is non-fatal to the grant, and the dialog names the address before you
+  click (the toast reports what actually happened).
 - Admin surfaces label it honestly: a "Free access (comp)" badge with the reason
   on TenantDetail, a "Comp" badge in TenantList, and comps are **excluded from
   the "paying tenants" stat**.
