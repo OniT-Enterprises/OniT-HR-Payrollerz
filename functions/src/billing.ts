@@ -881,6 +881,11 @@ export const sendRenewalReminders = onSchedule(
         >;
         if (sentFor[stage] === paidUntilMs) continue; // already sent this period
 
+        // Complimentary access (a $0 grant to a tester/pilot/partner) is never
+        // dunned: the tenant owes nothing. Ops still gets the heads-up so a
+        // comp does not silently expire mid-test.
+        const comped = data.subscriptionComped === true;
+
         const name = (data.name as string) || tenantId;
         const paidUntilStr = new Date(paidUntilMs).toLocaleDateString("en-GB", {
           day: "numeric",
@@ -916,7 +921,7 @@ export const sendRenewalReminders = onSchedule(
         ].join("\n");
 
         const mail = db.collection("mail");
-        if (tenantEmail) {
+        if (tenantEmail && !comped) {
           await mail.add({
             tenantId,
             to: [tenantEmail],
@@ -933,16 +938,25 @@ export const sendRenewalReminders = onSchedule(
           to: [BILLING_OPS_EMAIL],
           subject:
             stage === "lapsed"
-              ? `[Xefe ops] ${name}: manual subscription LAPSED (${paidUntilStr})`
-              : `[Xefe ops] ${name}: manual subscription expires in ${daysLeftLabel}d (${paidUntilStr})`,
+              ? `[Xefe ops] ${name}: ${comped ? "free access" : "manual subscription"} LAPSED (${paidUntilStr})`
+              : `[Xefe ops] ${name}: ${comped ? "free access" : "manual subscription"} expires in ${daysLeftLabel}d (${paidUntilStr})`,
           text: [
             `Tenant: ${name} (${tenantId})`,
             `Paid until: ${paidUntilStr}`,
-            `Standard monthly value: $${Number(data.monthlySubscriptionAmount ?? 0)}`,
-            `Last payment: $${Number(data.subscriptionBillingAmount ?? data.monthlySubscriptionAmount ?? 0)} for ${Number(data.subscriptionBillingMonths ?? 1)} month(s)`,
+            ...(comped
+              ? [
+                  `Complimentary access — reason: ${String(data.subscriptionCompReason ?? "not recorded")}`,
+                  "No reminder was sent to the tenant (nothing is owed).",
+                ]
+              : [
+                  `Standard monthly value: $${Number(data.monthlySubscriptionAmount ?? 0)}`,
+                  `Last payment: $${Number(data.subscriptionBillingAmount ?? data.monthlySubscriptionAmount ?? 0)} for ${Number(data.subscriptionBillingMonths ?? 1)} month(s)`,
+                ]),
             `Tenant contact: ${tenantEmail ?? "NO EMAIL ON FILE — contact them another way"}`,
             "",
-            "Once payment arrives, record it in Admin -> Tenants -> Record offline payment.",
+            comped
+              ? "To extend, use Admin -> Tenants -> Extend free access."
+              : "Once payment arrives, record it in Admin -> Tenants -> Record offline payment.",
           ].join("\n"),
           status: "pending",
           purpose: "billing-renewal-reminder-ops",

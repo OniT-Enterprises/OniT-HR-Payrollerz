@@ -109,6 +109,30 @@ export function useRecordManualSubscription() {
   });
 }
 
+export function useGrantComplimentarySubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, months, reason, actorUid, actorEmail }: {
+      tenantId: string;
+      months: number;
+      reason: string;
+      actorUid: string;
+      actorEmail: string;
+    }) => adminService.grantComplimentarySubscription(
+      tenantId,
+      { months, reason },
+      actorUid,
+      actorEmail,
+    ),
+    onSuccess: (_, { tenantId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenant(tenantId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+      queryClient.invalidateQueries({ queryKey: ["tenant-billing", tenantId] });
+    },
+  });
+}
+
 export function useCancelManualSubscription() {
   const queryClient = useQueryClient();
   return useMutation({

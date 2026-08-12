@@ -14,6 +14,7 @@ import {
   calculatePackageEstimate,
   getPackageBillingAmount,
   normalizeBillingPackagesConfig,
+  isTenantComplimentary,
   isTenantSubscribed,
 } from "@/lib/packagePricing";
 
@@ -110,5 +111,32 @@ describe("isTenantSubscribed — payroll unlock gate", () => {
   it("supports Firestore Timestamp-like objects", () => {
     const future = { toDate: () => new Date(Date.now() + 86400_000) };
     expect(isTenantSubscribed({ stripeSubscriptionId: "sub_123", subscriptionPaidUntil: future })).toBe(true);
+  });
+});
+
+describe("isTenantComplimentary — $0 grants must never read as revenue", () => {
+  it("false for ordinary free and paying tenants", () => {
+    expect(isTenantComplimentary({})).toBe(false);
+    expect(isTenantComplimentary({ stripeSubscriptionId: "sub_123" })).toBe(false);
+  });
+
+  it("true for a comped manual subscription", () => {
+    expect(isTenantComplimentary({ subscriptionComped: true })).toBe(true);
+  });
+
+  it("a live Stripe subscription wins over a stale comp flag", () => {
+    expect(
+      isTenantComplimentary({ stripeSubscriptionId: "sub_123", subscriptionComped: true }),
+    ).toBe(false);
+  });
+
+  it("a comp still unlocks payroll only while unexpired", () => {
+    const future = new Date(Date.now() + 86400_000);
+    const past = new Date(Date.now() - 86400_000);
+    const comp = { manualSubscription: true, subscriptionComped: true };
+    expect(isTenantSubscribed({ ...comp, subscriptionPaidUntil: future })).toBe(true);
+    expect(isTenantSubscribed({ ...comp, subscriptionPaidUntil: past })).toBe(false);
+    // Never open-ended, exactly like a recorded offline payment.
+    expect(isTenantSubscribed(comp)).toBe(false);
   });
 });

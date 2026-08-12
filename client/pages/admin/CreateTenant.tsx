@@ -18,7 +18,6 @@ const initialValue: TenantProfileInput = {
   ownerEmail: "",
   billingEmail: "",
   currentEmployeeCount: 0,
-  plan: "free",
 };
 
 export default function CreateTenant() {

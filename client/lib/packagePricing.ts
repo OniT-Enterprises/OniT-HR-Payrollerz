@@ -116,6 +116,21 @@ function toDateMaybe(value: unknown): Date | null {
  *   manualSubscription === true AND an unexpired subscriptionPaidUntil is
  *   REQUIRED — manual subs are never open-ended.
  */
+/**
+ * Complimentary access: a manual subscription a superadmin granted with nothing
+ * received (testers, pilots, partners). It unlocks exactly what a paid
+ * subscription unlocks and still expires with subscriptionPaidUntil — the flag
+ * only stops a $0 grant being counted as revenue or dunned for renewal.
+ * A live Stripe subscription always wins, so a stale flag cannot mislabel a
+ * paying tenant.
+ */
+export function isTenantComplimentary(tenant: {
+  stripeSubscriptionId?: string | null;
+  subscriptionComped?: boolean | null;
+}): boolean {
+  return !tenant.stripeSubscriptionId && tenant.subscriptionComped === true;
+}
+
 export function isTenantSubscribed(tenant: {
   stripeSubscriptionId?: string | null;
   manualSubscription?: boolean | null;

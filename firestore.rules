@@ -103,6 +103,7 @@ service cloud.firestore {
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
           'subscriptionAnnualMonthsCharged',
+          'subscriptionComped', 'subscriptionCompReason',
           'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout',
           'lastStripeSubscriptionEventAt'
         ]);
@@ -348,6 +349,9 @@ service cloud.firestore {
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
           'subscriptionAnnualMonthsCharged',
+          // Complimentary access is a manual subscription with $0 received —
+          // an owner writing it would unlock the payroll paywall for free.
+          'subscriptionComped', 'subscriptionCompReason',
           'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout',
           // Webhook ordering watermark (functions/src/billing.ts). If an owner
           // could push it into the future, Stripe cancellation events would be

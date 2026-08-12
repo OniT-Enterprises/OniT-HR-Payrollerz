@@ -27,6 +27,16 @@ of truth, mirrored by `tenantHasActiveSubscription()` in `firestore.rules`
 | **Stripe**                        | `stripeSubscriptionId` set (webhook-managed) AND `subscriptionPaidUntil` (when present) not in the past      |
 | **Manual** (bank transfer / cash) | `manualSubscription == true` AND an **unexpired** `subscriptionPaidUntil` — manual subs are never open-ended |
 
+**Complimentary access** (testers, pilots, partners) is the manual path with
+nothing received: `manualSubscription: true` + `subscriptionComped: true` +
+`subscriptionCompReason`, with `subscriptionBillingAmount` and
+`monthlySubscriptionAmount` written as an explicit **0**. It therefore unlocks
+exactly what a paying tenant unlocks and expires on its own — a comp is never
+open-ended either. `isTenantComplimentary()` (same module) is what keeps a $0
+grant out of revenue and out of dunning; the explicit zeros matter because a
+*missing* amount gets back-filled with a list-price estimate for subscribed
+tenants in `getTenants()` enrichment, which would show a comp as revenue.
+
 ## Enforcement (two layers)
 
 1. **Client**: `payrollService.approvePayrollRun` throws
@@ -38,13 +48,35 @@ of truth, mirrored by `tenantHasActiveSubscription()` in `firestore.rules`
    a subscription lapses. Tests: `tests/rules/payroll-approval.test.ts`.
 
 **Tamper protection**: tenant owners cannot write `stripeSubscriptionId`,
-`subscriptionPaidUntil`, `manualSubscription`, `monthlySubscriptionAmount`,
+`subscriptionPaidUntil`, `manualSubscription`, `subscriptionComped`,
+`subscriptionCompReason`, `monthlySubscriptionAmount`,
 `subscriptionBillingAmount`, `subscriptionBillingInterval`,
 `subscriptionBillingMonths`, `subscriptionBilledSeats`,
 `subscriptionAnnualMonthsCharged`,
 `stripeCustomerId`, `status`, `plan`, or `limits` on their own tenant doc
 (they could otherwise self-activate the paywall). Only the webhook and
 superadmins set those fields.
+
+## There is no plan to pick
+
+The `plan` enum (`free`/`starter`/`professional`/`enterprise`) and `limits` on
+the tenant doc are **legacy and unenforced** — nothing reads `PLAN_LIMITS` to
+cap employees, users or storage. The "Subscription Plan" dropdown and "Plan
+limits" panel were removed from the admin tenant form in Aug 2026 because they
+read as the way to grant paid access and were not: the only thing that unlocks
+anything is a subscription (Stripe, offline payment, or a comp).
+
+Two traps that dropdown carried, both now fixed:
+
+- `createTenant` set `features.payroll = input.plan !== "free"`, so an
+  admin-created tenant on the **default** "free" plan shipped with the payroll
+  module switched OFF. Every module is now on for every tenant.
+- `updateTenantProfile` rewrote `plan` and `limits` on every profile save.
+  Editing a name is not a billing change; it no longer touches them.
+
+New tenants are written as `plan: "free"` with `PLAN_LIMITS.free` for the
+benefit of existing readers, and `isValidPlan` still normalizes the field when
+reading tenant docs. Do not reintroduce a plan picker.
 
 ## Where users see their plan
 
@@ -130,15 +162,48 @@ superadmins set those fields.
 3. `sendRenewalReminders` (daily 08:00 Dili) emails the tenant at 7 days out,
    1 day out, and once after lapse (+ ops copy to info@naroman.tl).
    Idempotent per stage per paid-until value; recording a new payment re-arms
-   the stages. Lapse re-locks finalizing automatically.
+   the stages. Lapse re-locks finalizing automatically. **Comped tenants get no
+   tenant-facing reminder** (they owe nothing) — ops still gets one so a comp
+   does not silently expire mid-test.
+
+## Complimentary (free) access flow — testers, pilots, partners
+
+**Admin → Tenants → tenant → "Grant free access"**: pick 1/3/6/12 months and a
+required reason ("Testing", "Pilot", …). It extends from max(now, current
+paid-until), so granting again extends rather than resets, and logs
+`complimentary_subscription_granted` with the reason to the admin audit log.
+The tenant sees the normal ACTIVE plan chip — nothing tells them it is free —
+and the button becomes "Extend free access" once a comp is live.
+
+Deliberate choices:
+
+- **Never open-ended.** Same invariant as an offline payment; the longest single
+  grant is 12 months and it always has a paid-until date.
+- **$0, not a fake payment.** Recording a $0 "offline payment" would corrupt the
+  payment record and the `expectedAmount` guard rejects it anyway. The comp
+  path is separate for that reason.
+- **Mutually exclusive with Stripe**, like offline payments: the grant refuses a
+  tenant with a live `stripeSubscriptionId`, and a later real payment (offline
+  or Stripe) clears the comp flag.
+- **Not a role.** A comp changes billing only — it never grants admin,
+  superadmin, or any extra feature. All features are free anyway; the comp buys
+  the one paywalled action.
+- Admin surfaces label it honestly: a "Free access (comp)" badge with the reason
+  on TenantDetail, a "Comp" badge in TenantList, and comps are **excluded from
+  the "paying tenants" stat**.
+- "End free access" is the same action as "End manual subscription" — it clears
+  `manualSubscription` and the comp flags and logs
+  `complimentary_subscription_ended`.
 
 ## Admin console
 
 TenantList/TenantDetail show **real** subscription state via
-`isTenantSubscribed` (same source as the app chip): Active/Free badges,
+`isTenantSubscribed` (same source as the app chip), with comps flagged by
+`isTenantComplimentary`: Active/Free badges,
 live active-employee and billed-seat counts, billing cycle and cycle amount, no
 fabricated price for free tenants, employee-count field read-only (auto-synced). "Record offline
-payment" / "End manual subscription" live on TenantDetail.
+payment", "Grant free access" and "End manual subscription" / "End free access"
+live on TenantDetail.
 
 Stripe and offline subscriptions are mutually exclusive: checkout refuses a
 tenant with an unexpired offline subscription, and Admin refuses an offline

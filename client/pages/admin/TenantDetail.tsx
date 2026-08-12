@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import {
   calculatePackageEstimate,
+  isTenantComplimentary,
   isTenantSubscribed,
   normalizeBillingPackagesConfig,
 } from "@/lib/packagePricing";
@@ -29,6 +30,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import {
   useCancelManualSubscription,
   useDeleteTenant,
+  useGrantComplimentarySubscription,
   usePackagesConfig,
   useReactivateTenant,
   useRecordManualSubscription,
@@ -66,6 +68,7 @@ import {
   Landmark,
   Loader2,
   Pencil,
+  Sparkles,
   Trash2,
   UserCog,
   Users,
@@ -117,6 +120,12 @@ export default function TenantDetail() {
   const [offlineMonths, setOfflineMonths] = useState("1");
   const [offlineAmountReceived, setOfflineAmountReceived] = useState("");
 
+  // Complimentary access (testers, pilots, partners) — a $0 manual subscription
+  const grantCompMutation = useGrantComplimentarySubscription();
+  const [compOpen, setCompOpen] = useState(false);
+  const [compMonths, setCompMonths] = useState("3");
+  const [compReason, setCompReason] = useState("Testing");
+
   const billingPricing = normalizeBillingPackagesConfig(packagesConfig);
   const billingEstimate = calculatePackageEstimate(billingPricing, {
     employeeCount: stats?.employeeCount ?? tenant?.currentEmployeeCount ?? 0,
@@ -139,7 +148,6 @@ export default function TenantDetail() {
         ownerEmail: tenant.ownerEmail || "",
         billingEmail: tenant.billingEmail || "",
         currentEmployeeCount: stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0,
-        plan: tenant.plan,
       });
     }
   }, [stats?.employeeCount, tenant]);
@@ -182,6 +190,24 @@ export default function TenantDetail() {
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "Could not record the payment");
+    }
+  };
+
+  const handleGrantComplimentary = async () => {
+    if (!tenant || !user) return;
+    try {
+      await grantCompMutation.mutateAsync({
+        tenantId: tenant.id,
+        months: Number(compMonths),
+        reason: compReason,
+        actorUid: user.uid,
+        actorEmail: user.email || "",
+      });
+      toast.success(`Free access granted for ${compMonths} month${compMonths === "1" ? "" : "s"}`);
+      setCompOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Could not grant free access");
     }
   };
 
@@ -326,7 +352,11 @@ export default function TenantDetail() {
                       variant="outline"
                       className={isTenantSubscribed(tenant) ? "border-primary/40 text-primary" : "text-muted-foreground"}
                     >
-                      {isTenantSubscribed(tenant) ? "Subscribed" : "Free plan"}
+                      {isTenantSubscribed(tenant)
+                        ? isTenantComplimentary(tenant)
+                          ? "Free access (comp)"
+                          : "Subscribed"
+                        : "Free plan"}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Tenant ID: {tenant.id}</p>
@@ -486,6 +516,63 @@ export default function TenantDetail() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={compOpen} onOpenChange={setCompOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Grant free access</DialogTitle>
+            <DialogDescription>
+              Gives {tenant?.name} the full paid plan — including finalizing payroll runs —
+              at no charge. Nothing is billed and no invoice is expected. Access ends on its
+              own at the paid-until date.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="comp-months">Length</Label>
+              <Select value={compMonths} onValueChange={setCompMonths}>
+                <SelectTrigger id="comp-months">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 month</SelectItem>
+                  <SelectItem value="3">3 months</SelectItem>
+                  <SelectItem value="6">6 months</SelectItem>
+                  <SelectItem value="12">12 months</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Added to the current paid-until date when access is already active. Grant
+                again at any time to extend.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="comp-reason">Reason</Label>
+              <Input
+                id="comp-reason"
+                value={compReason}
+                onChange={(event) => setCompReason(event.target.value)}
+                placeholder="Testing, pilot, partner…"
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown on this page and recorded in the admin audit log.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGrantComplimentary}
+              disabled={grantCompMutation.isPending || !compReason.trim()}
+            >
+              {grantCompMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Grant free access
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="px-6 py-6 lg:px-8">
         {isEditing && formValue ? (
           <div className="max-w-4xl">
@@ -605,13 +692,17 @@ export default function TenantDetail() {
                     <p className="text-sm text-muted-foreground">Active Employees / Billed Seats</p>
                     <p className="font-medium">
                       {stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0} /{" "}
-                      {tenant.subscriptionBilledSeats ?? billingEstimate.billedEmployees}
+                      {isTenantComplimentary(tenant)
+                        ? "0 (nothing billed)"
+                        : tenant.subscriptionBilledSeats ?? billingEstimate.billedEmployees}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Subscription</p>
                     <p className="font-medium">
-                      {isTenantSubscribed(tenant)
+                      {isTenantComplimentary(tenant)
+                        ? `${isTenantSubscribed(tenant) ? "Free access" : "Free access (expired)"} — ${tenant.subscriptionCompReason || "complimentary"}`
+                        : isTenantSubscribed(tenant)
                         ? `Subscribed${typeof tenant.subscriptionBillingAmount === "number"
                           ? ` — $${tenant.subscriptionBillingAmount.toFixed(2)}/${tenant.subscriptionBillingInterval === "year" ? "yr" : "mo"}`
                           : typeof tenant.monthlySubscriptionAmount === "number"
@@ -621,15 +712,23 @@ export default function TenantDetail() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Paid Until</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isTenantComplimentary(tenant) ? "Free access until" : "Paid Until"}
+                    </p>
                     <p className="font-medium">{formatDateValue(tenant.subscriptionPaidUntil)}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-4 sm:col-span-2">
                     {!tenant.stripeSubscriptionId && (
-                      <Button variant="outline" size="sm" onClick={openOfflinePayment}>
-                        <Landmark className="mr-2 h-4 w-4" />
-                        Record offline payment
-                      </Button>
+                      <>
+                        <Button variant="outline" size="sm" onClick={openOfflinePayment}>
+                          <Landmark className="mr-2 h-4 w-4" />
+                          Record offline payment
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCompOpen(true)}>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {isTenantComplimentary(tenant) ? "Extend free access" : "Grant free access"}
+                        </Button>
+                      </>
                     )}
                     {tenant.manualSubscription && (
                       <Button
@@ -642,12 +741,15 @@ export default function TenantDetail() {
                         {cancelManualMutation.isPending && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        End manual subscription
+                        {isTenantComplimentary(tenant) ? "End free access" : "End manual subscription"}
                       </Button>
                     )}
                     <p className="w-full text-xs text-muted-foreground">
-                      For bank-transfer or cash payments: record the months paid and the
-                      subscription unlocks payroll finalizing until the paid-until date.
+                      Both actions unlock the same thing — finalizing payroll runs — until the
+                      date above. Use <span className="font-medium">Record offline payment</span>{" "}
+                      when money arrived by bank transfer or cash, and{" "}
+                      <span className="font-medium">Grant free access</span> for testers, pilots
+                      and partners who pay nothing.
                     </p>
                   </div>
                 </CardContent>

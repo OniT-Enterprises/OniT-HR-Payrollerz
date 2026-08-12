@@ -332,6 +332,40 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
       );
     });
 
+    it('allows approval on complimentary access (a $0 manual subscription)', async () => {
+      await seed(undefined, {
+        name: 'Tenant A',
+        manualSubscription: true,
+        subscriptionComped: true,
+        subscriptionCompReason: 'Testing',
+        subscriptionBillingAmount: 0,
+        subscriptionPaidUntil: new Date(Date.now() + DAY_MS),
+      });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
+    it('blocks approval when complimentary access has expired', async () => {
+      await seed(undefined, {
+        name: 'Tenant A',
+        manualSubscription: true,
+        subscriptionComped: true,
+        subscriptionPaidUntil: new Date(Date.now() - DAY_MS),
+      });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
     it('allows approval with an active MANUAL subscription (bank transfer/cash)', async () => {
       await seed(undefined, {
         name: 'Tenant A',
@@ -398,6 +432,19 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
           subscriptionBilledSeats: 5,
           subscriptionAnnualMonthsCharged: 10,
         }),
+      );
+      // Complimentary access is superadmin-granted: an owner marking their own
+      // tenant comped would unlock finalizing for free.
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), {
+          subscriptionComped: true,
+          subscriptionCompReason: 'self-granted',
+          manualSubscription: true,
+          subscriptionPaidUntil: new Date(Date.now() + 90 * DAY_MS),
+        }),
+      );
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), { subscriptionComped: true }),
       );
       // The webhook ordering watermark is CF-managed state: pushing it into
       // the future would make Stripe cancellation events look "stale" and get
