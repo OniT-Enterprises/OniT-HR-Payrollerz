@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   announcementEmailContent,
+  billingContactCandidates,
   BILINGUAL_FOOTER,
   firebaseStorageObjectPath,
   MAX_ANNOUNCEMENT_RECIPIENTS,
@@ -180,6 +181,35 @@ describe("client mail policy", () => {
     expect(memberCanRequestClientMail("interview-invitation", "manager", [])).toBe(false);
     expect(memberCanRequestClientMail("interview-invitation", "manager", ["hiring"])).toBe(true);
     expect(memberCanRequestClientMail("application-outcome", "viewer", ["hiring"])).toBe(true);
+  });
+
+  it("finds the billing contact where the admin console actually shows it", () => {
+    // Redman's shape: the tenant root doc has no billingEmail/ownerEmail and the
+    // address lives in settings/config companyDetails. Reading only the root doc
+    // reported "no email on file" while the console displayed one.
+    expect(
+      billingContactCandidates({}, { email: "onit.kiwi.steve@gmail.com" }),
+    ).toEqual(["onit.kiwi.steve@gmail.com"]);
+
+    // companyDetails wins — it is what the tenant edits and what is displayed.
+    expect(
+      billingContactCandidates(
+        { billingEmail: "root@example.com", ownerEmail: "owner@example.com" },
+        { email: "Company@Example.com" },
+      ),
+    ).toEqual(["company@example.com", "root@example.com", "owner@example.com"]);
+
+    // Falls back through the root doc, and de-duplicates.
+    expect(billingContactCandidates({ ownerEmail: " Owner@Example.com " }, {})).toEqual([
+      "owner@example.com",
+    ]);
+    expect(
+      billingContactCandidates({ billingEmail: "a@b.com", ownerEmail: "a@b.com" }, {}),
+    ).toEqual(["a@b.com"]);
+
+    // Nothing usable anywhere -> caller must report "nobody notified".
+    expect(billingContactCandidates({}, {})).toEqual([]);
+    expect(billingContactCandidates({ billingEmail: "   " }, { email: 42 })).toEqual([]);
   });
 
   it("lets NO tenant role announce complimentary access", () => {

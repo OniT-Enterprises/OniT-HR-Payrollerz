@@ -965,13 +965,19 @@ class AdminService {
       );
     }
 
-    // Seat count is recorded for reporting only; nothing is charged.
-    const activeEmployeeSnapshot = await getCountFromServer(
-      query(
-        collection(db, paths.employees(tenantId)),
-        where("status", "==", "active"),
+    // Seat count is recorded for reporting only; nothing is charged. The
+    // settings doc is read for the billing contact: companyDetails.email is what
+    // the tenant edits and what this console DISPLAYS (see the enrichment in
+    // getTenants), so the tenant root doc alone is often empty.
+    const [activeEmployeeSnapshot, settingsSnap] = await Promise.all([
+      getCountFromServer(
+        query(
+          collection(db, paths.employees(tenantId)),
+          where("status", "==", "active"),
+        ),
       ),
-    );
+      getDoc(doc(db, paths.settings(tenantId))),
+    ]);
     const activeEmployees = activeEmployeeSnapshot.data().count;
 
     const current = tenantSnap.data()?.subscriptionPaidUntil as
@@ -1007,8 +1013,15 @@ class AdminService {
     // and an email failure must never make a successful grant look failed. The
     // callable composes the wording and picks the recipient from the tenant
     // record — this only names the tenant and a best-known address.
+    // Same precedence as billingContactCandidates in functions/src/mailPolicy.ts
+    // (the callable is the authority on the real recipient; this drives the
+    // toast, so the two must not disagree).
     let emailedTo: string | null = null;
+    const companyDetails = (settingsSnap.data()?.companyDetails ?? {}) as {
+      email?: string;
+    };
     const contact =
+      companyDetails.email?.trim() ||
       (tenantSnap.data()?.billingEmail as string | undefined)?.trim() ||
       (tenantSnap.data()?.ownerEmail as string | undefined)?.trim() ||
       "";
