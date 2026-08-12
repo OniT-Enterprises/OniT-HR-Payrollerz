@@ -1,16 +1,8 @@
 import React from "react";
 import { TenantProfileInput } from "@/services/adminService";
-import { TenantPlan, PLAN_LIMITS } from "@/types/tenant";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2 } from "lucide-react";
 
@@ -25,13 +17,6 @@ type Props = {
   submitLabel: string;
 };
 
-const plans: { value: TenantPlan; label: string; description: string }[] = [
-  { value: "free", label: "Free", description: "Entry setup for tiny teams" },
-  { value: "starter", label: "Starter", description: "Small teams with paid support" },
-  { value: "professional", label: "Professional", description: "Growing organizations" },
-  { value: "enterprise", label: "Enterprise", description: "Large or bespoke organizations" },
-];
-
 export function TenantProfileForm({
   title,
   description,
@@ -42,11 +27,6 @@ export function TenantProfileForm({
   loading = false,
   submitLabel,
 }: Props) {
-  const selectedLimits = PLAN_LIMITS[value.plan] ?? {
-    maxEmployees: 0,
-    maxUsers: 0,
-    storageGB: 0,
-  };
   const update = <K extends keyof TenantProfileInput>(field: K, nextValue: TenantProfileInput[K]) => {
     onChange({ ...value, [field]: nextValue });
   };
@@ -153,47 +133,22 @@ export function TenantProfileForm({
                 daily quantity sync overwrite manual edits, so this is read-only.
               </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tenant-plan">Subscription Plan</Label>
-              <Select
-                value={value.plan}
-                onValueChange={(nextValue: TenantPlan) => update("plan", nextValue)}
-                disabled={loading}
-              >
-                <SelectTrigger id="tenant-plan">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.value} value={plan.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{plan.label}</span>
-                        <span className="text-xs text-muted-foreground">{plan.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
+          {/* There is no plan to pick: every feature is free and a subscription
+              unlocks exactly one action (finalizing payroll). Paid access is set
+              per tenant under Subscription on the tenant page — see
+              docs/BILLING.md. A "Subscription Plan" dropdown used to live here
+              writing plan/limits that nothing read or enforced, which read as
+              the way to grant paid access and was not. */}
           <div className="rounded-xl bg-muted/40 p-4">
-            <p className="text-sm font-medium">Plan limits</p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Max employees</p>
-                <p className="font-medium">{selectedLimits.maxEmployees.toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Max users</p>
-                <p className="font-medium">{selectedLimits.maxUsers.toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Storage</p>
-                <p className="font-medium">{selectedLimits.storageGB} GB</p>
-              </div>
-            </div>
+            <p className="text-sm font-medium">Plan &amp; billing</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Every feature is free for all tenants; a subscription unlocks finalizing
+              payroll runs only. Set paid access on the tenant page under{" "}
+              <span className="font-medium">Subscription</span> — "Record offline payment"
+              for bank transfer or cash, or "Grant free access" for testers and pilots.
+            </p>
           </div>
         </CardContent>
       </Card>

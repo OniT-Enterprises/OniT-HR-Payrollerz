@@ -221,6 +221,18 @@ describe("Self-Service Signup Security Rules", () => {
       }),
     );
 
+    // Self-granting complimentary access is the same bypass with a $0 label.
+    await assertFails(
+      commitBootstrap(db, "freeloader", uid, {
+        tenant: {
+          manualSubscription: true,
+          subscriptionComped: true,
+          subscriptionCompReason: "self-granted",
+          subscriptionPaidUntil: farFuture,
+        },
+      }),
+    );
+
     // So is any other billing metadata field.
     await assertFails(
       commitBootstrap(db, "freeloader", uid, {

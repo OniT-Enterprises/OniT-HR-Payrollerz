@@ -52,7 +52,6 @@ export interface TenantProfileInput {
   ownerEmail: string;
   billingEmail?: string;
   currentEmployeeCount?: number;
-  plan: TenantPlan;
 }
 
 type LegacyTenantLimits = {
@@ -654,12 +653,17 @@ class AdminService {
         { tenantId: string; ownerUid: string; message: string }
       >(await getFunctionsLazy(), "provisionTenant");
 
+      // Every module is on for every tenant: all features are free and the ONLY
+      // paywalled action is finalizing a payroll run, enforced by the
+      // subscription gate (docs/BILLING.md). This used to read
+      // `payroll: input.plan !== "free"`, so an admin-created tenant on the
+      // default "free" plan shipped with the payroll module switched OFF.
       const features: TenantConfig["features"] = {
         people: true,
         hiring: true,
         timeleave: true,
         performance: true,
-        payroll: input.plan !== "free",
+        payroll: true,
         money: true,
         accounting: true,
         reports: true,
@@ -695,8 +699,11 @@ class AdminService {
       await Promise.all([
         updateDoc(tenantRef, {
           status: "active",
-          plan: input.plan,
-          limits: PLAN_LIMITS[input.plan],
+          // Legacy fields kept for existing readers. There is no plan to choose:
+          // all features are free and a subscription unlocks finalizing payroll
+          // (docs/BILLING.md). PLAN_LIMITS is not enforced anywhere.
+          plan: "free" as TenantPlan,
+          limits: PLAN_LIMITS.free,
           ownerEmail,
           billingEmail,
           currentEmployeeCount,
@@ -743,7 +750,6 @@ class AdminService {
         targetId: createdTenantId,
         targetName: name,
         details: {
-          plan: input.plan,
           ownerUid,
           ownerEmail,
           billingEmail,
@@ -786,8 +792,6 @@ class AdminService {
           0,
           Number(input.currentEmployeeCount || 0),
         ),
-        plan: input.plan,
-        limits: PLAN_LIMITS[input.plan],
         updatedAt: serverTimestamp(),
       }),
       setDoc(
@@ -895,6 +899,9 @@ class AdminService {
 
     await updateDoc(tenantRef, {
       manualSubscription: true,
+      // A real payment supersedes any complimentary grant.
+      subscriptionComped: false,
+      subscriptionCompReason: null,
       subscriptionPaidUntil: Timestamp.fromDate(paidUntil),
       monthlySubscriptionAmount: estimate.monthlyTotal,
       subscriptionBillingAmount: amountReceived,
@@ -926,6 +933,94 @@ class AdminService {
     });
   }
 
+  /**
+   * Grant complimentary (free) paid-plan access — testers, pilots, partners.
+   * Mechanically a manual subscription with $0 received, so it unlocks exactly
+   * what a paying tenant unlocks (finalizing payroll) and expires on its own:
+   * comps are never open-ended, same invariant as offline payments. The $0
+   * amounts plus subscriptionComped keep it out of revenue reporting and out of
+   * the renewal-dunning emails.
+   */
+  async grantComplimentarySubscription(
+    tenantId: string,
+    input: { months: number; reason: string },
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
+    if (!db) throw new Error("Database not available");
+
+    const months = Math.floor(input.months);
+    if (!Number.isFinite(months) || months < 1 || months > 24) {
+      throw new Error("Choose between 1 and 24 months");
+    }
+    const reason = input.reason.trim();
+    if (!reason) throw new Error("Add a reason for the free access");
+
+    const tenantRef = doc(db, paths.tenant(tenantId));
+    const tenantSnap = await getDoc(tenantRef);
+    if (!tenantSnap.exists()) throw new Error("Tenant not found");
+    if (tenantSnap.data().stripeSubscriptionId) {
+      throw new Error(
+        "This tenant has an active Stripe subscription — cancel it in Stripe before granting free access",
+      );
+    }
+
+    // Seat count is recorded for reporting only; nothing is charged.
+    const activeEmployeeSnapshot = await getCountFromServer(
+      query(
+        collection(db, paths.employees(tenantId)),
+        where("status", "==", "active"),
+      ),
+    );
+    const activeEmployees = activeEmployeeSnapshot.data().count;
+
+    const current = tenantSnap.data()?.subscriptionPaidUntil as
+      | { toDate?: () => Date }
+      | undefined;
+    const currentDate =
+      typeof current?.toDate === "function" ? current.toDate() : null;
+    const base =
+      currentDate && currentDate.getTime() > Date.now()
+        ? currentDate
+        : new Date();
+    const paidUntil = new Date(base);
+    paidUntil.setMonth(paidUntil.getMonth() + months);
+
+    await updateDoc(tenantRef, {
+      manualSubscription: true,
+      subscriptionComped: true,
+      subscriptionCompReason: reason,
+      subscriptionPaidUntil: Timestamp.fromDate(paidUntil),
+      // Explicit zeros, not absent fields: a missing amount gets back-filled
+      // with a list-price estimate for subscribed tenants (see enrichment in
+      // getTenants), which would show a comp as revenue.
+      monthlySubscriptionAmount: 0,
+      subscriptionBillingAmount: 0,
+      subscriptionBillingInterval: "month",
+      subscriptionBillingMonths: months,
+      subscriptionBilledSeats: 0,
+      currentEmployeeCount: activeEmployees,
+      updatedAt: serverTimestamp(),
+    });
+
+    await this.logAdminAction({
+      action: "complimentary_subscription_granted",
+      actorUid,
+      actorEmail,
+      targetType: "tenant",
+      targetId: tenantId,
+      targetName: tenantSnap.data()?.name,
+      details: {
+        months,
+        reason,
+        activeEmployees,
+        amountReceived: 0,
+        paidUntil: paidUntil.toISOString(),
+      },
+      timestamp: Timestamp.now(),
+    });
+  }
+
   /** End a manual subscription (paid-until stays for the record; gate closes). */
   async cancelManualSubscription(
     tenantId: string,
@@ -937,14 +1032,19 @@ class AdminService {
     const tenantRef = doc(db, paths.tenant(tenantId));
     const tenantSnap = await getDoc(tenantRef);
     if (!tenantSnap.exists()) throw new Error("Tenant not found");
+    const wasComped = tenantSnap.data()?.subscriptionComped === true;
 
     await updateDoc(tenantRef, {
       manualSubscription: false,
+      subscriptionComped: false,
+      subscriptionCompReason: null,
       updatedAt: serverTimestamp(),
     });
 
     await this.logAdminAction({
-      action: "manual_subscription_cancelled",
+      action: wasComped
+        ? "complimentary_subscription_ended"
+        : "manual_subscription_cancelled",
       actorUid,
       actorEmail,
       targetType: "tenant",

@@ -37,6 +37,14 @@ export interface TenantConfig {
   // requires an unexpired subscriptionPaidUntil to count as subscribed.
   manualSubscription?: boolean;
   subscriptionPaidUntil?: FirestoreTimestamp;
+  /**
+   * Complimentary access granted by a superadmin (testers, pilots, partners).
+   * It is a manual subscription with nothing received, so it still needs an
+   * unexpired subscriptionPaidUntil — never open-ended. The flag exists so a
+   * $0 comp is never mistaken for revenue or dunned for payment.
+   */
+  subscriptionComped?: boolean;
+  subscriptionCompReason?: string;
   /** Standard monthly list value, retained for reporting across both cycles. */
   monthlySubscriptionAmount?: number;
   /** Actual amount charged or received for the current billing cycle. */

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
-import { isTenantSubscribed } from "@/lib/packagePricing";
+import { isTenantComplimentary, isTenantSubscribed } from "@/lib/packagePricing";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -434,7 +434,12 @@ export default function TenantList() {
                 <div>
                   <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.paying")}</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    {tenants.filter((tenant) => isTenantSubscribed(tenant)).length}
+                    {
+                      tenants.filter(
+                        (tenant) =>
+                          isTenantSubscribed(tenant) && !isTenantComplimentary(tenant),
+                      ).length
+                    }
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -528,6 +533,11 @@ export default function TenantList() {
                           >
                             {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
                           </Badge>
+                          {isTenantComplimentary(tenant) && (
+                            <Badge variant="outline" className="text-xs border-amber-500/40 text-amber-600">
+                              Comp
+                            </Badge>
+                          )}
                           <Badge variant="outline" className="text-xs">
                             {formatSubscription(tenant)}
                           </Badge>
@@ -604,6 +614,15 @@ export default function TenantList() {
                             >
                               {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
                             </Badge>
+                            {isTenantComplimentary(tenant) && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs border-amber-500/40 text-amber-600"
+                                title={tenant.subscriptionCompReason || "Complimentary access"}
+                              >
+                                Comp
+                              </Badge>
+                            )}
                             <span className="text-sm font-medium">
                               {formatSubscription(tenant)}
                             </span>
