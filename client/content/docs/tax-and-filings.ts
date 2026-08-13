@@ -19,7 +19,7 @@ export const article: LocalizedDocArticle = {
     blocks: [
       {
         type: "prose",
-        body: "Xefe computes your wage income tax (WIT) and INSS contributions from payroll you've actually run and paid — never from an estimate. Each month, that payroll turns straight into the exact figures your return needs. You stay in control of what actually gets submitted and when: Xefe prepares the numbers and the paperwork, not the click that files them.",
+        body: "Xefe computes your wage income tax (WIT) and INSS contributions from payroll you've actually run and paid — never from an estimate. WIT follows the month wages are paid, and each employee must be marked resident or non-resident using the tax residence tests; nationality and shareholder status do not create a tax exemption. You stay in control of what actually gets submitted and when: Xefe prepares the numbers and the paperwork, not the click that files them.",
       },
       { type: "heading", id: "calendar", text: "The monthly calendar" },
       {
@@ -53,7 +53,9 @@ export const article: LocalizedDocArticle = {
           "Your INSS declaration, built to the INSS portal's own official Excel template, ready to upload as-is.",
           "Each employee's annual WIT certificate — a record of the wages paid and tax withheld for the year.",
           "The annual employer wage-tax reconciliation, matching twelve months of filings against the year.",
-          "The working figures behind your annual income tax return (TADR-IT 1), organized for your accountant to check and file.",
+          "Services-tax assistance for hotel, restaurant/bar and telecommunications receipts. Mixed businesses enter only their designated-service receipts; Xefe never taxes all turnover from the sector label alone.",
+          "Income-tax installment figures at 0.5% of the reviewed turnover base, with quarterly/monthly frequency based on prior-year turnover.",
+          "The working figures behind your annual income tax return (TADR-IT 1), including Schedule VII's 100% tax-depreciation schedule, organized for your accountant to check and file.",
         ],
       },
       {
@@ -63,7 +65,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "A filing and its payment are always two separate obligations, and Xefe tracks them separately. Marking a return as filed doesn't mark the tax as paid — an unpaid balance stays visibly overdue even after the paperwork is in. Record the payment once it clears, and Xefe posts the matching clearing entry to your books automatically, so your ledger and your filings never drift apart.",
+        body: "A filing and its payment are separate obligations. Xefe tracks both statuses for WIT and INSS. Services tax and income-tax installments each have their own declaration record: filing one never marks another as filed just because the month matches. Once a declaration is recorded as filed, its declared figures are frozen; evidence can still be added.",
       },
       {
         type: "table",
@@ -99,7 +101,7 @@ export const article: LocalizedDocArticle = {
     blocks: [
       {
         type: "prose",
-        body: "O Xefe calcula o seu imposto sobre salários (WIT) e as contribuições do INSS a partir da folha de pagamento que efetivamente processou e pagou — nunca de uma estimativa. Todos os meses, essa folha transforma-se diretamente nos valores exatos de que a sua declaração precisa. A decisão sobre o que é efetivamente submetido, e quando, continua a ser sua: o Xefe prepara os números e os documentos, não o clique que os entrega.",
+        body: "O Xefe calcula o imposto sobre salários (WIT) e o INSS a partir da folha efetivamente processada e paga. O WIT segue o mês em que o salário é pago, e cada trabalhador deve ser classificado como residente ou não residente pelos testes de residência fiscal; nacionalidade e qualidade de acionista não criam isenção. A entrega continua sob o seu controlo.",
       },
       { type: "heading", id: "calendar", text: "O calendário mensal" },
       {
@@ -133,7 +135,9 @@ export const article: LocalizedDocArticle = {
           "A sua declaração de INSS, construída no modelo Excel oficial do portal, pronta a submeter tal como está.",
           "O certificado anual de WIT de cada trabalhador — um registo dos salários pagos e do imposto retido durante o ano.",
           "A reconciliação anual do imposto sobre salários do empregador, cruzando doze meses de declarações com o ano.",
-          "Os valores de trabalho por trás da sua declaração anual de imposto sobre o rendimento (TADR-IT 1), organizados para o seu contabilista rever e entregar.",
+          "Apoio ao imposto sobre serviços para receitas de hotel, restaurante/bar e telecomunicações. Negócios mistos introduzem apenas receitas de serviços designados.",
+          "Valores do imposto prestacional a 0,5% da base revista, com frequência trimestral ou mensal conforme o volume de negócios do ano anterior.",
+          "Os valores de trabalho da declaração anual (TADR-IT 1), incluindo a tabela fiscal de depreciação de 100% do Anexo VII, para revisão do contabilista.",
         ],
       },
       {
@@ -143,7 +147,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "Uma declaração e o respetivo pagamento são sempre duas obrigações separadas, e o Xefe acompanha-as em separado. Marcar uma declaração como entregue não marca o imposto como pago — um saldo por pagar continua visivelmente em atraso mesmo depois de o documento estar entregue. Registe o pagamento assim que ele se concretizar, e o Xefe lança automaticamente o respetivo lançamento de regularização na sua contabilidade, para que os livros e as declarações nunca se desalinhem.",
+        body: "A declaração e o pagamento são obrigações separadas. O Xefe acompanha ambos os estados para WIT e INSS. O imposto sobre serviços e o imposto prestacional têm, cada um, o seu próprio registo de declaração: entregar um não marca outro como entregue no mesmo mês. Depois de registada a entrega, os valores declarados ficam congelados; ainda pode acrescentar comprovativos.",
       },
       {
         type: "table",
@@ -179,7 +183,7 @@ export const article: LocalizedDocArticle = {
     blocks: [
       {
         type: "prose",
-        body: "Xefe kalkula ita-nia impostu saláriu (WIT) no kontribuisaun INSS husi folha pagamentu ne'ebé ita prosesa no selu ona — nunka husi estimativa. Kada fulan, folha ne'e sai valór loloos ne'ebé deklarasaun presiza. Ita kontinua kontrola saida mak submete loloos no bainhira; Xefe prepara de'it númeru no dokumentu sira, la'ós klik ne'ebé entrega sira-ne'e.",
+        body: "Xefe kalkula WIT no INSS husi folha ne'ebé prosesa no selu ona. WIT tuir fulan ne'ebé saláriu selu, no traballadór ida-idak tenke hili rezidente ka la'ós rezidente tuir teste rezidénsia fiskál; nasionalidade no acionista la halo izensaun. Ita kontinua kontrola submisaun.",
       },
       { type: "heading", id: "calendar", text: "Kalendáriu fulan-fulan nian" },
       {
@@ -213,7 +217,9 @@ export const article: LocalizedDocArticle = {
           "Ita-nia deklarasaun INSS, halo tuir modelu Excel ofisiál portál nian, prontu atu submete tuir mós.",
           "Sertifikadu WIT anuál trabalhadór ida-idak — rejistu saláriu ne'ebé selu no impostu ne'ebé retein durante tinan ida.",
           "Rekonsiliasaun anuál impostu saláriu empregadór nian, kompara deklarasaun 12 fulan ho tinan tomak.",
-          "Valór servisu iha okos deklarasaun anuál rendimentu (TADR-IT 1), organizadu ba ita-nia kontabilista atu verifika no entrega.",
+          "Asisténsia impostu servisu ba resibu hotel, restaurante/bar no telekomunikasaun. Negósiu mistu hatama deit resibu servisu dezignadu.",
+          "Valór impostu prestasaun 0,5% hosi baze ne'ebé revee, ho frekuénsia trimestrál ka mensál tuir volume negósiu tinan kotuk.",
+          "Valór servisu TADR-IT 1, inklui tabela depreciasaun fiskál 100% Anexu VII, ba kontabilista atu verifika.",
         ],
       },
       {
@@ -223,7 +229,7 @@ export const article: LocalizedDocArticle = {
       },
       {
         type: "prose",
-        body: "Deklarasaun ida no nia pagamentu nunka obrigasaun hanesan, no Xefe kontrola sira ketak. Marka deklarasaun hanesan entregadu la marka impostu hanesan selu ona — saldu seidauk selu kontinua atrazadu ho klaru maski dokumentu tama ona. Rejistu pagamentu bainhira ida-ne'e klaru, no Xefe lansa automátiku lansamentu regularizasaun ba ita-nia livru kontabilidade — atu livru no deklarasaun sira kontinua hanesan.",
+        body: "Deklarasaun no pagamentu mak obrigasaun ketak. Xefe akompaña estadu rua ba WIT no INSS. Impostu servisu no impostu prestasaun ida-idak iha rejistu deklarasaun rasik; entrega ida la marka ida seluk iha fulan hanesan. Depois rejista nu'udar hatama ona, valór deklaradu labele muda; bele aumenta evidénsia.",
       },
       {
         type: "table",

@@ -722,7 +722,23 @@ export default function PayrollHistory() {
         description: t("payrollHistory.toastGeneratingDesc", { name: record.employeeName }),
       });
 
-      await downloadPayslip(record, selectedRun, undefined, language);
+      // Passing the tenant's real company details, NOT undefined: the PDF
+      // defaults are placeholders ("OniT Enterprises", a San Francisco address),
+      // so a downloaded payslip used to carry another company's letterhead and
+      // no employer NISS. The emailed path (SendPayslipsDialog) always passed
+      // them; only this one did not.
+      await downloadPayslip(
+        record,
+        selectedRun,
+        tenantSettings?.companyDetails
+          ? {
+              name: tenantSettings.companyDetails.legalName,
+              address: tenantSettings.companyDetails.registeredAddress,
+              niss: tenantSettings.companyDetails.employerNiss,
+            }
+          : undefined,
+        language,
+      );
 
       toast({
         title: t("payrollHistory.toastDownloaded"),

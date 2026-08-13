@@ -24,6 +24,15 @@ import {
 } from "@/lib/tax/income-tax-installment-tl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
+import {
+  useRecordBusinessTaxAsFiled,
+  useTaxFilingByPeriod,
+} from "@/hooks/useTaxFiling";
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { EtaxFilingCard, type EtaxAccount } from "./EtaxFilingCard";
 
 /** Percentage displayed by the e-Tax form (the calculator uses its decimal equivalent). */
@@ -33,13 +42,21 @@ export function InstallmentTaxEtaxFiling({
   revenue,
   priorYearTurnover,
   periodLabel,
+  period,
 }: {
   revenue: number;
   priorYearTurnover: number;
   periodLabel?: string;
+  /** Month, or quarter-end month, represented by this declaration. */
+  period: string;
 }) {
   const { t } = useI18n();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const tenantId = useTenantId();
   const [baseOverride, setBaseOverride] = useState("");
+  const filingQuery = useTaxFilingByPeriod("installment_tax", period, !!period);
+  const recordFiled = useRecordBusinessTaxAsFiled();
 
   const overrideValue = useMemo(() => {
     if (baseOverride.trim() === "") return null;
@@ -77,6 +94,38 @@ export function InstallmentTaxEtaxFiling({
       },
     ],
   };
+  const isFiled = filingQuery.data?.status === "filed";
+
+  const markAsFiled = async () => {
+    if (!user) return;
+    try {
+      await recordFiled.mutateAsync({
+        type: "installment_tax",
+        period,
+        figures: {
+          taxBase: effectiveBase,
+          rate: INSTALLMENT_TAX_RATE / 100,
+          taxDue: taxToPay,
+        },
+        userId: user.uid,
+        audit: {
+          tenantId,
+          userId: user.uid,
+          userEmail: user.email || "",
+          userName: user.displayName || undefined,
+        },
+      });
+      toast({
+        title: t("reports.profitLoss.etax.recordedFiled") || "Recorded as filed",
+      });
+    } catch (error) {
+      toast({
+        title: t("common.error") || "Error",
+        description: error instanceof Error ? error.message : "Could not record the filing",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -88,6 +137,23 @@ export function InstallmentTaxEtaxFiling({
         }
         accounts={[account]}
       />
+      <div className="flex justify-end">
+        {isFiled ? (
+          <p className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-4 w-4" />
+            {t("reports.profitLoss.etax.filedRecorded") || "e-Tax filing recorded"}
+          </p>
+        ) : (
+          <Button
+            type="button"
+            onClick={() => void markAsFiled()}
+            disabled={!user || recordFiled.isPending}
+          >
+            {recordFiled.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("reports.profitLoss.etax.markFiled") || "I filed this in e-Tax"}
+          </Button>
+        )}
+      </div>
       {/* Sec. 64.6 exclusions — prominent, because Xefe cannot derive them. */}
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40">
         <p className="font-medium text-amber-800 dark:text-amber-200">

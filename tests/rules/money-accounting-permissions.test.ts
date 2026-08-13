@@ -73,6 +73,13 @@ describe('Money + Accounting Rules', () => {
         role: 'viewer',
         modules: ['payroll'],
       });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/settings/general'), {
+        tenantId: 'tenant-a',
+        payrollConfig: {
+          allowSelfApproval: false,
+          tax: { residentThreshold: 500, residentRate: 10, nonResidentRate: 10 },
+        },
+      });
 
       // Seed global platform vatConfig
       await setDoc(doc(adminDb, 'platform/vatConfig'), { isActive: true, updatedAt: new Date() });
@@ -133,6 +140,20 @@ describe('Money + Accounting Rules', () => {
         status: 'draft',
         dueDate: '2026-07-15',
       });
+      await setDoc(doc(adminDb, 'taxFilings/tenant-a__monthly_wit__2026-05'), {
+        tenantId: 'tenant-a',
+        type: 'monthly_wit',
+        period: '2026-05',
+        status: 'filed',
+        statementStatus: 'filed',
+        dueDate: '2026-06-15',
+        dataSnapshot: { reportingPeriod: '2026-05', employees: [] },
+        totalWages: 1000,
+        totalWITWithheld: 50,
+        employeeCount: 2,
+        createdAt: new Date(),
+        createdBy: 'owner-a',
+      });
     });
   });
 
@@ -143,6 +164,21 @@ describe('Money + Accounting Rules', () => {
   it('allows authenticated users to read platform VAT config', async () => {
     const authedDb = testEnv.authenticatedContext('owner-a').firestore();
     await assertSucceeds(getDoc(doc(authedDb, 'platform/vatConfig')));
+  });
+
+  it('locks statutory WIT rates in tenant settings', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const settingsRef = doc(ownerDb, 'tenants/tenant-a/settings/general');
+
+    await assertSucceeds(updateDoc(settingsRef, {
+      'payrollConfig.allowSelfApproval': true,
+    }));
+    await assertFails(updateDoc(settingsRef, {
+      'payrollConfig.tax.residentRate': 8,
+    }));
+    await assertFails(updateDoc(settingsRef, {
+      'payrollConfig.tax.residentThreshold': 1000,
+    }));
   });
 
   it('blocks unauthenticated users from reading platform VAT config', async () => {
@@ -300,6 +336,24 @@ describe('Money + Accounting Rules', () => {
     await assertFails(getDoc(doc(payrollViewerDb, filingPath)));
     await assertFails(getDoc(doc(viewerDb, 'taxFilings/tenant-a__monthly_wit__2026-06')));
     await assertSucceeds(getDoc(doc(payrollViewerDb, 'taxFilings/tenant-a__monthly_wit__2026-06')));
+  });
+
+  it('keeps filed declaration snapshots immutable while allowing evidence metadata', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const filingRef = doc(ownerDb, 'taxFilings/tenant-a__monthly_wit__2026-05');
+
+    await assertSucceeds(updateDoc(filingRef, {
+      receiptNumber: 'ETAX-123',
+      updatedAt: new Date(),
+    }));
+    await assertFails(updateDoc(filingRef, {
+      dataSnapshot: { reportingPeriod: '2026-05', employees: ['changed'] },
+    }));
+    await assertFails(updateDoc(filingRef, { totalWITWithheld: 1 }));
+    await assertFails(updateDoc(filingRef, { status: 'draft' }));
+    await assertFails(updateDoc(filingRef, { statementStatus: 'draft' }));
+    await assertFails(updateDoc(filingRef, { period: '2026-04' }));
+    await assertFails(deleteDoc(filingRef));
   });
 
   it('allows only clearing totals to change on cash advances and keeps clearings immutable', async () => {

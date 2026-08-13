@@ -1547,12 +1547,12 @@ const messages = {
       people: {
         title: "Rai dadus ema no oras hamutuk",
         description:
-          "Hatama trabalhador ida-idak dala ida de'it — saláriu, oráriu no dadus banku. Prezensa no lisensa hela iha rejistu hanesan.",
+          "Hatama trabalhador ida-idak dala ida de'it — saláriu, oráriu no dadus banku. Prezensa no lisensa hela iha rejistu hanesan, no mudansa saláriu ida-idak rai fulan ne'ebé nia hahú.",
       },
       payroll: {
         title: "Reviza no aprova folha",
         description:
-          "Hili períodu no reviza. Xefe kalkula saláriu brutu, WIT, INSS, oras extra no saláriu líquidu ba trabalhador ida-idak.",
+          "Hili períodu no reviza. Xefe kalkula saláriu brutu, WIT, INSS, oras extra no saláriu líquidu ba trabalhador ida-idak — inklui prémiu asiduidade no retroativu husi aumentu ho efeitu ba fulan liubá.",
       },
       payments: {
         title: "Selu trabalhador no prepara deklarasaun",
@@ -1811,10 +1811,16 @@ const messages = {
       description: "Define setor, lokal no departamentu",
       businessSector: "Setor Negosiu *",
       sectorHint: "Hili setor atu sujere departamentu comum",
+      servicesTaxReceipts: "Resibu ba impostu servisu",
+      servicesTaxManual: "Negósiu mistu — hau sei haree Secsaun 3",
+      servicesTaxAllDesignated: "Resibu kliente hotu servisu dezignadu",
+      servicesTaxReceiptsHelp:
+        "Hili opsaun daruak deit karik resibu kliente hotu ba servisu hotel, restaurante/bar ka telekomunikasaun. Se lae, Xefe husik baze impostu atu revee manualmente.",
       sectors: {
         security: "Servisu Seguransa",
         hotel: "Hotelaria",
         restaurant: "Restaurante",
+        telecommunications: "Telekomunikasaun",
         trading: "Komersiu",
         manufacturing: "Fabrikasaun",
         construction: "Konstrusaun",
@@ -2119,7 +2125,7 @@ const messages = {
       petroleumHint:
         "Loke ida-ne'e de'it se ita-nia empreza tama iha Akordu Petróleu. Ita-nia traballadór sira sei selu impostu tuir Anexu IX, la'ós impostu saláriu baibain — rejime seluk ho taxa, regra amortizasaun no fatin entrega rasik. Xefe la kalkula ne'e, tan ne'e sei para folha duke kalkula sala no husik Ita selu diferensa.",
       currentRatesTitle: "Valór ne'ebé ita uza agora",
-      changeRatesTitle: "Muda valór legál sira",
+      changeRatesTitle: "Polítika folha avansadu",
       title: "Konfigurasaun Folha",
       description: "Impostu, seguransa sosial no horas extra",
       wit: "Impostu Rendimentu (WIT)",
@@ -2206,6 +2212,15 @@ const messages = {
         subsidioLabel: "Fulan 13 (Subsidiu Anual)",
         subsidioValue:
           "Saláriu fulan ida, selu to'o 20 Dezembru kada tinan (Lei Trabálhu Art. 44)",
+        subsidioBaseAfterRaiseLabel: "Fulan 13 hafoin aumentu iha klaran tinan",
+        subsidioBaseAfterRaiseValue:
+          "Kalkula ho saláriu ne'ebé vale iha loron pagamentu, la'ós média tinan tomak (Lei Trabálhu Art. 44 la dehan)",
+        retroTaxMonthLabel: "Fulan impostu ba retroativu",
+        retroTaxMonthValue:
+          "Retroativu sai impostu iha fulan ne'ebé SELU, la'ós fahe ba fulan sira ne'ebé nia refere",
+        attendancePremiumInssLabel: "Prémiu asiduidade no seguransa sosiál",
+        attendancePremiumInssValue:
+          "Konta nu'udar remunerasaun kontributiva ba dezempeñu individuál (DL 20/2017 Art. 8), entaun INSS aplika ba nia",
       },
     },
     notifications: {
@@ -2426,6 +2441,7 @@ const messages = {
       emergencyContactPhone: "Telefone Emerjensia",
       dateOfBirth: "Data Naran Moris (YYYY-MM-DD)",
       statusTemplate: "Status (ativu/inativu/iha_lisensa)",
+      taxResidence: "Rezidénsia fiskál (resident ka non-resident)",
     },
     statusLabels: {
       active: "Ativu",
@@ -2572,6 +2588,7 @@ const messages = {
       startDateRequired: "Hili data hahú servisu.",
       salaryRequired: "Hatama saláriu fulan nian.",
       salaryNonNegative: "Saláriu tenki zero ka liu.",
+      taxResidenceRequired: "Hili residente ka la'ós residente ba impostu.",
       minimumWorkingAge:
         "Lei traballu Timor-Leste: idade mínimu atu servisu mak tinan 15 (idade iha data hahú: {{age}}).",
       partTimeHours: "Hatama oras kontratu entre 1 no 44 kada semana.",
@@ -2741,6 +2758,21 @@ const messages = {
       salaryLabel: "Saláriu Mensal (USD)",
       salaryPlaceholder: "ez.: 1500",
       minWageHint: "Saláriu minimu TL: $115/fulan",
+      salaryEffectiveFrom: "Hahú iha",
+      salaryEffectiveFromHint:
+        "Loron ne'ebé saláriu foun hahú. Karik fulan liubá, diferensa sei oferese nu'udar retroativu iha prosesamentu tuirmai.",
+      salaryChangeReason: "Razaun (opsionál)",
+      salaryChangeReasonPlaceholder: "Promosaun, revizaun tinan…",
+      salaryHistorySection: "Mudansa saláriu ({count})",
+      salaryHistoryEffective: "Hahú {month}",
+      salaryHistoryBackdated: "Retroativu",
+      attendancePremiumSection: "Prémiu asiduidade",
+      attendancePremiumAmount: "Prémiu mensál",
+      attendancePremiumHint:
+        "Selu deit karik períodu la iha falta la justifikadu. Husik mamuk karik trabalhador ne'e la iha prémiu. Lisensa aprovadu no loron moras nunka lakon prémiu.",
+      attendancePremiumMode: "Karik iha falta la justifikadu",
+      attendancePremiumAllOrNothing: "La selu",
+      attendancePremiumProRata: "Hakotu tuir proporsaun",
       leaveDays: "Loron Lisensa Anual",
       leaveDaysPlaceholder: "25",
       benefits: "Pakote Benefisiu",
@@ -2751,6 +2783,12 @@ const messages = {
         executive: "Ekzekutivu",
       },
       taxResidentLabel: "Residente fiskal Timor-Leste",
+      taxResidenceLabel: "Rezidénsia fiskál *",
+      taxResidencePlaceholder: "Hili rezidénsia fiskál",
+      taxResidentOption: "Rezidente Timor-Leste",
+      taxNonResidentOption: "La'ós rezidente",
+      taxResidenceHelp:
+        "Jeralmente, rezidente signifika loron 183 iha períodu fulan 12 ne'ebé hahú ka remata iha tinan, exetu se nia hela-fatin permanente iha li'ur Timor-Leste. Funsionáriu Governu Timor-Leste ne'ebé servisu iha estranjeiru mos tama. Nasionalidade deit la determina.",
       incomeTaxTitle: "Impostu Rendimentu (WIT)",
       incomeTaxDesc: "10% ba rendimentu liu $500/fulan",
       socialSecurityTitle: "Seguransa Sosial (INSS)",
@@ -6179,7 +6217,7 @@ const messages = {
         templateWarning:
           "Exportasaun Formuláriu Ofisiál uza formatu template ATTL 2024/2025. Se Ministério das Finanças muda layout formuláriu, exportasaun ida-ne'e bele presiza atualiza.",
         dueDateLabel: "Data Vensimentu:",
-        dueDateValue: "Loron 15 iha fulan tuir mai depois períodu pagamentu.",
+        dueDateValue: "Loron 15 iha fulan tuir mai depois fulan ne'ebé selu saláriu.",
         supportLabel: "Suporte e-Tax:",
         supportValue: "(+670) 74962772 | etax@mof.gov.tl",
       },
@@ -6197,6 +6235,10 @@ const messages = {
         selectMethod: "Hili métodu",
         etax: "Portal e-Tax",
         bnu: "Banku BNU (papel)",
+        alsoFiledServicesTax: "Hau mos hatama ona impostu servisu ba fulan ne'e",
+        servicesTaxBase: "Resibu servisu dezignadu ne'ebé simu (USD)",
+        servicesTaxBaseHelp:
+          "Hatama deit resibu hotel, restaurante/bar ka telekomunikasaun. La hatama linha negósiu seluk.",
         receiptLabel: "Numeru Recibu (Opsionál)",
         paymentReferenceLabel: "Referénsia banku / resibu *",
         receiptPlaceholder: "Hatama numeru recibu ka konfirmasaun",
@@ -6240,6 +6282,8 @@ const messages = {
         officialExportedTitle: "Formuláriu ofisiál exporta ona",
         officialExportedDescription:
           "Formuláriu Impostu Mensal Konsolidada ATTL exporta ona ba Excel.",
+        servicesTaxManualReview:
+          "Formuláriu exporta ona. Secsaun 3 impostu servisu husik mamuk tanba negósiu seidauk konfirma katak resibu hotu servisu dezignadu; revee molok hatama.",
         officialExportFailedDescription:
           "La konsege gera formuláriu Excel. Favór koko fali.",
         filedTitle: "Arkivu rejista ona",
@@ -6271,6 +6315,9 @@ const messages = {
         baseOverrideLabel: "Baze volume negósiu ajustadu (opsionál)",
         baseOverrideAboveRevenue:
           "Baze ajustadu boot liu reseita períodu ne'ebé Xefe kalkula — verifika fila fali molok submete.",
+        markFiled: "Hau hatama ona iha e-Tax",
+        recordedFiled: "Rejista ona nu'udar hatama",
+        filedRecorded: "Rejistu e-Tax rai ona",
         title: "Preenxe impostu prestasaun iha e-Tax (asistidu)",
         description:
           "Prestasaun impostu mak 0,5% hosi volume negósiu: trimestrál se tinan kotuk la liu $1 millaun, no mensál se liu. Konfirma períodu no submete iha e-Tax — Xefe la submete hodi ita.",
@@ -7332,6 +7379,8 @@ const messages = {
     specialHours: "Oras espesiál (2×)",
     invalidHireDate:
       "data hahú servisu la validu — hadia iha perfil traballadór nian molok prosesa saláriu",
+    taxResidenceRequired:
+      "hili residente ka la'ós residente ba impostu iha perfil traballadór nian molok prosesa saláriu",
     unpaidAbsence: "Falta la selu",
     absenceHoursLabel: "Oras ne'ebé deskonta",
     absenceHoursHint:
@@ -7459,6 +7508,18 @@ const messages = {
     thirteenthMonth: "Fulan 13",
     serviceCompensation: "Indemnizasaun (Art. 56)",
     untakenLeavePayout: "Feriadu La Goza (Art. 32)",
+    attendancePremium: "Prémiu asiduidade",
+    attendancePremiumAmount: "Prémiu",
+    attendancePremiumClean:
+      "La iha falta la justifikadu iha períodu ne'e, entaun prémiu {amount} selu tomak.",
+    attendancePremiumForfeited:
+      "Falta la justifikadu {hours}h, entaun prémiu la selu. Hatama montante karik hakarak selu.",
+    attendancePremiumReduced:
+      "Hakotu husi {full} tanba falta la justifikadu {hours}h.",
+    retroactivePay: "Retroativu",
+    retroactivePayAmount: "Retroativu",
+    retroactivePayHint:
+      "Saláriu ne'ebé seidauk selu husi aumentu ho efeitu ba fulan liubá. Suzere husi istória saláriu ne'ebé rejistu no selu dala ida deit. Fulan parsiál la kalkula — hatama iha ne'e.",
     incomeTax: "Impostu Rendimentu",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Kontribuisaun Empreza",
@@ -8004,11 +8065,11 @@ const messages = {
         entitySoleTrader: "Empreza individuál (na'in ida de'it)",
         disclaimer:
           "Papel servisu ne'e mapeia kontabilidade ne'ebé lansa ona ba númeru liña formuláriu ofisiál nian, hanesan apoiu ba preparasaun. La'ós formuláriu ofisiál no Xefe la submete — reviza valor ida-idak ho ita-nia kontabilista, depois transkreve ba formuláriu ofisiál ATTL nian.",
-        depreciationMethod: "Métodu depresiasaun fiskál (liña 15)",
+        depreciationMethod: "Depresiasaun fiskál (liña 15)",
         depreciationUsefulLife: "Taxa vida útil (rejistu ativu)",
         depreciationFullExpensing: "100% iha tinan sosa (Aneksu VII)",
         depreciationMethodHint:
-          "Konfirma ho ita-nia kontabilista tratamentu ida-ne'ebé mak aplika molok entrega.",
+          "Xefe aplika taxa 100% iha Aneksu VII. Husu kontabilista atu verifika ativu no alienasaun molok entrega.",
         dueBy: "Formuláriu ofisiál to'o {{date}}.",
         officialFormLink: "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
         summaryTitle: "Rezumu kálkulu",

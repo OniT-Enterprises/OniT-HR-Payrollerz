@@ -59,6 +59,8 @@ import {
   LIGHT_WORK_MAX_HOURS_PER_WEEK,
 } from "@/lib/payroll/minors";
 import { FIXED_TERM_MOTIVES, appendContractRenewal } from "@/lib/probation";
+import { recordSalaryChange, salaryIncreaseSchedule } from "@/lib/payroll/salary-history";
+import type { AttendancePremium } from "@/lib/payroll/attendance-premium";
 import {
   UserPlus,
   FileText,
@@ -85,6 +87,9 @@ import { recoverableFormDraftKey } from "@/lib/recoverableFormDraft";
 const ContractGeneratorDialog = React.lazy(
   () => import("@/components/staff/ContractGeneratorDialog"),
 );
+
+const formatSalaryAmount = (amount: number): string =>
+  `$${(amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Helper function to get monthly salary with fallback
 const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?: number }): number => {
@@ -136,6 +141,7 @@ export default function AddEmployee() {
       startDateRequired: t("addEmployee.validation.startDateRequired"),
       salaryRequired: t("addEmployee.validation.salaryRequired"),
       salaryNonNegative: t("addEmployee.validation.salaryNonNegative"),
+      taxResidenceRequired: t("addEmployee.validation.taxResidenceRequired"),
       minimumWorkingAge: (age) =>
         t("addEmployee.validation.minimumWorkingAge", { age }),
       partTimeHours: t("addEmployee.validation.partTimeHours"),
@@ -182,10 +188,13 @@ export default function AddEmployee() {
       probationEndDate: "",
       fixedTermMotive: "",
       salary: searchParams.get("salary") || "",
+      salaryEffectiveFrom: "",
+      salaryChangeReason: "",
+      attendancePremiumAmount: "",
+      attendancePremiumMode: "all_or_nothing",
       leaveDays: "12",
       benefits: "standard",
       payFrequency: "monthly",
-      isResident: true,
     },
     mode: "onChange", // Validate on change for better UX
   });
@@ -315,6 +324,20 @@ export default function AddEmployee() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
+  const salaryChanges = useMemo(
+    () => salaryIncreaseSchedule(editingEmployee?.compensation?.salaryHistory),
+    [editingEmployee],
+  );
+
+  // True only when editing and the typed salary differs from what is stored, so
+  // the effective-date question appears exactly when it has an answer.
+  const salaryIsChanging = useMemo(() => {
+    if (!isEditMode || !editingEmployee) return false;
+    const stored = getMonthlySalary(editingEmployee.compensation);
+    const typed = Number(formValues.salary || "0") || 0;
+    return Number.isFinite(typed) && roundMoney(typed) !== roundMoney(stored);
+  }, [isEditMode, editingEmployee, formValues.salary]);
   const [supplementalDirty, setSupplementalDirty] = useState(false);
 
   const draftStorageKey = recoverableFormDraftKey({
@@ -406,10 +429,21 @@ export default function AddEmployee() {
           probationEndDate: employee.jobDetails.probationEndDate || "",
           fixedTermMotive: employee.jobDetails.fixedTermMotive || "",
           salary: getMonthlySalary(employee.compensation).toString(),
+          // Left blank on purpose: it is only answered when the salary is being
+          // changed, and prefilling a date would silently stamp a history entry
+          // with a meaningless effective date on an unrelated edit.
+          salaryEffectiveFrom: "",
+          salaryChangeReason: "",
+          attendancePremiumAmount:
+            employee.compensation.attendancePremium?.active
+              ? String(employee.compensation.attendancePremium.amount ?? "")
+              : "",
+          attendancePremiumMode:
+            employee.compensation.attendancePremium?.mode || "all_or_nothing",
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "12",
           benefits: ((employee.compensation.benefitsPackage || "standard").toLowerCase()) as "basic" | "standard" | "premium" | "executive",
           payFrequency: employee.compensation.payFrequency || "monthly",
-          isResident: employee.compensation.isResident ?? true,
+          isResident: employee.compensation.isResident,
         });
 
         // Populate documents from stored data
@@ -508,7 +542,8 @@ export default function AddEmployee() {
     setSupplementalDirty(true);
     setAdditionalInfo(prev => {
       const next = { ...prev, [field]: value };
-      // Auto-set residency status when nationality changes
+      // This drives immigration/document requirements only. Tax residence is
+      // the separate required `isResident` field and is never inferred here.
       if (field === "nationality") {
         next.residencyStatus = value === "Timor-Leste" ? "timorese" : "foreign_worker";
       }
@@ -574,6 +609,38 @@ export default function AddEmployee() {
         new Date().toISOString(),
       );
 
+      // Pay change → salary history. `recordSalaryChange` returns null unless
+      // this really is a change with an effective date, so a first-time set or
+      // an edit that leaves salary alone writes no entry.
+      const previousCompensation = isEditMode ? editingEmployee?.compensation : undefined;
+      const newMonthlySalary = roundMoney(Number(data.salary || "0") || 0);
+      const salaryHistory = recordSalaryChange(
+        previousCompensation?.salaryHistory,
+        previousCompensation ? getMonthlySalary(previousCompensation) : undefined,
+        newMonthlySalary,
+        data.salaryEffectiveFrom || "",
+        new Date().toISOString(),
+        {
+          recordedBy: user?.email || undefined,
+          reason: data.salaryChangeReason?.trim() || undefined,
+        },
+      );
+
+      // Standing attendance premium. A blank or zero amount clears it — stored as
+      // an inactive record rather than deleted so the employer's chosen mode
+      // survives switching it off and on again.
+      const premiumAmount = roundMoney(Number(data.attendancePremiumAmount || "0") || 0);
+      const attendancePremium: AttendancePremium | undefined =
+        premiumAmount > 0
+          ? {
+              amount: premiumAmount,
+              mode: data.attendancePremiumMode,
+              active: true,
+            }
+          : previousCompensation?.attendancePremium
+            ? { ...previousCompensation.attendancePremium, active: false }
+            : undefined;
+
       const newEmployee: Omit<Employee, "id"> = {
         personalInfo: {
           firstName: data.firstName,
@@ -619,11 +686,18 @@ export default function AddEmployee() {
           fundingSource: data.fundingSource?.trim() || "",
         },
         compensation: {
-          monthlySalary: roundMoney(Number(data.salary || "0") || 0),
+          monthlySalary: newMonthlySalary,
           annualLeaveDays: parseInt(data.leaveDays, 10) || 12,
           benefitsPackage: data.benefits || "standard",
           payFrequency: data.payFrequency,
           isResident: data.isResident,
+          // Same contract as contractRenewals above: non-null only when this
+          // save is a real pay change with an effective date, so an unrelated
+          // edit preserves the existing history via the spread.
+          ...(salaryHistory ? { salaryHistory } : previousCompensation?.salaryHistory
+            ? { salaryHistory: previousCompensation.salaryHistory }
+            : {}),
+          ...(attendancePremium ? { attendancePremium } : {}),
         },
         documents: {
           bilheteIdentidade: { number: docValues.bilheteIdentidade?.number || "", expiryDate: docValues.bilheteIdentidade?.expiryDate || "", required: isTimorese },
@@ -1318,7 +1392,11 @@ export default function AddEmployee() {
                           <SelectItem value="Full-time">{t("addEmployee.fields.employmentTypes.fullTime")}</SelectItem>
                           <SelectItem value="Part-time">{t("addEmployee.fields.employmentTypes.partTime")}</SelectItem>
                           <SelectItem value="Contractor">{t("addEmployee.fields.employmentTypes.contractor")}</SelectItem>
-                          <SelectItem value="Shareholder">{t("addEmployee.fields.employmentTypes.shareholder")}</SelectItem>
+                          {field.value === "Shareholder" && (
+                            <SelectItem value="Shareholder">
+                              {t("addEmployee.fields.employmentTypes.shareholder")}
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     )}
@@ -1577,6 +1655,43 @@ export default function AddEmployee() {
                   />
                   <p className="text-xs text-muted-foreground">{t("addEmployee.compensation.minWageHint")}</p>
                 </div>
+                {/* Only asked when an existing salary is actually being changed.
+                    A raise agreed this month but effective last month is the
+                    normal case here, and the effective date is what turns it
+                    into arrears on the next run instead of being lost. */}
+                {salaryIsChanging && (
+                  <div className="space-y-2">
+                    <Label htmlFor="salaryEffectiveFrom">
+                      {t("addEmployee.compensation.salaryEffectiveFrom")}
+                    </Label>
+                    <Controller
+                      name="salaryEffectiveFrom"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          id="salaryEffectiveFrom"
+                        />
+                      )}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("addEmployee.compensation.salaryEffectiveFromHint")}
+                    </p>
+                  </div>
+                )}
+                {salaryIsChanging && (
+                  <div className="space-y-2">
+                    <Label htmlFor="salaryChangeReason">
+                      {t("addEmployee.compensation.salaryChangeReason")}
+                    </Label>
+                    <Input
+                      id="salaryChangeReason"
+                      {...register("salaryChangeReason")}
+                      placeholder={t("addEmployee.compensation.salaryChangeReasonPlaceholder")}
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="leaveDays">{t("addEmployee.compensation.leaveDays")}</Label>
                   <Input
@@ -1625,6 +1740,96 @@ export default function AddEmployee() {
                   />
                 </div>
               </div>
+
+              {/* Attendance premium — an employer-set monthly amount that a
+                  period with unjustified absence forfeits or reduces. Kept out of
+                  the main grid because most employees have none; a blank amount
+                  means exactly that. */}
+              <MoreDetailsSection title={t("addEmployee.compensation.attendancePremiumSection")}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="attendancePremiumAmount">
+                      {t("addEmployee.compensation.attendancePremiumAmount")}
+                    </Label>
+                    <Input
+                      id="attendancePremiumAmount"
+                      type="number"
+                      min={0}
+                      step="any"
+                      {...register("attendancePremiumAmount")}
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("addEmployee.compensation.attendancePremiumHint")}
+                    </p>
+                  </div>
+                  {Number(formValues.attendancePremiumAmount || "0") > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="attendancePremiumMode">
+                        {t("addEmployee.compensation.attendancePremiumMode")}
+                      </Label>
+                      <Controller
+                        name="attendancePremiumMode"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger id="attendancePremiumMode">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all_or_nothing">
+                                {t("addEmployee.compensation.attendancePremiumAllOrNothing")}
+                              </SelectItem>
+                              <SelectItem value="pro_rata">
+                                {t("addEmployee.compensation.attendancePremiumProRata")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              </MoreDetailsSection>
+
+              {/* Recorded pay changes. Read-only: history is written by saving a
+                  new salary with an effective date, never edited after the fact,
+                  because a settled retroactive payment was calculated from it. */}
+              {salaryChanges.length > 0 && (
+                <MoreDetailsSection
+                  title={t("addEmployee.compensation.salaryHistorySection", {
+                    count: salaryChanges.length,
+                  })}
+                >
+                  <div className="border rounded-lg divide-y">
+                    {salaryChanges.map((row) => (
+                      <div
+                        key={`${row.effectiveFrom}-${row.recordedAt}`}
+                        className="p-3 flex flex-wrap items-baseline justify-between gap-2"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {row.from === null
+                              ? formatSalaryAmount(row.to)
+                              : `${formatSalaryAmount(row.from)} → ${formatSalaryAmount(row.to)}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("addEmployee.compensation.salaryHistoryEffective", {
+                              month: row.month,
+                            })}
+                            {row.reason ? ` · ${row.reason}` : ""}
+                          </p>
+                        </div>
+                        {row.backdated && (
+                          <Badge variant="outline" className="text-xs">
+                            {t("addEmployee.compensation.salaryHistoryBackdated")}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </MoreDetailsSection>
+              )}
 
               {/* Payment Method & Bank Details */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1682,15 +1887,44 @@ export default function AddEmployee() {
                   name="isResident"
                   control={control}
                   render={({ field }) => (
-                    <div className="flex min-h-11 items-center gap-3">
-                      <Checkbox
-                        id="isResident"
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                      />
-                      <Label htmlFor="isResident" className="cursor-pointer text-sm">
-                        {t("addEmployee.compensation.taxResidentLabel")}
+                    <div className="min-w-56 space-y-2">
+                      <Label htmlFor="isResident">
+                        {t("addEmployee.compensation.taxResidenceLabel")}
                       </Label>
+                      <Select
+                        value={
+                          typeof field.value === "boolean"
+                            ? field.value
+                              ? "resident"
+                              : "non_resident"
+                            : undefined
+                        }
+                        onValueChange={(value) =>
+                          field.onChange(value === "resident")
+                        }
+                      >
+                        <SelectTrigger id="isResident" aria-invalid={!!errors.isResident}>
+                          <SelectValue
+                            placeholder={t("addEmployee.compensation.taxResidencePlaceholder")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="resident">
+                            {t("addEmployee.compensation.taxResidentOption")}
+                          </SelectItem>
+                          <SelectItem value="non_resident">
+                            {t("addEmployee.compensation.taxNonResidentOption")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t("addEmployee.compensation.taxResidenceHelp")}
+                      </p>
+                      {errors.isResident && (
+                        <p className="text-sm text-destructive">
+                          {errors.isResident.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />

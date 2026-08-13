@@ -155,6 +155,7 @@ async function sendPayslipEmail(
     address?: string;
     phone?: string;
     email?: string;
+    niss?: string;
   },
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -268,6 +269,7 @@ export async function sendBulkPayslipEmails(
     address?: string;
     phone?: string;
     email?: string;
+    niss?: string;
   },
   userId: string,
   onProgress?: (current: number, total: number) => void

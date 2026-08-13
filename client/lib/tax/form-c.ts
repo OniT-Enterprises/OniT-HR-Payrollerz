@@ -38,11 +38,10 @@
  * e-filed now, so the workpaper matches the assessed behavior — golden
  * tests in tests/client/form-c-assessments.test.ts pin both assessments.
  *
- * TAX DEPRECIATION METHOD — the register's straight-line useful-life rates
- * ('useful_life', conservative default) or Schedule VII's 100% expensing in
- * the year of acquisition ('full_expensing', the treatment observed on real
- * filed returns and assessed by ATTL). Accountant sign-off on the default is
- * still an open launch gate; the method is an explicit per-year choice.
+ * TAX DEPRECIATION — Schedule VII sets the ordinary rate at 100%. Section
+ * 36.6 requires one method across the taxpayer's depreciable assets and Sec.
+ * 36.7 requires ATTL permission to change it. Xefe therefore applies the
+ * statutory 100% rate and does not present an annual method switch.
  */
 
 import {
@@ -53,12 +52,7 @@ import {
   subtractMoney,
   sumMoney,
 } from '@/lib/currency';
-import {
-  depreciableAmount,
-  monthlyCharge,
-  periodOf,
-  periodsBetween,
-} from '@/lib/accounting/depreciation';
+import { periodOf } from '@/lib/accounting/depreciation';
 
 // ── form line model ─────────────────────────────────────────────────────────
 
@@ -90,9 +84,8 @@ const EXPENSE_LINE_CODES = FORM_C_LINE_CODES.filter((code) => code !== '05');
 export type FormCEntityType = 'sole_trader' | 'company';
 
 /**
- * Line 15 treatment: register useful-life rates (conservative default) or
- * Schedule VII 100% expensing in the acquisition year (observed filed
- * practice — see the module header).
+ * `useful_life` is retained only to read old stored workpapers. New/current
+ * calculations normalize to Schedule VII 100% expensing.
  */
 export type FormCTaxDepreciationMethod = 'useful_life' | 'full_expensing';
 
@@ -328,30 +321,12 @@ function nonDeductibleReason(
   return null;
 }
 
-// ── depreciation schedule (mirrors the register's cumulative-cap engine) ────
-
-/** Capped cumulative depreciation through schedule index n (0 = none). */
-function accumulatedThroughIndex(asset: FormCAssetInput, n: number): number {
-  const life = asset.usefulLifeMonths;
-  if (!life || life <= 0 || n <= 0) return 0;
-  const total = depreciableAmount(asset);
-  if (n >= life) return total;
-  const standard = monthlyCharge(asset);
-  return Math.min(total, roundMoney(standard * n));
-}
-
-/** Schedule index (months elapsed, inclusive) at the given period. */
-function indexAtPeriod(asset: FormCAssetInput, period: string): number {
-  return periodsBetween(asset.depreciationStartPeriod, period);
-}
+// ── depreciation schedule ───────────────────────────────────────────────────
 
 /**
  * One official-schedule row per asset that existed during the tax year.
  *
- * useful_life: straight-line register rates; depreciation stops at the
- * disposal month and a disposed asset closes at 0.
- *
- * full_expensing (Schedule VII, observed filed practice): only in-year
+ * Schedule VII 100% expensing: only in-year
  * acquisitions appear, at rate 100% of cost with closing value 0 — prior
  * years' assets are already fully written down for tax. In-year disposals of
  * previously-expensed assets appear as zero-depreciation rows so their
@@ -360,11 +335,10 @@ function indexAtPeriod(asset: FormCAssetInput, period: string): number {
 export function buildFormCDepreciationSchedule(
   assets: FormCAssetInput[],
   taxYear: number,
-  method: FormCTaxDepreciationMethod = 'useful_life',
+  _legacyMethod: FormCTaxDepreciationMethod = 'full_expensing',
 ): FormCDepreciationRow[] {
   const yearStart = `${taxYear}-01`;
   const yearEnd = `${taxYear}-12`;
-  const priorYearEnd = `${taxYear - 1}-12`;
 
   const rows: FormCDepreciationRow[] = [];
   for (const asset of assets) {
@@ -380,62 +354,13 @@ export function buildFormCDepreciationSchedule(
     const disposedThisYear =
       disposedPeriod !== null && disposedPeriod <= yearEnd;
 
-    if (method === 'full_expensing') {
-      // Prior-year assets carry no tax value; only surface in-year events.
-      if (!acquiredInYear && !disposedThisYear) continue;
-      rows.push({
-        description: asset.reference
-          ? `${asset.name} (${asset.reference})`
-          : asset.name,
-        openingValue: 0,
-        ...(acquiredInYear
-          ? { purchaseCost: cost, purchaseDate: asset.acquisitionDate }
-          : {}),
-        ...(disposedThisYear
-          ? {
-              disposalDate: asset.disposalDate,
-              disposalProceeds: roundMoney(asset.disposalProceeds || 0),
-            }
-          : {}),
-        ratePercent: 100,
-        yearDepreciation: acquiredInYear ? cost : 0,
-        closingValue: 0,
-      });
-      continue;
-    }
-
-    const openingAccum = accumulatedThroughIndex(
-      asset,
-      indexAtPeriod(asset, priorYearEnd),
-    );
-    const openingValue = acquiredInYear ? 0 : subtractMoney(cost, openingAccum);
-
-    // Depreciation runs through December or the disposal month.
-    const lastPeriod =
-      disposedPeriod && disposedPeriod < yearEnd ? disposedPeriod : yearEnd;
-    const closingAccum = accumulatedThroughIndex(
-      asset,
-      indexAtPeriod(asset, lastPeriod),
-    );
-    const yearDepreciation = maxMoney(
-      0,
-      subtractMoney(closingAccum, openingAccum),
-    );
-
-    const closingValue = disposedThisYear
-      ? 0
-      : subtractMoney(cost, closingAccum);
-
-    const ratePercent =
-      asset.usefulLifeMonths > 0
-        ? Math.round((1200 / asset.usefulLifeMonths) * 100) / 100
-        : 0;
-
+    // Prior-year assets carry no tax value; only surface in-year events.
+    if (!acquiredInYear && !disposedThisYear) continue;
     rows.push({
       description: asset.reference
         ? `${asset.name} (${asset.reference})`
         : asset.name,
-      openingValue,
+      openingValue: 0,
       ...(acquiredInYear
         ? { purchaseCost: cost, purchaseDate: asset.acquisitionDate }
         : {}),
@@ -445,9 +370,9 @@ export function buildFormCDepreciationSchedule(
             disposalProceeds: roundMoney(asset.disposalProceeds || 0),
           }
         : {}),
-      ratePercent,
-      yearDepreciation,
-      closingValue,
+      ratePercent: 100,
+      yearDepreciation: acquiredInYear ? cost : 0,
+      closingValue: 0,
     });
   }
   return rows;
@@ -489,7 +414,7 @@ export const EMPTY_WHT_CREDITS: FormCWhtCredits = {
 
 export const EMPTY_FORM_C_MANUAL_INPUTS: FormCManualInputs = {
   entityType: 'company',
-  taxDepreciationMethod: 'useful_life',
+  taxDepreciationMethod: 'full_expensing',
   lossCarriedForward: 0,
   installmentsPaid: 0,
   foreignTaxCredits: 0,
@@ -508,7 +433,9 @@ export function buildFormCWorkpaper(
   input: BuildFormCWorkpaperInput,
 ): FormCWorkpaper {
   const { taxYear, glRows, assets, manual } = input;
-  const method = manual.taxDepreciationMethod;
+  // Normalize legacy useful-life workpapers. A stored historical choice is
+  // not authority to depart from Schedule VII or Sec. 36.7 in a new build.
+  const method: FormCTaxDepreciationMethod = 'full_expensing';
   const warnings: FormCWarning[] = [];
   const excluded: FormCExcludedAccount[] = [];
 
@@ -619,44 +546,28 @@ export function buildFormCWorkpaper(
     .filter((detail) => detail.amount > 1000)
     .sort((a, b) => b.amount - a.amount);
 
-  // 5. Method-specific depreciation cross-checks.
-  const depreciationLine = lines.find((entry) => entry.line === '15');
-  if (method === 'useful_life') {
-    if (
-      depreciationLine &&
-      (depreciationSchedule.length > 0 || depreciationLine.fromBooks > 0) &&
-      Math.abs(
-        subtractMoney(depreciationLine.fromBooks, scheduleTotalDepreciation),
-      ) > 1
-    ) {
+  // 5. Replace books depreciation with the statutory tax schedule.
+  const booksDepreciation = sumMoney(
+    excluded
+      .filter((entry) => entry.reason === 'books_depreciation_tax_method')
+      .map((entry) => entry.amount),
+  );
+  if (booksDepreciation > 0) {
+    warnings.push({
+      code: 'books_depreciation_replaced',
+      glAmount: booksDepreciation,
+    });
+  }
+  // Proceeds from selling an already-expensed asset are assessable income.
+  // They normally reach line 05 through the disposal journal; keep the warning
+  // so an accountant verifies that posting without double-counting it here.
+  for (const row of depreciationSchedule) {
+    if ((row.disposalProceeds || 0) > 0) {
       warnings.push({
-        code: 'depreciation_schedule_mismatch',
-        glAmount: depreciationLine.fromBooks,
-        scheduleAmount: roundMoney(scheduleTotalDepreciation),
+        code: 'expensed_disposal_proceeds',
+        assetDescription: row.description,
+        amount: row.disposalProceeds || 0,
       });
-    }
-  } else {
-    const booksDepreciation = sumMoney(
-      excluded
-        .filter((entry) => entry.reason === 'books_depreciation_tax_method')
-        .map((entry) => entry.amount),
-    );
-    if (booksDepreciation > 0) {
-      warnings.push({
-        code: 'books_depreciation_replaced',
-        glAmount: booksDepreciation,
-      });
-    }
-    // Proceeds from selling an already-expensed asset are assessable income
-    // (the instructions' rule for 100%-amortised intangibles, same logic).
-    for (const row of depreciationSchedule) {
-      if ((row.disposalProceeds || 0) > 0) {
-        warnings.push({
-          code: 'expensed_disposal_proceeds',
-          assetDescription: row.description,
-          amount: row.disposalProceeds || 0,
-        });
-      }
     }
   }
 

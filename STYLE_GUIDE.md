@@ -234,8 +234,16 @@ Introduce legal Portuguese terms in parentheses only when customers need them.
 ## Loading, empty, and error states
 
 - Use skeletons that match the final layout.
+- Never show a derived zero, success message, inactive state, or other resolved
+  copy while the query behind it is still loading. Skeleton that region too.
+- When populated and empty layouts have different shapes, use already-known
+  query state to choose the closest skeleton. On a first visit, prefer a compact
+  neutral loader over fabricated rows or counts.
 - Do not preload optional PDF, spreadsheet, or upload code.
-- Empty states say what happened and offer one next action.
+- Empty states say what happened and offer one next action. Keep them compact;
+  do not use a large dashed placeholder that makes the page look unfinished.
+- Do not duplicate an empty-state action when the same clear primary action is
+  already visible in the page header.
 - Connection errors preserve entered data and offer Retry.
 - Avoid decorative animation during loading; a spinner or shimmer is enough.
 

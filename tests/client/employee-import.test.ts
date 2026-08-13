@@ -18,6 +18,7 @@ const mappings = [
   "fundingSource",
   "contractedWeeklyHours",
   "minimumWageTreatment",
+  "taxResidence",
 ].map((field) => ({ csvColumn: field, employeeField: field }));
 
 describe("employee CSV import", () => {
@@ -35,6 +36,7 @@ describe("employee CSV import", () => {
           monthlySalary: "100.105",
           projectCode: " PRJ-1 ",
           fundingSource: " Donor A ",
+          taxResidence: "resident",
         },
       ],
       mappings,
@@ -66,6 +68,7 @@ describe("employee CSV import", () => {
           hireDate: "2026-01-10",
           employmentType: "Full-time",
           monthlySalary: "115",
+          taxResidence: "non-resident",
         },
       ],
       mappings,
@@ -75,6 +78,7 @@ describe("employee CSV import", () => {
     expect(result.errors).toEqual([]);
     expect(result.employees).toHaveLength(1);
     expect(result.employees[0].employee.compensation.monthlySalary).toBe(115);
+    expect(result.employees[0].employee.compensation.isResident).toBe(false);
   });
 
   it("requires a monthly salary rather than silently importing zero", () => {
@@ -190,6 +194,7 @@ describe("positional employee CSV template", () => {
           addressCity: "Dili",
           dateOfBirth: "1990-05-15",
           status: "active",
+          taxResidence: "resident",
         }),
       ],
       options,
@@ -270,6 +275,7 @@ describe("positional employee CSV template", () => {
           monthlySalary: "400",
           contractedWeeklyHours: "22",
           minimumWageTreatment: "pro_rata",
+          taxResidence: "resident",
         }),
       ],
       options,
@@ -304,12 +310,34 @@ describe("positional employee CSV template", () => {
 
   it("defaults a blank status to active and blank hire date to today", () => {
     const result = buildEmployeesFromPositionalCSV(
-      [templateRow({ firstName: "Ana", lastName: "Soares", monthlySalary: "850" })],
+      [templateRow({
+        firstName: "Ana",
+        lastName: "Soares",
+        monthlySalary: "850",
+        taxResidence: "resident",
+      })],
       options,
     );
 
     expect(result.errors).toEqual([]);
     expect(result.employees[0].employee.status).toBe("active");
     expect(result.employees[0].employee.jobDetails.hireDate).toBe("2026-01-01");
+  });
+
+  it("requires tax residence instead of inferring it from nationality", () => {
+    const result = buildEmployeesFromPositionalCSV(
+      [templateRow({
+        firstName: "Ana",
+        lastName: "Soares",
+        monthlySalary: "850",
+        nationality: "Timor-Leste",
+      })],
+      options,
+    );
+
+    expect(result.employees).toEqual([]);
+    expect(result.errors[0].messages).toContain(
+      "Tax residence is required (resident or non-resident); nationality is not enough",
+    );
   });
 });

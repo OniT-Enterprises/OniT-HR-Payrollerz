@@ -158,6 +158,31 @@ export function useMarkTaxFilingAsFiled() {
   });
 }
 
+/** Record an externally submitted services-tax/installment declaration. */
+export function useRecordBusinessTaxAsFiled() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ type, period, figures, userId, audit }: {
+      type: 'services_tax' | 'installment_tax';
+      period: string;
+      figures: { taxBase: number; rate: number; taxDue: number };
+      userId: string;
+      audit?: AuditContext;
+    }) => taxFilingService.recordBusinessTaxAsFiled(
+      type,
+      period,
+      figures,
+      userId,
+      tenantId,
+      audit,
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taxFilingKeys.all(tenantId) });
+    },
+  });
+}
+
 /** Record a monthly WIT/INSS remittance and its clearing journal. */
 export function useRecordTaxFilingPayment() {
   const queryClient = useQueryClient();

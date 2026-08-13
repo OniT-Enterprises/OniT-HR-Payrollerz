@@ -92,7 +92,7 @@ const LAW_POSITIONS: HelpArticle = {
   slug: "how-xefe-reads-the-law",
   kind: "positions",
   locale: "en",
-  updated: "2026-08-08",
+  updated: "2026-08-13",
   title: "Where Xefe takes a position on the law",
   summary:
     "Timor-Leste's labour and tax statutes leave real questions open. This is every place Xefe had to choose a reading in order to compute a number — what it does, why, and what is still being confirmed.",
@@ -291,6 +291,87 @@ const LAW_POSITIONS: HelpArticle = {
           open:
             "How much the three non-court routes actually import, and whether the doubled figure is something to provision for or exposure to disclose.",
         },
+        {
+          id: "subsidio-base-after-raise",
+          heading:
+            "After a pay rise, which salary is the 13th month calculated on?",
+          status: "confirming",
+          quote:
+            "1. O trabalhador tem direito a um subsídio anual de valor não inferior a 1 salário mensal, que deve ser pago pelo empregador até ao dia 20 de Dezembro de cada ano civil. 2. O cálculo do subsídio anual é proporcional aos meses de trabalho prestado em cada ano civil.",
+          quoteCite: "Lei 4/2012, Art. 44",
+          body: [
+            "The article fixes a **floor** — \"valor **não inferior a** 1 salário mensal\", not less than one monthly salary — pro-rated by the months worked in the civil year. What it does not say is *which* monthly salary, and that only matters once the salary moved during the year.",
+            "Take someone on $500 who rose to $600 in March. The salary in force when the subsídio is paid gives $600. Weighting the year by the days spent at each rate gives about $584.",
+            "Xefe uses the salary in force at payment, and the wording is part of why. Because the entitlement is expressed as a minimum, a weighted average that lands *below* one current monthly salary is arguably below the floor the article sets. The larger figure is both the safer reading and the one that needs no argument. The same reasoning governs the untaken-leave payout and the severance month.",
+          ],
+          synonyms: [
+            "13th month",
+            "subsidio anual",
+            "christmas bonus",
+            "pay rise",
+            "raise",
+            "increase",
+          ],
+          today:
+            "The salary in force when the subsídio is paid. Now that Xefe records each pay change with the month it took effect, the weighted alternative can be produced on request — so this is a decision waiting on an answer, not on data.",
+          impact:
+            "About $16 on a $500→$600 rise in March; around $300 on a $2,000→$2,600 rise in July.",
+          open:
+            "Which basis Timor-Leste employers actually use. The statute settles neither.",
+        },
+        {
+          id: "retro-pay-tax-month",
+          heading:
+            "A rise back-dated to last month — which month is the extra pay taxed in?",
+          status: "settled",
+          quote:
+            "A remuneração deve ser paga em dia útil e dentro do horário de trabalho ou imediatamente depois.",
+          quoteCite: "Lei 4/2012, Art. 40(1)",
+          body: [
+            "Agreeing a rise in April with effect from March is ordinary practice, and the March shortfall is paid on the April payslip as \"retroativos\".",
+            "Xefe taxes it in the month it is PAID. Law 8/2008 imposes withholding when wages are paid and requires the employer to remit tax withheld from wages paid during the month. The ATTL wage-tax guidance uses the same paid/deducted basis.",
+            "This is the treatment that can withhold MORE, not less. Because the $500 resident exemption is granted per month, two months of pay landing in one month can cross a band that neither month would have crossed alone.",
+          ],
+          synonyms: [
+            "retroactive",
+            "retroativos",
+            "arrears",
+            "back pay",
+            "backdated",
+            "back-dated",
+          ],
+          today:
+            "Taxed in the month paid. Xefe suggests the arrears from your recorded pay changes, pays them once, and shows them as their own line on the payslip.",
+          impact:
+            "A few dollars in most months; more where bunched arrears cross the $500 exemption or a rate band.",
+        },
+        {
+          id: "attendance-premium-inss",
+          heading:
+            "Is an attendance premium subject to social security?",
+          status: "confirming",
+          quote:
+            "Considera-se igualmente base de incidência contributiva: a) A remuneração variável, paga ao trabalhador com base no seu desempenho ou produtividade […] f) Outros subsídios ou suplementos remuneratórios devidos por força do exercício de atividade, quando previstos em disposição legal, contrato ou em acordo coletivo.",
+          quoteCite: "DL 20/2017, Art. 8(2)(a) and (f)",
+          body: [
+            "Many employers here pay a fixed monthly premium that is lost if the worker has unjustified absence. Two limbs of Art. 8(2) pull it into the contribution base: (a) variable pay based on the worker's own performance or productivity, and (f) other supplements due by virtue of the work **when provided for in law, a contract or a collective agreement**.",
+            "Against that, Art. 9(e) excludes \"outros benefícios extraordinários concedidos pelo empregador\" — other extraordinary benefits the employer grants. So the honest answer may depend on how the premium arises: written into the employment contract it looks like 8(2)(f); handed out at the employer's discretion it starts to look like 9(e).",
+            "Xefe charges INSS on it either way. On a $150 premium that is $6.00 from the worker (4%) and $9.00 from the employer (6%). We chose that side deliberately: it is the more expensive reading, so if it turns out to be wrong the correction reduces a contribution, where the opposite mistake would leave an arrear owing to INSS.",
+          ],
+          synonyms: [
+            "premium",
+            "premio",
+            "assiduidade",
+            "attendance",
+            "bonus",
+            "absence",
+          ],
+          today:
+            "Taxable, and inside the INSS base. Approved leave and sick days never cost the premium — only unjustified absence does, and a worker who was not yet hired keeps theirs.",
+          impact: "$15 a month in combined contributions on a $150 premium.",
+          open:
+            "Whether an attendance premium is Art. 8 contributable pay or an Art. 9 benefit outside the base.",
+        },
       ],
     },
     {
@@ -303,18 +384,14 @@ const LAW_POSITIONS: HelpArticle = {
           id: "wit-month",
           heading:
             "For the $500 resident exemption, is a \"month\" earned or paid?",
-          status: "confirming",
+          status: "settled",
           body: [
-            "Xefe uses the wage-period month everywhere except one place, where the per-period slice of the $500 allowance is divided by the number of paydays falling in the *pay-date* month.",
-            "With weekly Friday paydays, a June period paid on 3 July lands in a five-payday month, so June's income receives $475 of allowance instead of $500. The error is small and always in the over-withholding direction, so the worker is never short at year end — the excess comes back on assessment.",
+            "It is the payment month. Law 8/2008 ties withholding and remittance to wages paid, and ATTL describes the monthly liability in terms of wages paid and tax deducted.",
+            "Xefe groups every committed run by pay date. A December salary paid in January and any other January wage payment share January's $500 resident threshold; they do not reopen December.",
           ],
           synonyms: ["income tax", "withholding", "tax free", "exemption", "WIT"],
           today:
-            "As described. No code has changed, because the correct fix depends on the answer.",
-          impact:
-            "About $2.50 per affected employee-month, always over-withheld rather than under.",
-          open:
-            "Earned-month or paid-month? If earned, the divisor should key on the period month.",
+            "The resident threshold and the $20 benefit-in-kind test both use the pay-date calendar month.",
         },
         {
           id: "job-search-credit",

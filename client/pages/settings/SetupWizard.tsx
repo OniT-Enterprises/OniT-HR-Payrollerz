@@ -39,6 +39,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { settingsService } from "@/services/settingsService";
 import { settingsKeys } from "@/hooks/useSettings";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
@@ -71,6 +72,7 @@ export default function SetupWizard() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const { session } = useTenant();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const invalidateSetupData = () =>
     Promise.all([
@@ -383,7 +385,14 @@ export default function SetupWizard() {
           currency: payrollForm.currency,
           currencySymbol:
             payrollForm.currency === "USD" ? "$" : settings.payrollConfig.currencySymbol,
-        }),
+        }, user
+          ? {
+              tenantId,
+              userId: user.uid,
+              userEmail: user.email || "",
+              userName: user.displayName || undefined,
+            }
+          : undefined),
       ]);
       return true;
     } catch {

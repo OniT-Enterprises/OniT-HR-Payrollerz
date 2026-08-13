@@ -924,6 +924,8 @@ export default function AllEmployees() {
         "Contracted weekly hours (part-time only)",
       t("employees.csvHeaders.minimumWageTreatment") ||
         "Minimum wage treatment (part-time only: full_floor, pro_rata, reviewed_exception)",
+      t("employees.csvHeaders.taxResidence") ||
+        "Tax residence (resident or non-resident)",
     ];
 
     // Add example row
@@ -950,6 +952,7 @@ export default function AllEmployees() {
       "active",
       "44",
       "full_floor",
+      "resident",
     ];
 
     const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");

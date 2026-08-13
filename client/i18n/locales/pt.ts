@@ -1564,12 +1564,12 @@ const messages = {
       people: {
         title: "Mantenha pessoas e tempo juntos",
         description:
-          "Adicione cada trabalhador uma vez — salário, horário e dados bancários. A assiduidade e as licenças ficam no mesmo registo.",
+          "Adicione cada trabalhador uma vez — salário, horário e dados bancários. A assiduidade e as licenças ficam no mesmo registo, e cada alteração salarial guarda o mês em que produziu efeito.",
       },
       payroll: {
         title: "Reveja e aprove a folha",
         description:
-          "Escolha o período e reveja. O Xefe calcula o bruto, o IRT, o INSS, as horas extra e o líquido de cada trabalhador.",
+          "Escolha o período e reveja. O Xefe calcula o bruto, o IRT, o INSS, as horas extra e o líquido de cada trabalhador — incluindo prémios de assiduidade e retroativos de um aumento com efeito a um mês anterior.",
       },
       payments: {
         title: "Pague à equipa e prepare declarações",
@@ -1835,10 +1835,16 @@ const messages = {
       description: "Defina o sector de atividade, localizações e departamentos",
       businessSector: "Sector de Atividade *",
       sectorHint: "Selecionar um sector irá sugerir departamentos comuns",
+      servicesTaxReceipts: "Receitas para imposto sobre serviços",
+      servicesTaxManual: "Negócio misto — vou rever a Secção 3",
+      servicesTaxAllDesignated: "Todas as receitas de clientes são serviços designados",
+      servicesTaxReceiptsHelp:
+        "Escolha a segunda opção apenas se todas as receitas de clientes forem de hotel, restaurante/bar ou telecomunicações. Caso contrário, o Xefe deixa a base para revisão manual.",
       sectors: {
         security: "Serviços de Segurança",
         hotel: "Hotel e Hotelaria",
         restaurant: "Restaurante",
+        telecommunications: "Telecomunicações",
         trading: "Comércio",
         manufacturing: "Indústria",
         construction: "Construção",
@@ -2154,7 +2160,7 @@ const messages = {
       petroleumHint:
         "Ative apenas se a sua empresa for parte de um Acordo Petrolífero. Os seus trabalhadores passam a ser tributados pelo Anexo IX e não pelo imposto sobre salários comum — um regime diferente, com taxas, regras de amortização e serviço de entrega próprios. O Xefe não o calcula, por isso vai parar a folha em vez de a calcular mal e deixá-lo a dever a diferença.",
       currentRatesTitle: "As taxas que está a usar agora",
-      changeRatesTitle: "Alterar as taxas legais",
+      changeRatesTitle: "Políticas avançadas da folha",
       title: "Configuração da Folha",
       description:
         "Impostos, segurança social e definições de horas extra para Timor-Leste",
@@ -2247,6 +2253,15 @@ const messages = {
         subsidioLabel: "13.º mês (Subsídio Anual)",
         subsidioValue:
           "Um mês de salário, a pagar até 20 de dezembro de cada ano (Lei do Trabalho, art. 44.º)",
+        subsidioBaseAfterRaiseLabel: "13.º mês após aumento a meio do ano",
+        subsidioBaseAfterRaiseValue:
+          "Calculado com o salário em vigor à data do pagamento e não com a média ponderada do ano (a Lei do Trabalho, art. 44.º, é omissa)",
+        retroTaxMonthLabel: "Mês de tributação dos retroativos",
+        retroTaxMonthValue:
+          "Os retroativos são tributados no mês em que são PAGOS e não distribuídos pelos meses a que respeitam",
+        attendancePremiumInssLabel: "Prémio de assiduidade e segurança social",
+        attendancePremiumInssValue:
+          "Considerado remuneração contributiva por desempenho individual (DL 20/2017, art. 8.º), pelo que é sujeito a INSS",
       },
     },
     notifications: {
@@ -2462,6 +2477,7 @@ const messages = {
       emergencyContactPhone: "Telefone do Contacto de Emergência",
       dateOfBirth: "Data de Nascimento (AAAA-MM-DD)",
       statusTemplate: "Estado (ativo/inativo/de_licença)",
+      taxResidence: "Residência fiscal (residente ou não residente)",
     },
     statusLabels: {
       active: "Ativo",
@@ -2624,6 +2640,7 @@ const messages = {
       startDateRequired: "Escolha a data de início.",
       salaryRequired: "Indique quanto paga por mês.",
       salaryNonNegative: "O salário deve ser zero ou superior.",
+      taxResidenceRequired: "Escolha residente ou não residente para efeitos fiscais.",
       minimumWorkingAge:
         "Lei laboral de Timor-Leste: a idade mínima para trabalhar é 15 anos (idade na data de início: {{age}}).",
       partTimeHours: "Indique entre 1 e 44 horas contratadas por semana.",
@@ -2795,6 +2812,21 @@ const messages = {
       salaryLabel: "Salário Mensal (USD)",
       salaryPlaceholder: "ex., 1500",
       minWageHint: "Salário mínimo TL: $115/mês",
+      salaryEffectiveFrom: "Com efeito a partir de",
+      salaryEffectiveFromHint:
+        "Data de início do novo salário. Se for um mês anterior, a diferença é proposta como retroativos no próximo processamento.",
+      salaryChangeReason: "Motivo (opcional)",
+      salaryChangeReasonPlaceholder: "Promoção, revisão anual…",
+      salaryHistorySection: "Alterações salariais ({count})",
+      salaryHistoryEffective: "Efeito em {month}",
+      salaryHistoryBackdated: "Retroativo",
+      attendancePremiumSection: "Prémio de assiduidade",
+      attendancePremiumAmount: "Prémio mensal",
+      attendancePremiumHint:
+        "Pago apenas quando o período não tem faltas injustificadas. Deixe em branco se este trabalhador não tiver prémio. As férias aprovadas e os dias de doença nunca fazem perder o prémio.",
+      attendancePremiumMode: "Se houver faltas injustificadas",
+      attendancePremiumAllOrNothing: "Não pagar",
+      attendancePremiumProRata: "Reduzir proporcionalmente",
       leaveDays: "Dias de Férias Anuais",
       leaveDaysPlaceholder: "25",
       benefits: "Pacote de Benefícios",
@@ -2805,6 +2837,12 @@ const messages = {
         executive: "Executivo",
       },
       taxResidentLabel: "Residente fiscal de Timor-Leste",
+      taxResidenceLabel: "Residência fiscal *",
+      taxResidencePlaceholder: "Escolha a residência fiscal",
+      taxResidentOption: "Residente de Timor-Leste",
+      taxNonResidentOption: "Não residente",
+      taxResidenceHelp:
+        "Em geral, residente significa 183 dias num período de 12 meses que comece ou termine no ano, salvo se a residência permanente estiver fora de Timor-Leste. Um funcionário do Governo de Timor-Leste destacado no estrangeiro também se qualifica. A nacionalidade, por si só, não decide.",
       incomeTaxTitle: "Imposto sobre Rendimento (IRT)",
       incomeTaxDesc: "10% sobre rendimento acima de $500/mês",
       socialSecurityTitle: "Segurança Social (INSS)",
@@ -5281,7 +5319,7 @@ const messages = {
         templateWarning:
           "A exportação do Formulário Oficial usa o formato do modelo ATTL 2024/2025. Se o Ministério das Finanças atualizar o layout, esta exportação poderá precisar de atualização.",
         dueDateLabel: "Prazo:",
-        dueDateValue: "Dia 15 do mês seguinte ao período de pagamento.",
+        dueDateValue: "Dia 15 do mês seguinte ao mês em que o salário foi pago.",
         supportLabel: "Suporte e-Tax:",
         supportValue: "(+670) 74962772 | etax@mof.gov.tl",
       },
@@ -5300,6 +5338,10 @@ const messages = {
         selectMethod: "Selecionar método",
         etax: "Portal e-Tax",
         bnu: "Banco BNU (papel)",
+        alsoFiledServicesTax: "Também apresentei o imposto sobre serviços deste mês",
+        servicesTaxBase: "Receitas recebidas de serviços designados (USD)",
+        servicesTaxBaseHelp:
+          "Introduza apenas receitas de hotel, restaurante/bar ou telecomunicações. Não inclua outras linhas de negócio.",
         receiptLabel: "Número do Recibo (Opcional)",
         paymentReferenceLabel: "Referência bancária / recibo *",
         receiptPlaceholder: "Introduza o número do recibo ou confirmação",
@@ -5344,6 +5386,8 @@ const messages = {
         officialExportedTitle: "Formulário Oficial Exportado",
         officialExportedDescription:
           "O Formulário Consolidado Mensal de Impostos ATTL foi exportado para Excel.",
+        servicesTaxManualReview:
+          "O formulário foi exportado. A Secção 3 do imposto sobre serviços ficou em branco porque a empresa não confirmou que todas as receitas são serviços designados; reveja-a antes de apresentar.",
         officialExportFailedDescription:
           "Falha ao gerar o formulário Excel. Tente novamente.",
         filedTitle: "Entrega Registada",
@@ -5375,6 +5419,9 @@ const messages = {
         baseOverrideLabel: "Base de volume de negócios ajustada (opcional)",
         baseOverrideAboveRevenue:
           "A base ajustada é superior à receita do período calculada pelo Xefe — reveja antes de submeter.",
+        markFiled: "Apresentei isto no e-Tax",
+        recordedFiled: "Registado como apresentado",
+        filedRecorded: "Apresentação e-Tax registada",
         title: "Preencher imposto prestacional no e-Tax (assistido)",
         description:
           "A prestação é 0,5% do volume de negócios: trimestral até $1 milhão no ano anterior e mensal acima disso. Confirme o período e submeta no e-Tax — o Xefe nunca submete por si.",
@@ -7460,6 +7507,8 @@ const messages = {
     specialHours: "Horas especiais (2×)",
     invalidHireDate:
       "a data de admissão não é uma data válida — corrija-a no perfil do trabalhador antes de processar o salário",
+    taxResidenceRequired:
+      "escolha residente ou não residente para efeitos fiscais no perfil do trabalhador antes de processar o salário",
     unpaidAbsence: "Ausência não remunerada",
     absenceHoursLabel: "Horas descontadas",
     absenceHoursHint:
@@ -7588,6 +7637,18 @@ const messages = {
     thirteenthMonth: "13.º Mês",
     serviceCompensation: "Indemnização (Art. 56)",
     untakenLeavePayout: "Férias Não Gozadas (Art. 32.º)",
+    attendancePremium: "Prémio de assiduidade",
+    attendancePremiumAmount: "Prémio",
+    attendancePremiumClean:
+      "Sem faltas injustificadas neste período, pelo que o prémio de {amount} é pago por inteiro.",
+    attendancePremiumForfeited:
+      "{hours}h de faltas injustificadas, pelo que o prémio não é pago. Introduza um valor para o pagar mesmo assim.",
+    attendancePremiumReduced:
+      "Reduzido de {full} por {hours}h de faltas injustificadas.",
+    retroactivePay: "Retroativos",
+    retroactivePayAmount: "Retroativos",
+    retroactivePayHint:
+      "Valores em atraso de um aumento com efeito retroativo a um mês anterior. Sugerido a partir do histórico salarial registado e pago uma única vez. Os meses parciais não são calculados — introduza-os aqui.",
     incomeTax: "Imposto sobre Rendimento",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Contribuições do Empregador",
@@ -8155,11 +8216,11 @@ const messages = {
         entitySoleTrader: "Empresário em nome individual",
         disclaimer:
           "Este papel de trabalho mapeia a contabilidade lançada para os números de linha do formulário oficial, como apoio à preparação. Não é o formulário oficial e o Xefe não o submete — reveja cada valor com o seu contabilista e transcreva depois para o formulário oficial da ATTL.",
-        depreciationMethod: "Método de depreciação fiscal (linha 15)",
+        depreciationMethod: "Depreciação fiscal (linha 15)",
         depreciationUsefulLife: "Taxas de vida útil (registo de ativos)",
         depreciationFullExpensing: "100% no ano de aquisição (Anexo VII)",
         depreciationMethodHint:
-          "Confirme com o seu contabilista qual o tratamento aplicável antes de entregar.",
+          "O Xefe aplica a taxa de 100% do Anexo VII. Peça ao contabilista para verificar os ativos e alienações antes da entrega.",
         dueBy: "Formulário oficial até {{date}}.",
         officialFormLink: "Formulário e instruções oficiais (attl.gov.tl)",
         summaryTitle: "Resumo do cálculo",

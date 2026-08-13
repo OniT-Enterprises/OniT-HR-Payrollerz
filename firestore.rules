@@ -59,6 +59,21 @@ service cloud.firestore {
         getTenantRole(tenantId) in ['owner', 'hr-admin', 'accountant'];
     }
 
+    // Law 8/2008 Schedule V is not tenant configuration. The legacy fields
+    // remain in settings documents for compatibility, but ordinary users may
+    // only write the statutory values (superadmins retain migration access).
+    function hasStatutoryWitRates(data) {
+      let tax = data.get('payrollConfig', {}).get('tax', {});
+      return tax.get('residentThreshold', null) == 500 &&
+        tax.get('residentRate', null) == 10 &&
+        tax.get('nonResidentRate', null) == 10;
+    }
+
+    function hasNoWitRateOverride(data) {
+      return !data.get('payrollConfig', {}).keys().hasAny(['tax']) ||
+        hasStatutoryWitRates(data);
+    }
+
     function getTenantMember(tenantId) {
       return get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
@@ -413,6 +428,7 @@ service cloud.firestore {
         allow create: if isSuperAdmin() || (
           (isTenantAdmin(tenantId) ||
             (docId != 'integrations' && isTenantFinanceAdmin(tenantId))) &&
+          hasNoWitRateOverride(request.resource.data) &&
           (isTenantOwner(tenantId) ||
             request.resource.data.get('payrollConfig', {})
               .get('allowSelfApproval', false) == false)
@@ -420,6 +436,9 @@ service cloud.firestore {
         allow update: if isSuperAdmin() || (
           (isTenantAdmin(tenantId) ||
             (docId != 'integrations' && isTenantFinanceAdmin(tenantId))) &&
+          (request.resource.data.get('payrollConfig', {}).get('tax', {}) ==
+              resource.data.get('payrollConfig', {}).get('tax', {}) ||
+            hasStatutoryWitRates(request.resource.data)) &&
           (isTenantOwner(tenantId) ||
             request.resource.data.get('payrollConfig', {})
               .get('allowSelfApproval', false) ==
@@ -462,6 +481,32 @@ service cloud.firestore {
                 request.resource.data.jobDetails.keys().hasOnly(['manager'])
               )
             )
+          ) || (
+            // Marking a payroll run paid stamps `retroSettledPeriod` on the
+            // salary-history entries whose arrears that run discharged — the
+            // once-only guard for back-dated pay (MONEY_CHAIN §4b). That write
+            // is inside the payment TRANSACTION, so without this clause an
+            // `accountant` (who may finalize payroll via isTenantFinanceAdmin
+            // but is not an isTenantAdmin) could not mark any run paid at all:
+            // the denied employee write would roll the whole payment back.
+            //
+            // Deliberately narrow to compensation.salaryHistory. It does NOT
+            // let a finance admin touch monthlySalary, so pay itself stays an
+            // admin-only field. A finance admin can rewrite the history array,
+            // which is a real if minor trust surface — but that role can already
+            // approve payroll and post journals, and owner/hr-admin can edit the
+            // whole employee document today.
+            isTenantFinanceAdmin(tenantId) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'compensation',
+              'updatedAt',
+            ]) &&
+            request.resource.data.keys().hasAny(['compensation']) &&
+            request.resource.data.compensation is map &&
+            resource.data.keys().hasAny(['compensation']) &&
+            resource.data.compensation is map &&
+            request.resource.data.compensation.diff(resource.data.compensation).affectedKeys()
+              .hasOnly(['salaryHistory'])
           ) || (
             isSelfEmployee(tenantId, employeeId) &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -2145,12 +2190,32 @@ service cloud.firestore {
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantFinanceAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId) &&
+        // Filing identity never changes. Once the declaration/statement is
+        // filed, its as-filed figures and source snapshot are evidence and may
+        // not be rewritten; payment/reference metadata can still be appended.
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'tenantId', 'type', 'period', 'createdAt', 'createdBy'
+        ]) &&
+        (
+          !(resource.data.get('status', '') == 'filed' ||
+            resource.data.get('statementStatus', '') == 'filed') ||
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            // Lock the filed state too. Otherwise a client could first move
+            // the record back to draft, then rewrite the snapshot.
+            'status', 'statementStatus',
+            'dataSnapshot', 'totalWages', 'totalWITWithheld', 'employeeCount',
+            'totalINSSEmployee', 'totalINSSEmployer'
+          ])
+        )
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null &&
+          isTenantFinanceAdmin(resource.data.tenantId) &&
+          resource.data.get('status', '') != 'filed' &&
+          resource.data.get('statementStatus', '') != 'filed');
     }
 
     // Attendance tracking

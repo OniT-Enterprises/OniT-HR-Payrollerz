@@ -454,6 +454,8 @@ const EARNING_CODES: Record<string, string> = {
   rest_day: 'D_D',
   sick_pay: 'D_M',
   bonus: 'BON',
+  attendance_premium: 'PR_A',
+  retroactive_pay: 'RET',
   subsidio_anual: 'SB_A',
   service_compensation: 'C_S',
   non_cash_benefit: 'B_NM',
@@ -521,6 +523,8 @@ interface PayslipPDFProps {
   companyAddress?: string;
   companyPhone?: string;
   companyEmail?: string;
+  /** Employer's INSS registration number (settings companyDetails.employerNiss). */
+  companyNiss?: string;
   language?: PayslipLocale;
 }
 
@@ -535,6 +539,7 @@ function PayslipHeader({
   companyAddress,
   companyPhone,
   companyEmail,
+  companyNiss,
   payrollRun,
   s,
   language,
@@ -544,6 +549,7 @@ function PayslipHeader({
   companyAddress: string;
   companyPhone: string;
   companyEmail: string;
+  companyNiss?: string;
   payrollRun: PayrollRun;
   s: PayslipStrings;
   language: PayslipLocale;
@@ -564,6 +570,13 @@ function PayslipHeader({
           <Text style={styles.companyName}>{companyName}</Text>
           <Text style={styles.companyInfo}>{companyAddress}</Text>
           <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
+          {/* The employer NISS belongs next to the employer's own identity: it is
+              what the worker needs to check their contributions were filed under
+              the right registration, and accountants chase it as often as the
+              employee's. Omitted when not recorded. */}
+          {companyNiss ? (
+            <Text style={styles.companyInfo}>{s.employerNiss} {companyNiss}</Text>
+          ) : null}
         </View>
         <View style={styles.monthBox}>
           <Text style={styles.monthLabel}>{s.monthOf}</Text>
@@ -607,6 +620,17 @@ function EmployeePayInfoSection({
             <Text style={styles.infoLabel}>{s.employeeId}</Text>
             <Text style={styles.infoValue}>{record.employeeNumber}</Text>
           </View>
+          {/* NISS is the identifier every INSS interaction turns on, and chasing
+              it after the fact is a recurring manual burden for employers and
+              their accountants. Printed when known; the row is omitted rather
+              than showing a blank, because an empty field on a payslip reads as
+              "this worker has none" instead of "not recorded yet". */}
+          {record.employeeNiss ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>{s.niss}</Text>
+              <Text style={styles.infoValue}>{record.employeeNiss}</Text>
+            </View>
+          ) : null}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>{s.department}</Text>
             <Text style={styles.infoValue}>{record.department}</Text>
@@ -796,6 +820,17 @@ function YtdSection({
           <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
           <Text style={styles.ytdValue}>{formatCurrency(record.ytdINSSEmployee)}</Text>
         </View>
+        {/* The employer's accumulated share. A worker checking their social
+            security standing needs BOTH sides — the employee deduction alone
+            understates what was contributed on their behalf by 6/10ths. Records
+            written before this field existed omit the row rather than print a
+            zero that would read as "your employer contributed nothing". */}
+        {typeof record.ytdINSSEmployer === 'number' && record.ytdINSSEmployer > 0 ? (
+          <View style={styles.ytdItem}>
+            <Text style={styles.ytdLabel}>{s.ytdINSSEmployer}</Text>
+            <Text style={styles.ytdValue}>{formatCurrency(record.ytdINSSEmployer)}</Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -1023,6 +1058,7 @@ const PayslipDocument = ({
   companyAddress = '123 Business Park, Suite 100, San Francisco, CA 94107',
   companyPhone = '(555) 123-4567',
   companyEmail = 'payroll@onit.com',
+  companyNiss,
   language = 'en',
 }: PayslipPDFProps) => {
   const s = payslipStrings[language];
@@ -1036,6 +1072,7 @@ const PayslipDocument = ({
           companyAddress={companyAddress}
           companyPhone={companyPhone}
           companyEmail={companyEmail}
+          companyNiss={companyNiss}
           payrollRun={payrollRun}
           s={s}
           language={language}
@@ -1074,6 +1111,7 @@ export const downloadPayslip = async (
     address?: string;
     phone?: string;
     email?: string;
+    niss?: string;
   },
   language?: PayslipLocale
 ): Promise<void> => {
@@ -1101,6 +1139,7 @@ export const generatePayslipBlob = async (
     address?: string;
     phone?: string;
     email?: string;
+    niss?: string;
   },
   language?: PayslipLocale
 ): Promise<Blob> => {
@@ -1112,6 +1151,7 @@ export const generatePayslipBlob = async (
       companyAddress={companyInfo?.address}
       companyPhone={companyInfo?.phone}
       companyEmail={companyInfo?.email}
+      companyNiss={companyInfo?.niss}
       language={language}
     />
   );

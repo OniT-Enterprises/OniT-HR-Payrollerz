@@ -108,6 +108,19 @@ export function buildEmployeesFromCSV(
     const employmentType = normalizeEmploymentType(
       mappedValue(row, mappings, "employmentType"),
     );
+    const taxResidenceText = mappedValue(row, mappings, "taxResidence")
+      .toLowerCase()
+      .replace(/[ _]/g, "-");
+    let isResident: boolean | undefined;
+    if (["resident", "timor-leste-resident", "yes", "true"].includes(taxResidenceText)) {
+      isResident = true;
+    } else if (["non-resident", "nonresident", "no", "false"].includes(taxResidenceText)) {
+      isResident = false;
+    } else {
+      rowErrors.push(
+        "Tax residence is required (resident or non-resident); nationality is not enough",
+      );
+    }
 
     if (!firstName) rowErrors.push("First name is required");
     if (!lastName) rowErrors.push("Last name is required");
@@ -249,7 +262,9 @@ export function buildEmployeesFromCSV(
           benefitsPackage:
             mappedValue(row, mappings, "benefitsPackage") || "standard",
           payFrequency: "monthly",
-          isResident: isTimorese,
+          // Explicitly parsed above. The row cannot reach this write while the
+          // value is missing, and nationality is deliberately not consulted.
+          isResident: isResident!,
         },
         documents: {
           bilheteIdentidade: {
@@ -335,6 +350,9 @@ export const EMPLOYEE_CSV_TEMPLATE_COLUMNS = [
   "status",
   "contractedWeeklyHours",
   "minimumWageTreatment",
+  // Appended for backwards-safe positional parsing. Old templates now receive
+  // a clear row error rather than silently treating nationality as residence.
+  "taxResidence",
 ] as const;
 
 /** Template columns that are joined into the single `address` field. */

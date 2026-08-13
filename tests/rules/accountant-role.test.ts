@@ -77,6 +77,17 @@ describe('Accountant role rules', () => {
       });
       await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-1'), {
         personalInfo: { firstName: 'Maria', lastName: 'Silva' },
+        compensation: {
+          monthlySalary: 600,
+          salaryHistory: [
+            {
+              effectiveFrom: '2026-03-01',
+              monthlySalary: 600,
+              previousMonthlySalary: 500,
+              recordedAt: '2026-04-28T00:00:00.000Z',
+            },
+          ],
+        },
       });
       await setDoc(doc(adminDb, 'tenants/tenant-a/settings/config'), {
         companyDetails: { legalName: 'Tenant A Lda' },
@@ -252,6 +263,65 @@ describe('Accountant role rules', () => {
       await assertFails(
         updateDoc(doc(asAccountant(), `tenants/tenant-a/members/${ACCOUNTANT}`), {
           role: 'owner',
+        }),
+      );
+    });
+
+    /**
+     * Marking a payroll run paid stamps retroSettledPeriod on the salary-history
+     * entries whose arrears it discharged, inside the payment transaction. An
+     * accountant may finalize payroll, so without a narrow employee-write grant
+     * the denied stamp would roll the whole payment back — the run could never be
+     * marked paid by an accountant at all.
+     */
+    it('accountant may stamp the retro settlement on salary history', async () => {
+      await assertSucceeds(
+        updateDoc(doc(asAccountant(), 'tenants/tenant-a/employees/emp-1'), {
+          'compensation.salaryHistory': [
+            {
+              effectiveFrom: '2026-03-01',
+              monthlySalary: 600,
+              previousMonthlySalary: 500,
+              recordedAt: '2026-04-28T00:00:00.000Z',
+              retroSettledPeriod: '2026-04',
+            },
+          ],
+        }),
+      );
+    });
+
+    it('accountant cannot change pay itself through that grant', async () => {
+      await assertFails(
+        updateDoc(doc(asAccountant(), 'tenants/tenant-a/employees/emp-1'), {
+          'compensation.monthlySalary': 5000,
+        }),
+      );
+      // Nor smuggle a salary change alongside a legitimate stamp.
+      await assertFails(
+        updateDoc(doc(asAccountant(), 'tenants/tenant-a/employees/emp-1'), {
+          'compensation.monthlySalary': 5000,
+          'compensation.salaryHistory': [],
+        }),
+      );
+    });
+
+    it('accountant still cannot edit other employee fields', async () => {
+      await assertFails(
+        updateDoc(doc(asAccountant(), 'tenants/tenant-a/employees/emp-1'), {
+          'personalInfo.firstName': 'Tampered',
+        }),
+      );
+      await assertFails(
+        updateDoc(doc(asAccountant(), 'tenants/tenant-a/employees/emp-1'), {
+          'jobDetails.department': 'Finance',
+        }),
+      );
+    });
+
+    it('a manager gains nothing from the salary-history grant', async () => {
+      await assertFails(
+        updateDoc(doc(asManager(), 'tenants/tenant-a/employees/emp-1'), {
+          'compensation.salaryHistory': [],
         }),
       );
     });

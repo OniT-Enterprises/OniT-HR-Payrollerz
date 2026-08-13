@@ -261,16 +261,17 @@ under this Schedule.
 - **Land does not depreciate** — `depreciation.ts` has
   `{ key: 'land', … defaultLifeMonths: 0 }`, commented `0 = does not depreciate`.
   ✅ Matches 36.4.
-- **Form C offers both treatments** — `FormCTaxDepreciationMethod =
-  'useful_life' | 'full_expensing'`, the latter documented as "Schedule VII,
-  observed filed practice". ✅ Right to offer both while the open question is what
-  ATTL *accepts*; the statute itself is unambiguous.
+- **The annual workpaper now applies Schedule VII's 100% rate only.** Legacy
+  `useful_life` values can still be read but are normalized on calculation; the
+  UI no longer offers an annual method switch. This also respects §36.6's
+  consistency rule and §36.7's written-permission requirement for a change.
 - The fixed-asset register's straight-line schedules are **book** depreciation, a
   different thing from the Sec. 36 tax deduction. No conflict.
 
-**Newly open, small:** under full expensing WDV is always zero, so `36.11` makes
-disposal proceeds taxable income in the year. Whether Form C's `full_expensing`
-path nets disposals is unverified.
+Under full expensing WDV is zero, so `36.11` makes disposal proceeds taxable
+income in the year. The workpaper surfaces each disposal and warns the reviewer
+to verify that its disposal journal reached gross income; it does not add the
+proceeds a second time because a correct disposal journal already records them.
 
 ### Schedule VII is headed "Other Than Contractors"
 

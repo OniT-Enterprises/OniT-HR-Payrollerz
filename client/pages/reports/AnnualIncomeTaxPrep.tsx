@@ -175,10 +175,9 @@ export default function AnnualIncomeTaxPrep() {
     if (saved) {
       setManual({
         entityType: saved.entityType,
-        taxDepreciationMethod:
-          saved.taxDepreciationMethod === "full_expensing"
-            ? "full_expensing"
-            : "useful_life",
+        // Legacy workpapers may contain the removed useful-life choice. New
+        // builds always apply Schedule VII's statutory 100% rate.
+        taxDepreciationMethod: "full_expensing",
         lossCarriedForward: saved.lossCarriedForward,
         installmentsPaid: saved.installmentsPaid,
         foreignTaxCredits: saved.foreignTaxCredits,
@@ -694,28 +693,9 @@ export default function AnnualIncomeTaxPrep() {
             <Label>
               {t("taxReports.formC.workpaper.depreciationMethod")}
             </Label>
-            <Select
-              value={manual.taxDepreciationMethod}
-              onValueChange={(value) =>
-                setManual((current) => ({
-                  ...current,
-                  taxDepreciationMethod:
-                    value as FormCManualInputs["taxDepreciationMethod"],
-                }))
-              }
-            >
-              <SelectTrigger className="min-h-10">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="useful_life">
-                  {t("taxReports.formC.workpaper.depreciationUsefulLife")}
-                </SelectItem>
-                <SelectItem value="full_expensing">
-                  {t("taxReports.formC.workpaper.depreciationFullExpensing")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="min-h-10 rounded-md border bg-muted/30 px-3 py-2 text-sm font-medium">
+              {t("taxReports.formC.workpaper.depreciationFullExpensing")}
+            </div>
             <p className="text-xs text-muted-foreground">
               {t("taxReports.formC.workpaper.depreciationMethodHint")}
             </p>

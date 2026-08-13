@@ -72,7 +72,28 @@ export const firestoreEmployeeSchema = z.object({
     annualLeaveDays: z.number().default(25),
     benefitsPackage: z.string().default('standard'),
     payFrequency: z.enum(['weekly', 'monthly']).optional(),
-    isResident: z.boolean().default(true),
+    // Legacy rows may omit this. Preserve "unknown" so payroll can require an
+    // explicit tax-residence decision instead of silently treating it resident.
+    isResident: z.boolean().optional(),
+    // Both MUST be declared here. This object has no `.passthrough()`, so an
+    // unlisted field is stripped on read even though it was written correctly —
+    // salary history would have vanished between save and load, and every
+    // retroactive suggestion would have silently been zero.
+    salaryHistory: z.array(z.object({
+      effectiveFrom: z.string(),
+      monthlySalary: z.number(),
+      previousMonthlySalary: z.number().optional(),
+      reason: z.string().optional(),
+      recordedAt: z.string(),
+      recordedBy: z.string().optional(),
+      retroSettledPeriod: z.string().optional(),
+    }).passthrough()).optional(),
+    attendancePremium: z.object({
+      amount: z.number(),
+      mode: z.enum(['all_or_nothing', 'pro_rata']),
+      graceHours: z.number().optional(),
+      active: z.boolean(),
+    }).passthrough().optional(),
   }).default({}),
   documents: z.object({
     bilheteIdentidade: z.object({
@@ -233,6 +254,7 @@ export interface AddEmployeeValidationMessages {
   startDateRequired: string;
   salaryRequired: string;
   salaryNonNegative: string;
+  taxResidenceRequired: string;
   minimumWorkingAge: (age: number) => string;
   partTimeHours: string;
   minimumWageTreatment: string;
@@ -246,6 +268,7 @@ const DEFAULT_ADD_EMPLOYEE_VALIDATION_MESSAGES: AddEmployeeValidationMessages = 
   startDateRequired: 'Start date is required',
   salaryRequired: 'Enter how much you pay them each month',
   salaryNonNegative: 'Salary must be zero or more',
+  taxResidenceRequired: 'Choose resident or non-resident for tax',
   minimumWorkingAge: (age) =>
     `Timor-Leste labour law: minimum working age is 15 (age at start date: ${age}).`,
   partTimeHours: 'Enter contracted hours between 1 and 44 per week',
@@ -311,13 +334,28 @@ export const createAddEmployeeFormSchema = (
     (value) => Number.isFinite(Number(value)) && Number(value) >= 0,
     messages.salaryNonNegative,
   ),
+  /**
+   * Date a CHANGED salary takes effect, so the change lands in the employee's
+   * salary history with the month it happened (what auditors ask for) and any
+   * back-dated months can be paid as arrears. Only shown, and only meaningful,
+   * when editing an employee whose salary is being changed — empty otherwise, in
+   * which case no history entry is written.
+   */
+  salaryEffectiveFrom: z.string().optional().or(z.literal('')),
+  /** Free-text note on why the salary changed (promotion, annual review). */
+  salaryChangeReason: z.string().max(200).optional().or(z.literal('')),
+  /** Standing attendance premium; blank or 0 means the employee has none. */
+  attendancePremiumAmount: z.string().optional().or(z.literal('')),
+  attendancePremiumMode: z.enum(['all_or_nothing', 'pro_rata']).default('all_or_nothing'),
   // Art. 32 statutory annual leave is 12 working days, which is also what
   // TL_DEFAULT_LEAVE_POLICIES.annualLeave.daysPerYear uses. The old 25 default
   // contradicted the tenant policy default.
   leaveDays: z.string().default('12'),
   benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
   payFrequency: z.enum(['weekly', 'monthly']).default('monthly'),
-  isResident: z.boolean().default(true),
+  // Tax residence depends on the permanent-abode / 183-day tests in Law
+  // 8/2008. Never infer it from nationality and never default it silently.
+  isResident: z.boolean({ required_error: messages.taxResidenceRequired }),
 }).superRefine((data, ctx) => {
   // Lei 4/2012 Art. 68 — minimum working age is 15. Hard block when a date of
   // birth is provided and the person would be under 15 at the hire date

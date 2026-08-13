@@ -18,6 +18,7 @@ import { Building, CheckCircle2, Circle, Globe, Settings } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { exportToCSV } from "@/lib/csvExport";
 import { useTenant } from "@/contexts/TenantContext";
+import { TL_INCOME_TAX } from "@/lib/payroll/constants-tl";
 
 export default function SetupReports() {
   const { toast } = useToast();
@@ -77,7 +78,7 @@ export default function SetupReports() {
       {
         section: t("reports.setup.configSections.payroll"),
         setting: t("reports.setup.configSettings.witRate"),
-        value: `${settings.payrollConfig.tax.residentRate ?? 10}%`,
+        value: `${TL_INCOME_TAX.rate * 100}%`,
       },
       {
         section: t("reports.setup.configSections.payroll"),

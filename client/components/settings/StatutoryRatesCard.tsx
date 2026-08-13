@@ -46,6 +46,18 @@ const ROWS: StatutoryRow[] = [
   { labelKey: 'severanceLabel', valueKey: 'severanceValue', pendingConfirmation: true },
   { labelKey: 'nonCashLabel', valueKey: 'nonCashValue' },
   { labelKey: 'subsidioLabel', valueKey: 'subsidioValue' },
+  // Which salary an Art. 44 subsídio is priced at once the salary moved during
+  // the year. Xefe uses the CURRENT salary — unchanged behaviour, and the
+  // employee-favourable side when the year's movement was a rise, which it
+  // normally is. `timeWeightedMonthlySalary` computes the alternative but is
+  // wired to nothing (NICO_OPEN_QUESTIONS A11).
+  { labelKey: 'subsidioBaseAfterRaiseLabel', valueKey: 'subsidioBaseAfterRaiseValue', pendingConfirmation: true },
+  // Which month wage arrears from a back-dated rise are taxed in. Xefe taxes
+  // them in the month PAID (NICO_OPEN_QUESTIONS A12).
+  { labelKey: 'retroTaxMonthLabel', valueKey: 'retroTaxMonthValue', pendingConfirmation: true },
+  // Whether an attendance premium is Art. 8 contributable remuneration. Xefe
+  // says yes (NICO_OPEN_QUESTIONS A13).
+  { labelKey: 'attendancePremiumInssLabel', valueKey: 'attendancePremiumInssValue', pendingConfirmation: true },
 ];
 
 export function StatutoryRatesCard({ t }: StatutoryRatesCardProps) {

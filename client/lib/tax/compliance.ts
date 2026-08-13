@@ -35,7 +35,7 @@ export function getMonthlyWITDueDateBase(period: string): string {
 
 /**
  * Law 8/2008 Secs. 8-9: the monthly services-tax form and payment are due by
- * day 15 of the following month (same consolidated monthly form as WIT).
+ * day 15 of the following month. Xefe tracks its filing evidence separately.
  */
 export function getMonthlyServicesTaxDueDateBase(period: string): string {
   return getMonthlyWITDueDateBase(period);
@@ -144,11 +144,14 @@ export function isActionableDeadline(params: {
   status?: TaxFilingStatus;
   hasFilingRecord: boolean;
   periodsWithPayroll: ReadonlySet<string> | null;
+  /** Business-tax evidence; avoids incorrectly borrowing payroll activity. */
+  hasTaxActivity?: boolean;
 }): boolean {
   if (!/^\d{4}-\d{2}$/.test(params.period)) return true;
   if (params.daysUntilDue >= 0) return true;
   if (params.status === "filed") return true;
   if (params.hasFilingRecord) return true;
+  if (params.hasTaxActivity === true) return true;
   if (!params.periodsWithPayroll) return true;
   return params.periodsWithPayroll.has(params.period);
 }

@@ -1543,12 +1543,12 @@ const messages = {
       people: {
         title: "Keep people and time together",
         description:
-          "Add each employee once — salary, schedule and bank details. Attendance and leave stay on the same record.",
+          "Add each employee once — salary, schedule and bank details. Attendance and leave stay on the same record, and every pay change keeps the month it took effect.",
       },
       payroll: {
         title: "Review and approve payroll",
         description:
-          "Choose the period and review. Xefe calculates gross pay, WIT, INSS, overtime and net pay for every employee.",
+          "Choose the period and review. Xefe calculates gross pay, WIT, INSS, overtime and net pay for every employee — including attendance premiums and arrears from a back-dated rise.",
       },
       payments: {
         title: "Pay people and prepare filings",
@@ -1806,10 +1806,16 @@ const messages = {
       description: "Define your business sector, locations, and departments",
       businessSector: "Business Sector *",
       sectorHint: "Selecting a sector will suggest common departments",
+      servicesTaxReceipts: "Services-tax receipts",
+      servicesTaxManual: "Mixed business — I will review Section 3",
+      servicesTaxAllDesignated: "All customer receipts are designated services",
+      servicesTaxReceiptsHelp:
+        "Choose the second option only if every customer receipt is for hotel, restaurant/bar or telecommunications services. Xefe will otherwise leave the tax base for manual review.",
       sectors: {
         security: "Security Services",
         hotel: "Hotel & Hospitality",
         restaurant: "Restaurant",
+        telecommunications: "Telecommunications",
         trading: "Trading",
         manufacturing: "Manufacturing",
         construction: "Construction",
@@ -2129,7 +2135,7 @@ const messages = {
       petroleumHint:
         "Turn this on only if your company is a party to a Petroleum Agreement. Your employees are then taxed under Schedule IX, not the ordinary wage tax — a different regime with its own rates, depreciation rules and filing desk. Xefe does not calculate it, so it will stop payroll rather than work it out wrongly and leave you owing the difference.",
       currentRatesTitle: "The rates you are using now",
-      changeRatesTitle: "Change the legal rates",
+      changeRatesTitle: "Advanced payroll policies",
       title: "Payroll Configuration",
       description:
         "Tax, social security, and overtime settings for Timor-Leste",
@@ -2218,6 +2224,15 @@ const messages = {
         subsidioLabel: "13th month (Subsidio Anual)",
         subsidioValue:
           "One month's salary, due by 20 December each year (Labour Law Art. 44)",
+        subsidioBaseAfterRaiseLabel: "13th month after a mid-year pay rise",
+        subsidioBaseAfterRaiseValue:
+          "Priced at the salary in force when it is paid, not a time-weighted average of the year (Labour Law Art. 44 is silent)",
+        retroTaxMonthLabel: "Tax month for back-dated pay arrears",
+        retroTaxMonthValue:
+          "Arrears are taxed in the month they are PAID, not spread back over the months they relate to",
+        attendancePremiumInssLabel: "Attendance premium and social security",
+        attendancePremiumInssValue:
+          "Counted as contributable remuneration for individual performance (DL 20/2017 Art. 8), so INSS is charged on it",
       },
     },
     notifications: {
@@ -2430,6 +2445,7 @@ const messages = {
       emergencyContactPhone: "Emergency Contact Phone",
       dateOfBirth: "Date of Birth (YYYY-MM-DD)",
       statusTemplate: "Status (active/inactive/on_leave)",
+      taxResidence: "Tax residence (resident or non-resident)",
     },
     statusLabels: {
       active: "Active",
@@ -2587,6 +2603,7 @@ const messages = {
       startDateRequired: "Choose their start date.",
       salaryRequired: "Enter how much you pay them each month.",
       salaryNonNegative: "Salary must be zero or more.",
+      taxResidenceRequired: "Choose resident or non-resident for tax.",
       minimumWorkingAge:
         "Timor-Leste labour law: minimum working age is 15 (age at start date: {{age}}).",
       partTimeHours: "Enter contracted hours between 1 and 44 per week.",
@@ -2758,6 +2775,21 @@ const messages = {
       salaryLabel: "Monthly Salary (USD)",
       salaryPlaceholder: "e.g., 1500",
       minWageHint: "TL minimum wage: $115/month",
+      salaryEffectiveFrom: "Effective from",
+      salaryEffectiveFromHint:
+        "When the new salary starts. If it is a past month, the shortfall is offered as arrears on the next payroll run.",
+      salaryChangeReason: "Reason (optional)",
+      salaryChangeReasonPlaceholder: "Promotion, annual review…",
+      salaryHistorySection: "Pay changes ({count})",
+      salaryHistoryEffective: "Effective {month}",
+      salaryHistoryBackdated: "Back-dated",
+      attendancePremiumSection: "Attendance premium",
+      attendancePremiumAmount: "Monthly premium",
+      attendancePremiumHint:
+        "Paid only when the period has no unjustified absence. Leave blank if this employee has none. Approved leave and sick days never cost the premium.",
+      attendancePremiumMode: "If there is unjustified absence",
+      attendancePremiumAllOrNothing: "Pay nothing",
+      attendancePremiumProRata: "Reduce in proportion",
       leaveDays: "Annual Leave Days",
       leaveDaysPlaceholder: "25",
       benefits: "Benefits Package",
@@ -2768,6 +2800,12 @@ const messages = {
         executive: "Executive",
       },
       taxResidentLabel: "Tax resident of Timor-Leste",
+      taxResidenceLabel: "Tax residence *",
+      taxResidencePlaceholder: "Choose tax residence",
+      taxResidentOption: "Timor-Leste resident",
+      taxNonResidentOption: "Non-resident",
+      taxResidenceHelp:
+        "Resident generally means 183 days in a 12-month period starting or ending in the year, unless the person's permanent abode is outside Timor-Leste. A Timor-Leste government employee posted abroad also qualifies. Nationality alone does not decide it.",
       incomeTaxTitle: "Income Tax (WIT)",
       incomeTaxDesc: "10% on income above $500/month",
       socialSecurityTitle: "Social Security (INSS)",
@@ -5202,7 +5240,7 @@ const messages = {
         templateWarning:
           "The Official Form export uses the 2024/2025 ATTL template format. If the Ministry of Finance updates the form layout, this export may need updating.",
         dueDateLabel: "Due Date:",
-        dueDateValue: "15th of the month following the pay period.",
+        dueDateValue: "15th of the month following the wage-payment month.",
         supportLabel: "e-Tax Support:",
         supportValue: "(+670) 74962772 | etax@mof.gov.tl",
       },
@@ -5220,6 +5258,10 @@ const messages = {
         selectMethod: "Select method",
         etax: "e-Tax Portal",
         bnu: "BNU Bank (Paper)",
+        alsoFiledServicesTax: "I also filed services tax for this month",
+        servicesTaxBase: "Designated-service receipts received (USD)",
+        servicesTaxBaseHelp:
+          "Enter only hotel, restaurant/bar or telecommunications receipts. Do not include other lines of business.",
         receiptLabel: "Receipt Number (Optional)",
         paymentReferenceLabel: "Bank / receipt reference *",
         receiptPlaceholder: "Enter receipt or confirmation number",
@@ -5263,6 +5305,8 @@ const messages = {
         officialExportedTitle: "Official Form Exported",
         officialExportedDescription:
           "ATTL Consolidated Monthly Taxes Form exported to Excel.",
+        servicesTaxManualReview:
+          "The form was exported. Services-tax Section 3 was left blank because this business has not confirmed that all receipts are designated services; review it before filing.",
         officialExportFailedDescription:
           "Failed to generate Excel form. Please try again.",
         filedTitle: "Filing Recorded",
@@ -5294,6 +5338,9 @@ const messages = {
         baseOverrideLabel: "Adjusted turnover base (optional)",
         baseOverrideAboveRevenue:
           "The adjusted base is higher than the period revenue Xefe derived — double-check before filing.",
+        markFiled: "I filed this in e-Tax",
+        recordedFiled: "Recorded as filed",
+        filedRecorded: "e-Tax filing recorded",
         title: "File installment tax on e-Tax (assisted)",
         description:
           "Installment tax is 0.5% of turnover: quarterly when prior-year turnover is at most $1 million, monthly when it is higher. Check the period, then file in e-Tax — Xefe never files for you.",
@@ -7354,6 +7401,8 @@ const messages = {
     specialHours: "Special hours (2× pay)",
     invalidHireDate:
       "hire date is not a valid date — fix it on the employee profile before running payroll",
+    taxResidenceRequired:
+      "choose resident or non-resident for tax on the employee profile before running payroll",
     unpaidAbsence: "Unpaid absence",
     absenceHoursLabel: "Hours docked",
     absenceHoursHint:
@@ -7480,6 +7529,18 @@ const messages = {
     thirteenthMonth: "13th Month",
     serviceCompensation: "Severance (Art. 56)",
     untakenLeavePayout: "Untaken Leave (Art. 32)",
+    attendancePremium: "Attendance premium",
+    attendancePremiumAmount: "Premium",
+    attendancePremiumClean:
+      "No unjustified absence this period, so the full {amount} premium is paid.",
+    attendancePremiumForfeited:
+      "{hours}h of unjustified absence, so the premium is not paid. Type an amount to pay it anyway.",
+    attendancePremiumReduced:
+      "Reduced from {full} for {hours}h of unjustified absence.",
+    retroactivePay: "Retroactive pay",
+    retroactivePayAmount: "Arrears",
+    retroactivePayHint:
+      "Wage arrears from a pay rise back-dated to an earlier month. Suggested from the recorded salary history and paid once. Part-months are not calculated — add them here yourself.",
     incomeTax: "Income Tax",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Employer Contributions",
@@ -8026,11 +8087,11 @@ const messages = {
         entitySoleTrader: "Sole trader (individually-owned)",
         disclaimer:
           "This workpaper maps your posted books to the official form's line numbers as a preparation aid. It is not the official form and Xefe does not file it — review every figure with your accountant, then transcribe onto the official ATTL form.",
-        depreciationMethod: "Tax depreciation method (line 15)",
+        depreciationMethod: "Tax depreciation (line 15)",
         depreciationUsefulLife: "Useful-life rates (asset register)",
         depreciationFullExpensing: "100% in year of purchase (Schedule VII)",
         depreciationMethodHint:
-          "Confirm with your accountant which treatment applies before filing.",
+          "Xefe applies the 100% rate in Schedule VII. Have your accountant verify the asset and disposal inputs before filing.",
         dueBy: "Official form due by {{date}}.",
         officialFormLink: "Official form & instructions (attl.gov.tl)",
         summaryTitle: "Calculation summary",

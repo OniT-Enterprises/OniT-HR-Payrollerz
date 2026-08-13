@@ -449,9 +449,16 @@ export const settingsService = {
     try {
       await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
+      // Schedule V WIT is statutory. Keep the legacy fields in the settings
+      // document for backwards compatibility, but normalize them on every save
+      // so stale/tampered tenant values cannot become a competing source of law.
+      const statutoryPayrollConfig = {
+        ...payrollConfig,
+        tax: { ...TL_DEFAULT_PAYROLL_CONFIG.tax },
+      };
       await setDoc(docRef, {
         tenantId,
-        payrollConfig: omitUndefinedValues(payrollConfig),
+        payrollConfig: omitUndefinedValues(statutoryPayrollConfig),
         setupProgress: { payrollConfig: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
@@ -465,7 +472,7 @@ export const settingsService = {
           entityId: tenantId,
           entityType: 'tenant_settings',
           description: 'Updated payroll configuration',
-          newValue: payrollConfig as unknown as Record<string, unknown>,
+          newValue: statutoryPayrollConfig as unknown as Record<string, unknown>,
         }).catch(err => console.error('Audit log failed:', err));
       }
     } catch (error) {

@@ -69,7 +69,7 @@ the existing journal, never a duplicate (same pattern as the
 `fixedAssetPostings` guards in `ACCOUNTING_AUTOMATIONS.md`). Recurring
 deductions settle with the run — never posted twice.
 
-## 3. Statutory filings & deadlines (return ≠ payment, always)
+## 3. Statutory filings & deadlines (return ≠ payment)
 
 ```mermaid
 flowchart LR
@@ -77,6 +77,8 @@ flowchart LR
     REC --> DR["Monthly INSS DR\nstatement by 10th · payment by 20th\n(late: +1%/month-or-fraction, DL 20/2017 Art. 39)"]
     REC --> AWIT["Annual employer WIT recon (TADR-WR 1)\n31 March"]
     GLBOOKS[Posted GL year] --> AIT["Annual income tax TADR-IT 1\nworkpaper → accountant → e-Tax\n31 March"]
+    RECEIPTS[Designated-service receipts] --> ST["Services tax\nown filing evidence · due 15th"]
+    GLBOOKS --> INST["Income-tax installment\nown filing evidence · due 15th"]
 
     WIT -- markAsFiled --> F1[return: filed]
     WIT -- recordPayment --> P1[payment: paid + journal]
@@ -84,11 +86,16 @@ flowchart LR
     DR -- recordPayment --> P2[payment: paid + journal]
 ```
 
-- Return submission and payment are **independent obligations** with separate
-  statuses — a filed return with unpaid tax stays visibly overdue.
+- Return submission and payment are **independent obligations**. Xefe tracks
+  both statuses for WIT and INSS, so a filed wage/INSS return with unpaid tax
+  stays visibly overdue. Services-tax and installment records currently capture
+  the operator-confirmed declaration and its frozen figures.
 - Filing ownership (rules-enforced read split on `taxFilings`): wage filings
   (WIT/INSS) belong to **Payroll**; business tax (`annual_income_tax`,
   `services_tax`, `installment_tax`) belongs to **Accounting**.
+- Filing identity and declared snapshots are immutable after filing. Services
+  tax and installments never inherit status from a WIT record for the same
+  month; each requires its own operator-confirmed e-Tax evidence.
 - Statutory exports mirror OFFICIAL templates only (INSS portal DR, ATTL
   form); the TADR-IT 1 workpaper is Xefe's own layout and is a preparation
   aid — Xefe never claims to calculate or file the official annual return
@@ -104,10 +111,22 @@ flowchart LR
 | 4 | Every money move has exactly one balanced journal; retries are idempotent | service transactions + journal-by-source lookups |
 | 5 | Corrections = reversing journals; never delete/repoint | `voidJournalEntry`/`createReversingJournalEntry` |
 | 6 | Statutory generation refuses on missing data — Xefe never infers compliance values | strict readers in `lib/tax/statutory-payroll-record.ts` |
-| 7 | Audit trail: `payroll.run/approve/pay`, `tax.*` actions written via server callable | `functions/src/audit.ts` allowlist + E2E assertion |
+| 7 | Audit trail: payroll lifecycle events are server-written, retryable without duplicates, and covered alongside `tax.*` actions | `functions/src/audit.ts` transaction + `audit-log-retry.test.ts` + E2E assertion |
 | 8 | Deduction LINES never sum to more than `cashGrossPay`, so `gross − deductions = net` always holds | clamp in `calculateTLPayroll` + `payroll-journal.test.ts` (engine → summary → journal) |
 | 9 | A leaver's Art. 56 severance, Art. 44 subsídio and Art. 32 untaken-leave payout are each paid exactly once, and the Art. 44 test is per-civil-year while the other two are year-agnostic | `getCommittedFinalPayByEmployee` + `committedSubsidioDischarging` + `final-pay-dedup.test.ts` + `untaken-leave-payout.test.ts` |
 | 10 | A run cannot be approved with figures built before another run was committed (double exemption / double severance) | `assertRunFiguresFresh` on approve, for `draft` AND `processing` — the latter covers the cross-client concurrency the client-side dedup caches cannot. Decision is pure in `isRunFiguresStale` + `run-figures-stale.test.ts` |
+| 11 | WIT thresholds and benefit-in-kind tests use the payment calendar month; tax residence is explicit and ownership grants no exemption | `usePayrollCalculator` + `getMonthToDateWITByEmployee` + payroll/import tests |
+| 12 | Schedule V WIT rates cannot be tenant-overridden; filed return figures cannot be rewritten or deleted | constants + `settingsService` normalization + `firestore.rules` + emulator tests |
+| 13 | Back-dated wage arrears are paid exactly once per pay change | `retroSettledPeriod` stamped on the `salaryHistory` entry inside the mark-as-paid transaction + `salary-history.test.ts` |
+| 14 | A period's entitlement and the salary it is priced at come from the same effective-dated source | `salaryOnDate` returns its `source`, so an unrecorded month is reported as unknown rather than priced off today's salary |
+
+Payroll lifecycle audit calls use the deterministic event ID
+`payroll:<action>:<payrollRunId>`. The client retries one transient callable
+failure with that same ID. The server transaction either creates the event or
+accepts an existing event only when its actor, action, entity, and description
+match; reusing the ID for different content fails. `payroll.export` deliberately
+has no deterministic ID because repeated exports are legitimate separate
+events.
 
 ### 4a. Final-pay once-only guard — the two scopes are NOT the same
 
@@ -166,6 +185,59 @@ Any change here needs `final-pay-dedup.test.ts`, `rl-termination-payroll.test.ts
 and `payroll-journal.test.ts` green, and those tests must exercise the shape the
 **service** actually returns — a test built on a hand-made input shape hid one of
 the four bugs completely.
+
+### 4b. Salary history, retroactive pay, and the attendance premium (added 2026-08-13)
+
+Three earnings arrived together from a practitioner's feature list. Two of them are
+once-only or attendance-derived, which puts them squarely in §4a's hazard class.
+
+**`compensation.monthlySalary` is still the only salary any money path reads.**
+`compensation.salaryHistory` is an append-only record of what it used to be
+(`lib/payroll/salary-history.ts`), shaped like `jobDetails.contractRenewals` and
+written by the same null-returns-mean-no-change contract (`recordSalaryChange` ↔
+`appendContractRenewal`). Nothing about the Art. 44 subsídio, the Art. 32 payout or
+the Art. 56 severance changed when it shipped — they all still price at the current
+salary. Whether they *should* price at a time-weighted average is
+NICO_OPEN_QUESTIONS A11, and `timeWeightedMonthlySalary` exists so that question can
+be answered with a number.
+
+**Retroactive pay is once-only, and the guard is a stamp not a query.**
+`suggestRetroactivePay` skips any change already carrying `retroSettledPeriod`;
+`markPayrollRunAsPaid` writes that stamp inside the same transaction that settles
+recurring deductions. Two details are load-bearing:
+
+- The stamp is driven by `retroactiveSettles` **persisted on the payroll record**,
+  not by recomputing the suggestion at paid time. An operator may edit the suggested
+  figure down, and stamping a change the run did not actually settle would bury the
+  arrears permanently.
+- `stampRetroSettled` only ever fills an EMPTY `retroSettledPeriod`, so a retried
+  payment or two runs racing cannot re-stamp with a different month.
+
+**Whole months only, deliberately.** A mid-month effective date yields the whole
+months after it and reports the part-month in `partialMonths` for the operator.
+Pricing it would mean adopting `calculateProRataSalary`'s working-day convention,
+which still assumes Mon–Fri — wrong for the six-day week that A6 is about. Such a
+change is also never stamped settled, so the outstanding part-month cannot be lost.
+
+**The attendance premium must subtract non-employment hours before judging absence.**
+RunPayroll books pre-hire and post-termination hours as `absenceHours` on purpose,
+so the existing deduction prorates a salaried partial period. Anything *judging*
+attendance therefore has to net them off first — `nonEmploymentAbsenceHours` on the
+row exists only for this, and without it every new hire and every leaver would
+forfeit their premium for days they were never employed. There is ONE resolver,
+`resolveAttendancePremium`, called from row seeding, the attendance sync and record
+preparation, because duplicated money arithmetic has drifted in this repo before.
+
+**Both new earnings are taxable and inside the INSS base**, and both readings are
+provisional: NICO_OPEN_QUESTIONS A12 (which month arrears are taxed in) and A13 (is
+a premium Art. 8 contributable). Each carries a *pending confirmation* badge on the
+statutory rules card. Both sides chosen are the employer-costlier ones, so a
+correction can only ever reduce a contribution, never create an arrear.
+
+**The next new earning needs its own guard.** §4a's closing lesson held again here:
+retroactive pay would have double-paid across two runs over one period without the
+stamp. Treat "does this pay the same thing twice?" as the first question about any
+earning added after this line.
 
 The whole chain is proven end-to-end in one browser pass:
 `tests/e2e/full-workflow.spec.ts` (signup → … → liability-clearing journals),

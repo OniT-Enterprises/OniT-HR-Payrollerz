@@ -45,11 +45,16 @@ import {
 
 export interface TLEmployeeTaxInfo {
   isResident: boolean;           // Resident vs non-resident
-  hasTaxExemption: boolean;      // Exempt from WIT withholding (e.g. shareholder distributions)
-  inssExempt?: boolean;          // Not INSS-enrolled (e.g. shareholders paid distributions, not wages)
+  hasTaxExemption: boolean;      // Explicit statutory exemption; ownership alone never qualifies
+  inssExempt?: boolean;          // Explicit statutory/non-enrolment classification
 }
 
 export interface TLPayrollCalculationConfig {
+  /**
+   * @deprecated Schedule V WIT is statutory and the main payroll engine ignores
+   * this legacy field. It remains only so older stored/configured object shapes
+   * can be read without a migration cliff.
+   */
   incomeTax?: {
     residentRate: number;
     nonResidentRate: number;
@@ -94,6 +99,47 @@ export interface TLPayrollCalculationConfig {
   leavePayout?: {
     workingDaysPerMonth?: number;
   };
+  /**
+   * This tenant is a petroleum Contractor (Lei 8/2008 Sec. 68.1 — a party to a
+   * Petroleum Agreement). When true the engine REFUSES to compute rather than
+   * apply Schedule V rates, because Sec. 72.2 sends a Contractor's employees to
+   * Schedule IX instead.
+   *
+   * The flag rides on the CONFIG, not on TLPayrollInput, and that is the whole
+   * point: the config is already built from the tenant's `payrollConfig`, so any
+   * caller that threads tenant settings inherits the refusal without knowing the
+   * regime exists. A per-employee input field would be a field each new caller
+   * has to remember, which is exactly the failure this guard is for.
+   */
+  petroleumContractor?: boolean;
+}
+
+/**
+ * Thrown when payroll is asked to compute for a petroleum Contractor.
+ *
+ * The RunPayroll wizard blocks this case at the screen (`petroleumBlockTitle`),
+ * but the wizard is not the only door into the engine — a spreadsheet import, an
+ * API caller or a future assistant would all have computed Schedule V silently.
+ * The gap is real money: a non-resident on $3,000/month is $300 under Schedule V
+ * against $600 under Schedule IX, and Sec. 25.3 makes the shortfall the
+ * EMPLOYER's liability, not the worker's.
+ *
+ * Same posture as `UnsupportedTLPetroleumTaxRegimeError` in lib/tax/withholding-tl.ts,
+ * which has always refused supplier withholding for the same reason. Kept as a
+ * separate class so payroll does not depend on the tax module.
+ *
+ * Implementation notes for adding Schedule IX live in
+ * docs/PETROLEUM_SCHEDULE_IX.md.
+ */
+export class UnsupportedTLPetroleumPayrollError extends Error {
+  constructor() {
+    super(
+      "Payroll for a petroleum Contractor is taxed under Lei 8/2008 Schedule IX, not the " +
+        "domestic Schedule V rates this engine applies. Xefe does not implement Schedule IX, " +
+        "so it refuses to compute rather than under-withhold.",
+    );
+    this.name = 'UnsupportedTLPetroleumPayrollError';
+  }
 }
 
 export type TLBonusINSSCategory =
@@ -150,6 +196,21 @@ export interface TLPayrollInput {
    * when bonus is zero; payroll refuses to guess the treatment of a paid award.
    */
   bonusINSSCategory: TLBonusINSSCategory | null;
+  /**
+   * Attendance premium (prémio de assiduidade) already resolved against this
+   * period's absence by `calculateAttendancePremium`. The engine receives the
+   * PAYABLE amount, not the policy — deciding forfeiture needs rostered hours,
+   * which is the caller's business, and keeping that out of here means the
+   * premium cannot accidentally re-read absence the docking path already used.
+   */
+  attendancePremium?: number;
+  /**
+   * Wage arrears from a back-dated pay rise ("Retroativos" on a TL payroll
+   * register), suggested by `suggestRetroactivePay` and confirmed by an operator.
+   * Wages for past months paid in this one, so it is taxable and contributable
+   * exactly like salary.
+   */
+  retroactivePay?: number;
   commission: number;
   perDiem: number;               // Per diem / travel allowance (excluded from INSS base)
   foodAllowance: number;         // Food subsidy (excluded from INSS base)
@@ -204,6 +265,8 @@ export interface TLPayrollInput {
   // runs in the same calendar month. Absent/0 for the first run of the month.
   mtdWitTaxableIncome?: number;
   mtdIncomeTax?: number;
+  /** Benefits in kind already provided in this payment calendar month. */
+  mtdNonCashBenefits?: number;
 
   // For Subsidio Anual
   monthsWorkedThisYear: number;
@@ -240,6 +303,10 @@ export interface TLPayrollResult {
   restDayPay: number;
   sickPay: number;
   bonus: number;
+  /** Prémio de assiduidade actually paid this period (0 when forfeited). */
+  attendancePremium: number;
+  /** Wage arrears from a back-dated rise. */
+  retroactivePay: number;
   commission: number;
   perDiem: number;
   foodAllowance: number;
@@ -876,6 +943,12 @@ export function calculateTLPayroll(
   input: TLPayrollInput,
   config?: TLPayrollCalculationConfig,
 ): TLPayrollResult {
+  // FIRST, before any figure is derived. A partially-computed petroleum result is
+  // worse than no result: it would look like an answer.
+  if (config?.petroleumContractor) {
+    throw new UnsupportedTLPetroleumPayrollError();
+  }
+
   const warnings: string[] = [];
   const earnings: TLPayrollEarning[] = [];
   const deductions: TLPayrollDeduction[] = [];
@@ -1054,6 +1127,44 @@ export function calculateTLPayroll(
     });
   }
 
+  // Attendance premium (prémio de assiduidade). Arrives already resolved
+  // against absence — see TLPayrollInput.attendancePremium. Treated as
+  // remuneration for individual performance: taxable, and inside the INSS base
+  // under DL 20/2017 Art. 8, the same side as an individual-performance bonus.
+  // That reading is with the accounting reviewer (NICO_OPEN_QUESTIONS A13); it
+  // is the employer-costlier, worker-protective side, so a correction can only
+  // ever reduce a contribution, never create an arrear.
+  const attendancePremium = Math.max(0, input.attendancePremium ?? 0);
+  if (attendancePremium > 0) {
+    earnings.push({
+      type: 'attendance_premium',
+      description: 'Attendance Premium',
+      descriptionTL: 'Prémiu Asiduidade',
+      amount: attendancePremium,
+      isTaxable: true,
+      isINSSBase: true,
+    });
+  }
+
+  // Retroactive pay — wages for earlier months that were underpaid because a
+  // rise was agreed late and back-dated. Salary paid in this period, so it is
+  // taxable and contributable like salary. It is deliberately taxed in the month
+  // PAID rather than spread back over the months it relates to: TL WIT runs on a
+  // monthly basis and Xefe's MTD context is per calendar month, so re-opening a
+  // closed month would break both the filed DR and the MTD exemption ledger.
+  // Confirm with the reviewer before changing (NICO_OPEN_QUESTIONS A12).
+  const retroactivePay = Math.max(0, input.retroactivePay ?? 0);
+  if (retroactivePay > 0) {
+    earnings.push({
+      type: 'retroactive_pay',
+      description: 'Retroactive Pay',
+      descriptionTL: 'Retroativu',
+      amount: retroactivePay,
+      isTaxable: true,
+      isINSSBase: true,
+    });
+  }
+
   // Commission
   if (input.commission > 0) {
     earnings.push({
@@ -1205,6 +1316,21 @@ export function calculateTLPayroll(
   const nonCashThreshold =
     config?.nonCashBenefits?.monthlyTaxableThreshold ??
     TL_NON_CASH_BENEFITS.monthlyTaxableThreshold;
+  const priorNonCashBenefits = Math.max(0, input.mtdNonCashBenefits ?? 0);
+  const cumulativeNonCashBenefits = addMoney(
+    priorNonCashBenefits,
+    nonCashBenefits,
+  );
+  // Art. 1 measures the $20 test across the calendar month. If an earlier run
+  // was below the threshold and this run crosses it, the earlier amount becomes
+  // taxable too: the statute excludes a benefit only while the month's total is
+  // not greater than $20; it does not provide a $20 deduction.
+  const taxableNonCashCatchUp =
+    nonCashBenefits > 0 &&
+    priorNonCashBenefits <= nonCashThreshold &&
+    cumulativeNonCashBenefits > nonCashThreshold
+      ? priorNonCashBenefits
+      : 0;
   if (nonCashBenefits > 0) {
     if (!input.nonCashBenefitINSSCategory) {
       throw new RangeError(
@@ -1216,9 +1342,10 @@ export function calculateTLPayroll(
       description: 'Non-cash Benefits',
       descriptionTL: 'Benefísiu La-Os Osan',
       amount: nonCashBenefits,
-      // Tax Law 8/2008 Art. 1 uses a strict "greater than $20" test. Once
-      // crossed, the benefit is salary; the law does not state an excess-only rule.
-      isTaxable: nonCashBenefits > nonCashThreshold,
+      // Tax Law 8/2008 Art. 1 uses a strict "greater than $20 in a calendar
+      // month" test. Once crossed, the benefit is salary; the law does not
+      // state an excess-only rule.
+      isTaxable: cumulativeNonCashBenefits > nonCashThreshold,
       // Labour Law Art. 2(t) includes regular pay in cash or in kind;
       // DL 20/2017 Art. 9 excludes expense allowances and extraordinary benefits.
       isINSSBase: input.nonCashBenefitINSSCategory === 'regular_remuneration',
@@ -1232,7 +1359,10 @@ export function calculateTLPayroll(
   const totalCompensation = sumMoney(earnings.map(e => e.amount));
   const grossPay = sumMoney(earnings.filter(e => e.isCash !== false).map(e => e.amount));
   const cashGrossPay = grossPay;
-  const taxableEarnings = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
+  const taxableEarnings = addMoney(
+    sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount)),
+    taxableNonCashCatchUp,
+  );
   const inssBase = sumMoney(earnings.filter(e => e.isINSSBase).map(e => e.amount));
 
   // ========== DEDUCTIONS ==========
@@ -1294,8 +1424,10 @@ export function calculateTLPayroll(
     subtractMoney(taxableEarnings, absenceDeduction, lateDeduction),
   );
 
-  // INSS mandatory registration: contribution base is the contributable remuneration earned in the period.
-  // Exempt payees (e.g. shareholders) are not enrolled, so their base is zero.
+  // INSS mandatory registration: contribution base is the contributable
+  // remuneration earned in the period. Any explicit non-enrolment
+  // classification must come from a verified statutory basis; ownership alone
+  // never supplies one.
   const contributableRemuneration = Math.max(0, subtractMoney(inssBase, absenceDeduction, lateDeduction));
   const inssContributionBase = input.taxInfo.inssExempt
     ? 0
@@ -1311,7 +1443,10 @@ export function calculateTLPayroll(
         input.taxInfo.isResident,
         input.payFrequency,
         input.totalPeriodsInMonth,
-        config?.incomeTax,
+        // Schedule V is a statutory constant. The lower-level function retains
+        // an override for isolated scenario calculations, but production
+        // payroll never accepts a tenant/config override here.
+        undefined,
         {
           priorTaxableIncome: input.mtdWitTaxableIncome ?? 0,
           priorTax: input.mtdIncomeTax ?? 0,
@@ -1567,6 +1702,8 @@ export function calculateTLPayroll(
     restDayPay: overtimePay.restDay,
     sickPay,
     bonus: input.bonus,
+    attendancePremium,
+    retroactivePay,
     commission: input.commission,
     perDiem: input.perDiem,
     foodAllowance: input.foodAllowance,
@@ -1708,14 +1845,24 @@ export function validateTLPayrollInput(
 ): string[] {
   const errors: string[] = [];
 
-  // Minimum wage applies to employment relationships. Fully exempt payees (shareholders
-  // receiving distributions rather than wages) are outside it and may be paid any amount.
-  const isStatutoryExempt = input.taxInfo.hasTaxExemption && input.taxInfo.inssExempt;
+  // Reported as an error rather than thrown, so a caller doing a pre-flight check
+  // over a whole roster gets one clear message per employee instead of an
+  // exception on the first row. `calculateTLPayroll` throws on the same flag.
+  if (config?.petroleumContractor) {
+    errors.push(
+      'This company is a petroleum Contractor, so its employees are taxed under ' +
+        'Lei 8/2008 Schedule IX. Xefe does not calculate Schedule IX payroll.',
+    );
+  }
+
+  // Minimum wage applies to the employment relationship independently of tax
+  // or INSS treatment. Dividends and other owner distributions do not belong in
+  // payroll and cannot use exemption flags to bypass this check.
   const isPartTime = input.employmentType?.toLowerCase() === 'part-time';
   const configuredMinimumWage = config?.minimumWage ?? TL_INSS.minimumSalary;
   let applicableMinimumWage: number | null = configuredMinimumWage;
 
-  if (isPartTime && !isStatutoryExempt) {
+  if (isPartTime) {
     const hours = input.contractedWeeklyHours;
     if (!Number.isFinite(hours) || !hours || hours <= 0 || hours > TL_WORKING_HOURS.standardWeeklyHours) {
       errors.push(
@@ -1745,8 +1892,7 @@ export function validateTLPayrollInput(
     errors.push('Monthly salary cannot be negative.');
   } else if (
     applicableMinimumWage !== null &&
-    input.monthlySalary < applicableMinimumWage &&
-    !isStatutoryExempt
+    input.monthlySalary < applicableMinimumWage
   ) {
     errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${applicableMinimumWage}).`);
   }

@@ -6,6 +6,24 @@ import { addMoney } from '@/lib/currency';
 import type { Employee } from '@/services/employeeService';
 import type { TLBonusINSSCategory, TLPayrollResult } from '@/lib/payroll/calculations-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
+import {
+  calculateAttendancePremium,
+  type AttendancePremiumResult,
+} from '@/lib/payroll/attendance-premium';
+import {
+  suggestRetroactivePay,
+  type RetroactiveSuggestion,
+} from '@/lib/payroll/salary-history';
+
+/** WIT month membership follows when wages are paid, never the wage period. */
+export function payrollRunIsPaidInMonth(
+  run: { payDate?: string },
+  paymentMonth: string,
+): boolean {
+  return /^\d{4}-\d{2}$/.test(paymentMonth) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(run.payDate || '') &&
+    run.payDate!.slice(0, 7) === paymentMonth;
+}
 
 export interface EmployeePayrollData {
   employee: Employee;
@@ -15,11 +33,35 @@ export interface EmployeePayrollData {
   holidayHours: number;
   restDayHours: number;
   absenceHours: number;
+  /**
+   * The part of `absenceHours` that is not absence at all — hours inside the
+   * period the employee was not yet hired, or was already gone. RunPayroll
+   * deliberately books those as absence so the existing deduction prorates a
+   * salaried partial period (see the comment where rows are seeded), which means
+   * anything JUDGING attendance must subtract them first. Without this, every
+   * new hire and every leaver would forfeit their attendance premium for days
+   * they were never employed.
+   */
+  nonEmploymentAbsenceHours: number;
   lateArrivalMinutes: number;
   sickDays: number;
   perDiem: number;
   bonus: number;
   bonusINSSCategory: TLBonusINSSCategory | null;
+  /**
+   * Prémio de assiduidade payable this period, resolved from the employee's
+   * standing premium against `absenceHours`. Editable, because the employer has
+   * the last word on a discretionary payment — but it re-resolves whenever
+   * absence changes, so a clean sheet never silently keeps a forfeited premium.
+   */
+  attendancePremium: number;
+  /** Wage arrears from a back-dated rise, suggested from salary history. */
+  retroactivePay: number;
+  /**
+   * Effective dates of the salary changes `retroactivePay` settles, carried so
+   * the paid-run stamp can mark them settled exactly once.
+   */
+  retroactiveSettles: string[];
   allowances: number;
   calculation: TLPayrollResult | null;
   isEdited: boolean;
@@ -33,9 +75,61 @@ export interface EmployeePayrollData {
     lateArrivalMinutes: number;
     bonus: number;
     bonusINSSCategory: TLBonusINSSCategory | null;
+    attendancePremium: number;
+    retroactivePay: number;
     perDiem: number;
     allowances: number;
   };
+}
+
+/**
+ * Prémio de assiduidade payable for a row.
+ *
+ * ONE resolver, called from every place that needs the figure — row seeding, the
+ * attendance sync, and record preparation. Three copies of this arithmetic is
+ * precisely how duplicated logic has drifted onto money in this repo before.
+ *
+ * Absence is measured net of `nonEmploymentAbsenceHours`, so a mid-period hire or
+ * a leaver with a clean sheet keeps the full premium. Paying the whole premium
+ * for a partial period of employment is the deliberate choice: it is a
+ * discretionary employer payment, the field stays editable, and the alternative
+ * (pro-rating by employment) is employer policy rather than anything statutory.
+ */
+export function resolveAttendancePremium(row: {
+  employee: Employee;
+  absenceHours: number;
+  nonEmploymentAbsenceHours: number;
+  regularHours: number;
+}): AttendancePremiumResult {
+  const baseline = Math.max(0, row.nonEmploymentAbsenceHours || 0);
+  const absence = Math.max(0, (row.absenceHours || 0) - baseline);
+  const rostered = Math.max(0, (row.regularHours || 0) - baseline);
+  return calculateAttendancePremium(
+    row.employee.compensation?.attendancePremium,
+    absence,
+    rostered,
+  );
+}
+
+/**
+ * Arrears a back-dated rise owes this run, plus the changes it settles.
+ *
+ * Reads the employee's own salary history, so it is the same answer wherever it
+ * is asked. Changes already stamped `retroSettledPeriod` are skipped by
+ * `suggestRetroactivePay` — that is the once-only guard.
+ */
+export function resolveRetroactivePay(
+  employee: Employee,
+  periodStart: string,
+): RetroactiveSuggestion {
+  if (!periodStart) {
+    return { amount: 0, lines: [], settles: [], partialMonths: [] };
+  }
+  return suggestRetroactivePay(
+    employee.compensation?.salaryHistory,
+    employee.compensation?.monthlySalary || 0,
+    periodStart,
+  );
 }
 
 export const getPayPeriodsInPayMonth = (

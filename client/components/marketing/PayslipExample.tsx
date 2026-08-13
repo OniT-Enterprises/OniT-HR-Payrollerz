@@ -73,6 +73,8 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
             Rua de Nu&apos;u Laran, Dili, Timor-Leste
             <br />
             +670 7723 4567 | folha@cafetimor.tl
+            <br />
+            {s.employerNiss} 100294417
           </div>
         </div>
         <div className="rounded bg-zinc-100 px-3 py-1.5 text-left sm:text-right">
@@ -100,6 +102,7 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
         {/* Employee + pay info */}
         <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1 text-[11px] sm:grid-cols-2">
           <Info label={s.name} value="Domingas Soares" />
+          <Info label={s.niss} value="101038725" />
           <Info
             label={s.payFrequency}
             value={

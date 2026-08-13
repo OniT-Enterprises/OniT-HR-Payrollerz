@@ -37,9 +37,11 @@
  * Regulation 2000/32 and was superseded. That was WRONG: 20% is Schedule IX(b)
  * of this Act. `client/lib/tax/withholding-tl.ts` has always cited it correctly
  * and refuses to compute petroleum withholding at all
- * (UnsupportedTLPetroleumTaxRegimeError). The payroll engine has NO equivalent
- * guard — it has no taxRegime input — so a Contractor's employee would be
- * withheld under Schedule V and UNDER-withheld. See docs/TIME_LEAVE_BACKLOG.md.
+ * (UnsupportedTLPetroleumTaxRegimeError). The payroll engine now refuses too —
+ * `UnsupportedTLPetroleumPayrollError`, thrown from `calculateTLPayroll` when
+ * `config.petroleumContractor` is set (2026-08-13). Before that the only guard
+ * was the wizard screen, so any other caller withheld under Schedule V and
+ * UNDER-withheld. See docs/PETROLEUM_SCHEDULE_IX.md.
  */
 export const TL_INCOME_TAX = {
   // Tax rate for residents and non-residents

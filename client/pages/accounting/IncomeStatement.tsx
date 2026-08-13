@@ -483,6 +483,7 @@ export default function IncomeStatement() {
               revenue={report.totalRevenue}
               priorYearTurnover={priorYearTurnoverQuery.data}
               periodLabel={installmentPeriodLabel}
+              period={requestedEnd.slice(0, 7)}
             />
           )}
         </>

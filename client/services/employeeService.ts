@@ -29,6 +29,8 @@ import {
   buildEmployeeComplianceSnapshot,
   type EmployeeComplianceSnapshot,
 } from "@/lib/employeeCompliance";
+import type { SalaryChange } from "@/lib/payroll/salary-history";
+import type { AttendancePremium } from "@/lib/payroll/attendance-premium";
 
 /**
  * Audit context for logging user actions
@@ -104,6 +106,10 @@ export interface Employee {
     projectCode?: string;
   };
   compensation: {
+    /**
+     * The CURRENT monthly salary. Every money path reads this and only this —
+     * `salaryHistory` records what it used to be, it does not replace it.
+     */
     monthlySalary: number;
     annualSalary?: number;       // Legacy: some records store annual instead of monthly
     annualLeaveDays: number;
@@ -112,6 +118,20 @@ export interface Employee {
     payFrequency?: 'weekly' | 'monthly';
     // TL-specific: Tax residency status affects WIT calculation
     isResident?: boolean;
+    /**
+     * Append-only record of pay changes, oldest first (see
+     * lib/payroll/salary-history.ts). Same shape of history as
+     * `jobDetails.contractRenewals`. Absent on every employee predating the
+     * feature, which is why `salaryOnDate` reports its source rather than
+     * pretending an unrecorded month is known.
+     */
+    salaryHistory?: SalaryChange[];
+    /**
+     * Standing attendance premium (prémio de assiduidade) — a fixed monthly
+     * amount an employer pays only when the period is clean of unjustified
+     * absence. See lib/payroll/attendance-premium.ts.
+     */
+    attendancePremium?: AttendancePremium;
   };
   documents: {
     // TL-specific: Bilhete de Identidade (National ID) - optional for non-TL nationals

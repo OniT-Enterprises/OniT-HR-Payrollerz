@@ -37,11 +37,13 @@ function validateReceipt(name: string, amount: number): number {
 
 /**
  * Business sectors (client/types/settings.ts BusinessSector) whose customer
- * receipts are designated services under Law 8/2008 Annex I. Telecoms are a
- * designated service too but are not Xefe's market, so they are deliberately
- * not auto-derived — a telecom operator would enter Section 3 manually.
+ * receipts are designated services under Law 8/2008 Annex I.
  */
-export const TL_SERVICES_TAX_LIABLE_SECTORS = ['hotel', 'restaurant'] as const;
+export const TL_SERVICES_TAX_LIABLE_SECTORS = [
+  'hotel',
+  'restaurant',
+  'telecommunications',
+] as const;
 
 export function isTLServicesTaxLiableSector(
   sector: string | undefined | null,
@@ -58,26 +60,33 @@ export function isTLServicesTaxLiableSector(
  * RECEIVED (cash basis) — callers must pass payments received in the month,
  * not invoiced/accrued revenue. Non-liable sectors map to all zeros.
  *
- * Deliberately simple: the whole receipts total goes into the sector's bucket
- * (a restaurant's receipts are restaurant/bar services, a hotel's are hotel
- * services). No per-account mapping — a hotel with a significant separate
- * non-designated line of business should review Section 3 before filing.
+ * The whole receipts total is mapped only after the tenant explicitly confirms
+ * that ALL customer receipts are designated services. Sector alone is not
+ * enough: a mixed hotel/retail or restaurant/catering business would otherwise
+ * pay 5% on unrelated receipts. Manual mode therefore fails closed to zero and
+ * the filing UI tells the operator to enter/review Section 3 themselves.
  */
 export function mapSectorReceiptsToDesignatedServices(
   sector: string | undefined | null,
   monthlyReceiptsTotal: number,
+  receiptMode: 'manual' | 'all_designated' | undefined = 'manual',
 ): TLDesignatedServiceReceipts {
   const receipts: TLDesignatedServiceReceipts = {
     hotelServices: 0,
     restaurantBarServices: 0,
     telecommunicationsServices: 0,
   };
-  if (!isTLServicesTaxLiableSector(sector)) return receipts;
   const total = validateReceipt('Designated-service', monthlyReceiptsTotal);
+  if (
+    !isTLServicesTaxLiableSector(sector) ||
+    receiptMode !== 'all_designated'
+  ) return receipts;
   if (sector === 'hotel') {
     receipts.hotelServices = total;
-  } else {
+  } else if (sector === 'restaurant') {
     receipts.restaurantBarServices = total;
+  } else {
+    receipts.telecommunicationsServices = total;
   }
   return receipts;
 }

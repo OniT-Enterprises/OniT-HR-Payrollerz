@@ -170,6 +170,10 @@ describe("Actionable past deadlines", () => {
     expect(isActionableDeadline({ ...base, hasFilingRecord: true })).toBe(true);
   });
 
+  it("keeps a business-tax month based on its own activity, not payroll", () => {
+    expect(isActionableDeadline({ ...base, hasTaxActivity: true })).toBe(true);
+  });
+
   it("keeps every current and future deadline regardless of payroll", () => {
     expect(isActionableDeadline({ ...base, daysUntilDue: 0 })).toBe(true);
     expect(isActionableDeadline({ ...base, daysUntilDue: 12 })).toBe(true);

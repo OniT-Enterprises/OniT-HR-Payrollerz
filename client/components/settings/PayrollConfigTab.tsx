@@ -6,8 +6,8 @@
  * not an everyday task for a first-time TL owner — they already follow the
  * law. So the page shows the everyday control (who may approve payroll) plus
  * the current rates as read-only facts, and hides the editors behind a
- * "Change the legal rates" disclosure. Nothing is removed: every control is
- * one tap away and behaves identically.
+ * advanced payroll-policy disclosure. Schedule V WIT itself is read-only:
+ * tenant settings must never override statutory rates.
  */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
 import { useTenant } from '@/contexts/TenantContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { TL_INCOME_TAX } from '@/lib/payroll/constants-tl';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 
 import {
@@ -57,9 +59,6 @@ function isInRange(value: number, minimum: number, maximum: number): boolean {
 
 function isValidPayrollConfig(config: PayrollConfig): boolean {
   return (
-    isInRange(config.tax.residentThreshold, 0, 1_000_000) &&
-    isInRange(config.tax.residentRate, 0, 100) &&
-    isInRange(config.tax.nonResidentRate, 0, 100) &&
     isInRange(config.socialSecurity.employeeRate, 0, 100) &&
     isInRange(config.socialSecurity.employerRate, 0, 100) &&
     isInRange(config.minimumWage, 0, 1_000_000) &&
@@ -81,6 +80,7 @@ export function PayrollConfigTab({
 }: PayrollConfigTabProps) {
   const { toast } = useToast();
   const { session } = useTenant();
+  const { user } = useAuth();
   const isOwner = session?.role === 'owner';
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig>(initialData);
   const configIsValid = isValidPayrollConfig(payrollConfig);
@@ -97,11 +97,15 @@ export function PayrollConfigTab({
     },
     {
       label: t('settings.payroll.residentThreshold'),
-      value: `$${payrollConfig.tax.residentThreshold}`,
+      value: `$${TL_INCOME_TAX.residentThreshold}`,
     },
     {
       label: t('settings.payroll.residentRate'),
-      value: `${payrollConfig.tax.residentRate}%`,
+      value: `${TL_INCOME_TAX.rate * 100}%`,
+    },
+    {
+      label: t('settings.payroll.nonResidentRate'),
+      value: `${TL_INCOME_TAX.rate * 100}%`,
     },
     {
       label: t('settings.payroll.employeeContribution'),
@@ -129,7 +133,18 @@ export function PayrollConfigTab({
     }
     setSaving(true);
     try {
-      await settingsService.updatePayrollConfig(tenantId, payrollConfig);
+      await settingsService.updatePayrollConfig(
+        tenantId,
+        payrollConfig,
+        user
+          ? {
+              tenantId,
+              userId: user.uid,
+              userEmail: user.email || '',
+              userName: user.displayName || undefined,
+            }
+          : undefined,
+      );
       toast({
         title: t('settings.notifications.savedTitle'),
         description: t('settings.notifications.payrollSaved'),
@@ -205,11 +220,10 @@ export function PayrollConfigTab({
           </div>
         </div>
 
-        {/* Everything below is legally fixed for almost every business. Hidden
-            by default; opened automatically if the stored config is invalid so
-            the error message below always has a reachable field. */}
+        {/* Less-common payroll policies. WIT is intentionally absent: Schedule
+            V's threshold/rates are statutory constants, not tenant controls. */}
         <MoreDetailsSection
-          title={t('settings.payroll.changeRatesTitle') || 'Change the legal rates'}
+          title={t('settings.payroll.changeRatesTitle') || 'Advanced payroll policies'}
           defaultOpen={!configIsValid}
         >
           <p className="mb-4 text-xs text-muted-foreground">
@@ -218,88 +232,6 @@ export function PayrollConfigTab({
           </p>
 
           <div className="space-y-6">
-            {/* Tax Settings (WIT) */}
-            <div className="space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                {t('settings.payroll.wit')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('settings.payroll.residentThreshold')}</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={payrollConfig.tax.residentThreshold}
-                      onChange={(e) =>
-                        setPayrollConfig({
-                          ...payrollConfig,
-                          tax: {
-                            ...payrollConfig.tax,
-                            residentThreshold: parseInt(e.target.value, 10) || 0,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('settings.payroll.residentThresholdHint', {
-                      amount: payrollConfig.tax.residentThreshold,
-                    })}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('settings.payroll.residentRate')}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={payrollConfig.tax.residentRate}
-                      onChange={(e) =>
-                        setPayrollConfig({
-                          ...payrollConfig,
-                          tax: {
-                            ...payrollConfig.tax,
-                            residentRate: parseInt(e.target.value, 10) || 0,
-                          },
-                        })
-                      }
-                    />
-                    <Percent className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('settings.payroll.nonResidentRate')}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={payrollConfig.tax.nonResidentRate}
-                      onChange={(e) =>
-                        setPayrollConfig({
-                          ...payrollConfig,
-                          tax: {
-                            ...payrollConfig.tax,
-                            nonResidentRate: parseInt(e.target.value, 10) || 0,
-                          },
-                        })
-                      }
-                    />
-                    <Percent className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('settings.payroll.flatRateHint')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
             {/* Social Security (INSS) */}
             <div className="space-y-4">
               <h3 className="font-medium flex items-center gap-2">

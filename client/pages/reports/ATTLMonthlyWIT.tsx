@@ -52,6 +52,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +89,7 @@ import {
   useMarkTaxFilingAsFiled,
   useSaveTaxFiling,
   useRecordTaxFilingPayment,
+  useRecordBusinessTaxAsFiled,
 } from "@/hooks/useTaxFiling";
 
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
@@ -113,6 +115,11 @@ import {
 } from "@/lib/tax/compliance";
 import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
 import { statutoryReviewHelpPath } from "@/lib/help/targets";
+import {
+  calculateTLServicesTax,
+  isTLServicesTaxLiableSector,
+  mapSectorReceiptsToDesignatedServices,
+} from "@/lib/tax/services-tax-tl";
 
 // ============================================
 // COMPONENT
@@ -162,6 +169,7 @@ export default function ATTLMonthlyWIT() {
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
   const recordPayment = useRecordTaxFilingPayment();
+  const recordBusinessTaxFiled = useRecordBusinessTaxAsFiled();
 
   const company: Partial<CompanyDetails> = settings?.companyDetails || {};
   const dueDates = useMemo(
@@ -204,6 +212,8 @@ export default function ATTLMonthlyWIT() {
   const [filedNotes, setFiledNotes] = useState("");
   const [paymentDate, setPaymentDate] = useState(getTodayTL());
   const [paymentAccountId, setPaymentAccountId] = useState("");
+  const [alsoFiledServicesTax, setAlsoFiledServicesTax] = useState(false);
+  const [servicesTaxBase, setServicesTaxBase] = useState("");
   const paymentAccounts = useMemo(
     () =>
       (settings?.paymentStructure?.bankAccounts ?? []).filter(
@@ -604,12 +614,10 @@ export default function ATTLMonthlyWIT() {
         { downloadATTLExcel },
         { billService },
         { mapTLBillWithholdingToATTL },
-        { isTLServicesTaxLiableSector, mapSectorReceiptsToDesignatedServices },
       ] = await Promise.all([
         import("@/lib/excel/attlExport"),
         import("@/services/billService"),
         import("@/lib/tax/bill-withholding"),
-        import("@/lib/tax/services-tax-tl"),
       ]);
       const [year, month] = selectedReturn.reportingPeriod.split("-");
       const yearNumber = Number(year);
@@ -632,8 +640,9 @@ export default function ATTLMonthlyWIT() {
         periodEnd,
       );
 
-      // Section 3 (services tax, Law 8/2008 Secs. 5-9): for hotel/restaurant
-      // tenants the base is the consideration RECEIVED in the month (cash
+      // Section 3 (services tax, Law 8/2008 Secs. 5-9): for hotel,
+      // restaurant/bar and telecommunications tenants the base is the
+      // consideration RECEIVED in the month (cash
       // basis, Sec. 9) — customer payments recorded in the period, NOT
       // invoiced/accrued revenue — mapped onto the sector's designated-service
       // line. Other sectors leave Section 3 empty.
@@ -643,23 +652,31 @@ export default function ATTLMonthlyWIT() {
         telecomServices?: number;
       } = {};
       const sector = settings?.companyStructure?.businessSector;
+      const servicesTaxReceiptMode =
+        settings?.companyStructure?.servicesTaxReceiptMode;
+      let servicesTaxNeedsManualReview = false;
       if (isTLServicesTaxLiableSector(sector)) {
-        const { invoiceService } = await import("@/services/invoiceService");
-        const receiptsTotal =
-          await invoiceService.getPaidInvoiceTotalByDateRange(
-            tenantId,
-            periodStart,
-            periodEnd,
+        if (servicesTaxReceiptMode !== "all_designated") {
+          servicesTaxNeedsManualReview = true;
+        } else {
+          const { invoiceService } = await import("@/services/invoiceService");
+          const receiptsTotal =
+            await invoiceService.getPaidInvoiceTotalByDateRange(
+              tenantId,
+              periodStart,
+              periodEnd,
+            );
+          const designated = mapSectorReceiptsToDesignatedServices(
+            sector,
+            receiptsTotal,
+            servicesTaxReceiptMode,
           );
-        const designated = mapSectorReceiptsToDesignatedServices(
-          sector,
-          receiptsTotal,
-        );
-        servicesReceipts = {
-          hotelServices: designated.hotelServices,
-          restaurantBarServices: designated.restaurantBarServices,
-          telecomServices: designated.telecommunicationsServices,
-        };
+          servicesReceipts = {
+            hotelServices: designated.hotelServices,
+            restaurantBarServices: designated.restaurantBarServices,
+            telecomServices: designated.telecommunicationsServices,
+          };
+        }
       }
 
       await downloadATTLExcel(
@@ -674,9 +691,9 @@ export default function ATTLMonthlyWIT() {
 
       toast({
         title: t("reports.attlMonthlyWit.toast.officialExportedTitle"),
-        description: t(
-          "reports.attlMonthlyWit.toast.officialExportedDescription",
-        ),
+        description: servicesTaxNeedsManualReview
+          ? t("reports.attlMonthlyWit.toast.servicesTaxManualReview")
+          : t("reports.attlMonthlyWit.toast.officialExportedDescription"),
       });
     } catch (error) {
       console.error("Failed to export Excel:", error);
@@ -738,12 +755,39 @@ export default function ATTLMonthlyWIT() {
             userEmail: user?.email || "",
           },
         });
+        if (alsoFiledServicesTax) {
+          const base = Number(servicesTaxBase);
+          const sector = settings?.companyStructure?.businessSector;
+          const servicesResult = calculateTLServicesTax({
+            hotelServices: sector === "hotel" ? base : 0,
+            restaurantBarServices: sector === "restaurant" ? base : 0,
+            telecommunicationsServices:
+              sector === "telecommunications" ? base : 0,
+          });
+          await recordBusinessTaxFiled.mutateAsync({
+            type: "services_tax",
+            period: filing.period,
+            figures: {
+              taxBase: servicesResult.totalDesignatedReceipts,
+              rate: servicesResult.rate,
+              taxDue: servicesResult.taxDue,
+            },
+            userId: user?.uid || "",
+            audit: {
+              tenantId,
+              userId: user?.uid || "",
+              userEmail: user?.email || "",
+            },
+          });
+        }
       }
 
       setShowMarkFiledDialog(false);
       setSelectedFilingId(null);
       setReceiptNumber("");
       setFiledNotes("");
+      setAlsoFiledServicesTax(false);
+      setServicesTaxBase("");
 
       toast({
         title: t(
@@ -772,6 +816,8 @@ export default function ATTLMonthlyWIT() {
     setSelectedTask(task);
     setReceiptNumber("");
     setFiledNotes("");
+    setAlsoFiledServicesTax(false);
+    setServicesTaxBase("");
     if (task === "payment") {
       const preferred =
         paymentAccounts.find((account) => account.purpose === "tax") ||
@@ -1816,31 +1862,71 @@ export default function ATTLMonthlyWIT() {
 
           <div className="space-y-4">
             {selectedTask === "statement" && (
-              <div>
-                <Label htmlFor="wit-submission-method">
-                  {t("reports.attlMonthlyWit.markFiled.submissionMethod")}
-                </Label>
-                <Select
-                  value={filedMethod}
-                  onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
-                >
-                  <SelectTrigger id="wit-submission-method">
-                    <SelectValue
-                      placeholder={t(
-                        "reports.attlMonthlyWit.markFiled.selectMethod",
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="etax">
-                      {t("reports.attlMonthlyWit.markFiled.etax")}
-                    </SelectItem>
-                    <SelectItem value="bnu_paper">
-                      {t("reports.attlMonthlyWit.markFiled.bnu")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="wit-submission-method">
+                    {t("reports.attlMonthlyWit.markFiled.submissionMethod")}
+                  </Label>
+                  <Select
+                    value={filedMethod}
+                    onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
+                  >
+                    <SelectTrigger id="wit-submission-method">
+                      <SelectValue
+                        placeholder={t(
+                          "reports.attlMonthlyWit.markFiled.selectMethod",
+                        )}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="etax">
+                        {t("reports.attlMonthlyWit.markFiled.etax")}
+                      </SelectItem>
+                      <SelectItem value="bnu_paper">
+                        {t("reports.attlMonthlyWit.markFiled.bnu")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {isTLServicesTaxLiableSector(
+                  settings?.companyStructure?.businessSector,
+                ) && (
+                  <div className="space-y-3 rounded-lg border p-3">
+                    <div className="flex min-h-11 items-center gap-3">
+                      <Checkbox
+                        id="also-filed-services-tax"
+                        checked={alsoFiledServicesTax}
+                        onCheckedChange={(checked) =>
+                          setAlsoFiledServicesTax(checked === true)
+                        }
+                      />
+                      <Label htmlFor="also-filed-services-tax" className="cursor-pointer">
+                        {t("reports.attlMonthlyWit.markFiled.alsoFiledServicesTax")}
+                      </Label>
+                    </div>
+                    {alsoFiledServicesTax && (
+                      <div className="space-y-2">
+                        <Label htmlFor="services-tax-base">
+                          {t("reports.attlMonthlyWit.markFiled.servicesTaxBase")}
+                        </Label>
+                        <Input
+                          id="services-tax-base"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          inputMode="decimal"
+                          value={servicesTaxBase}
+                          onChange={(event) => setServicesTaxBase(event.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.attlMonthlyWit.markFiled.servicesTaxBaseHelp")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             {selectedTask === "payment" && (
@@ -1932,6 +2018,12 @@ export default function ATTLMonthlyWIT() {
               disabled={
                 markFiled.isPending ||
                 recordPayment.isPending ||
+                recordBusinessTaxFiled.isPending ||
+                (selectedTask === "statement" &&
+                  alsoFiledServicesTax &&
+                  (servicesTaxBase.trim() === "" ||
+                    !Number.isFinite(Number(servicesTaxBase)) ||
+                    Number(servicesTaxBase) < 0)) ||
                 (selectedTask === "payment" &&
                   (!paymentDate ||
                     !paymentAccountId ||

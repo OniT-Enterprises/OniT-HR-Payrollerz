@@ -22,6 +22,7 @@ import {
   calculateHourlyRate,
   calculateAbsenceDeduction,
   calculateTLPayroll,
+  UnsupportedTLPetroleumPayrollError,
   validateTLPayrollInput,
   type TLPayrollInput,
   type TLBonusINSSCategory,
@@ -68,6 +69,8 @@ import {
   type EmployeePayrollData,
   finalPayDedupYears,
   getPayPeriodsInPayMonth,
+  resolveAttendancePremium,
+  resolveRetroactivePay,
 } from "@/lib/payroll/run-payroll-helpers";
 import {
   aggregateRecurringInputs,
@@ -100,17 +103,13 @@ const EMPTY_ALLOWANCE_INPUTS: Record<string, EmployeeAllowanceInputs> = {};
 const EMPTY_COMMITTED_FINAL_PAY: Record<string, CommittedFinalPay> = {};
 const EMPTY_MTD_WIT: Record<
   string,
-  { mtdWitTaxableIncome: number; mtdIncomeTax: number }
+  {
+    mtdWitTaxableIncome: number;
+    mtdIncomeTax: number;
+    mtdNonCashBenefits: number;
+  }
 > = {};
 const EMPTY_RECURRING_DEDUCTIONS: Record<string, EmployeeRecurringInputs> = {};
-
-// Shareholders receive profit distributions, not wages — exempt from WIT withholding and
-// INSS enrollment, and outside minimum-wage rules.
-function isShareholder(employee: Employee): boolean {
-  return (
-    (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder"
-  );
-}
 
 /**
  * A leaver's in-period termination, driving BOTH hours proration and the
@@ -217,11 +216,6 @@ export function usePayrollCalculator({
     () =>
       payrollConfig
         ? {
-            incomeTax: {
-              residentRate: payrollConfig.tax.residentRate / 100,
-              nonResidentRate: payrollConfig.tax.nonResidentRate / 100,
-              residentThreshold: payrollConfig.tax.residentThreshold,
-            },
             inss: {
               employeeRate: payrollConfig.socialSecurity.employeeRate / 100,
               // Small-employer discount (DL 20/2017 Art. 86): reduce ONLY the
@@ -262,6 +256,11 @@ export function usePayrollCalculator({
               proRataForNewEmployees:
                 payrollConfig.subsidioAnual?.proRataForNewEmployees ?? true,
             },
+            // Lei 8/2008 Sec. 72.2 — a Contractor's employees are on Schedule IX,
+            // which Xefe does not implement. RunPayrollWizard already blocks the
+            // screen; this makes the ENGINE refuse too, so a non-wizard caller
+            // cannot quietly compute Schedule V and under-withhold.
+            petroleumContractor: payrollConfig.petroleumContractor === true,
           }
         : undefined,
     [payrollConfig, periodEnd],
@@ -394,19 +393,19 @@ export function usePayrollCalculator({
 
   // Month-to-date WIT already withheld this calendar month, so the resident
   // $500/month exemption is applied per employee-month (not per run). Only
-  // needed for monthly runs; a same-month top-up run (e.g. a 13th-month run)
-  // then taxes against the remaining threshold. Keyed on the pay-period month.
-  const periodMonth = periodStart.slice(0, 7); // 'YYYY-MM'
+  // monthly runs use the WIT totals, while every frequency uses the same query
+  // to aggregate the Act's $20/calendar-month benefit-in-kind threshold. Tax is
+  // triggered by PAYMENT, so the bucket is the pay-date month, not wage period.
+  const paymentMonth = payDate.slice(0, 7); // 'YYYY-MM'
   const mtdWitQuery = useQuery({
     // Under 'payrollRecords' so finalizing a run invalidates it immediately
     // (same reasoning as committedFinalPay).
-    queryKey: ["tenants", tenantId, "payrollRecords", "mtdWit", periodMonth],
+    queryKey: ["tenants", tenantId, "payrollRecords", "mtdWit", paymentMonth],
     queryFn: () =>
-      payrollService.records.getMonthToDateWITByEmployee(tenantId, periodMonth),
+      payrollService.records.getMonthToDateWITByEmployee(tenantId, paymentMonth),
     enabled:
       Boolean(tenantId) &&
-      payFrequency === "monthly" &&
-      /^\d{4}-\d{2}$/.test(periodMonth) &&
+      /^\d{4}-\d{2}$/.test(paymentMonth) &&
       rosterEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
@@ -553,11 +552,10 @@ export function usePayrollCalculator({
         payDate,
         effectiveFrequency,
       );
-      const isResident =
-        data.employee.compensation?.isResident ??
-        (data.employee.documents?.residencyStatus
-          ? data.employee.documents.residencyStatus !== "foreign_worker"
-          : true);
+      // Tax residence is an explicit tax fact (permanent-abode / 183-day
+      // tests), not a nationality or immigration-status inference. A missing
+      // value is blocked before submission by validateAllEmployees below.
+      const isResident = data.employee.compensation?.isResident === true;
       const ytd = ytdByEmployee[data.employee.id || ""];
       const recurring = recurringInputsByEmployee[data.employee.id || ""];
       // Allowances register, split to this run's period. Row fields stay
@@ -589,6 +587,8 @@ export function usePayrollCalculator({
         ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
         bonus: data.bonus,
         bonusINSSCategory: data.bonusINSSCategory,
+        attendancePremium: data.attendancePremium,
+        retroactivePay: data.retroactivePay,
         commission: 0,
         perDiem: data.perDiem,
         foodAllowance: enrolled.foodAllowance,
@@ -607,8 +607,11 @@ export function usePayrollCalculator({
         nonCashBenefitINSSCategory: null,
         taxInfo: {
           isResident,
-          hasTaxExemption: isShareholder(data.employee),
-          inssExempt: isShareholder(data.employee),
+          // Ownership is not a payroll-tax exemption. Director/shareholder
+          // remuneration paid through payroll remains wages; dividends should
+          // be recorded outside payroll.
+          hasTaxExemption: false,
+          inssExempt: false,
         },
         // Deductions & Advances register; the engine applies the Lei 4/2012
         // Art. 42(3) 30% cap (court orders exempt) to these.
@@ -623,6 +626,8 @@ export function usePayrollCalculator({
           mtdWitByEmployee[data.employee.id || ""]?.mtdWitTaxableIncome || 0,
         mtdIncomeTax:
           mtdWitByEmployee[data.employee.id || ""]?.mtdIncomeTax || 0,
+        mtdNonCashBenefits:
+          mtdWitByEmployee[data.employee.id || ""]?.mtdNonCashBenefits || 0,
         monthsWorkedThisYear,
         hireDate,
       };
@@ -630,6 +635,15 @@ export function usePayrollCalculator({
       try {
         return calculateTLPayroll(input, calculationConfig);
       } catch (error) {
+        // A petroleum Contractor's refusal is BY DESIGN, not a failure: the
+        // wizard already shows the Schedule IX block, and the hook still runs
+        // over the roster behind it. Logging it would fire console.error once
+        // per employee per recalculation — and console.error is captured by
+        // Sentry, so a single petroleum tenant opening this page would bury real
+        // errors under expected ones.
+        if (error instanceof UnsupportedTLPetroleumPayrollError) {
+          return null;
+        }
         console.error(
           "Calculation error for employee:",
           data.employee.id,
@@ -702,6 +716,13 @@ export function usePayrollCalculator({
         Math.max(0, defaultHours - proratedHours).toFixed(2),
       );
       const regularHours = defaultHours;
+      const premium = resolveAttendancePremium({
+        employee,
+        absenceHours: preHireAbsence,
+        nonEmploymentAbsenceHours: preHireAbsence,
+        regularHours,
+      });
+      const retro = resolveRetroactivePay(employee, periodStart);
       const row: EmployeePayrollData = {
         employee,
         regularHours,
@@ -710,11 +731,15 @@ export function usePayrollCalculator({
         holidayHours: 0,
         restDayHours: 0,
         absenceHours: preHireAbsence,
+        nonEmploymentAbsenceHours: preHireAbsence,
         lateArrivalMinutes: 0,
         sickDays: 0,
         perDiem: 0,
         bonus: 0,
         bonusINSSCategory: null,
+        attendancePremium: premium.amount,
+        retroactivePay: retro.amount,
+        retroactiveSettles: retro.settles.map((c) => c.effectiveFrom),
         allowances: 0,
         calculation: null,
         isEdited: false,
@@ -728,6 +753,8 @@ export function usePayrollCalculator({
           lateArrivalMinutes: 0,
           bonus: 0,
           bonusINSSCategory: null,
+          attendancePremium: premium.amount,
+          retroactivePay: retro.amount,
           perDiem: 0,
           allowances: 0,
         },
@@ -771,6 +798,8 @@ export function usePayrollCalculator({
     updated.lateArrivalMinutes !== updated.originalValues.lateArrivalMinutes ||
     updated.bonus !== updated.originalValues.bonus ||
     updated.bonusINSSCategory !== updated.originalValues.bonusINSSCategory ||
+    updated.attendancePremium !== updated.originalValues.attendancePremium ||
+    updated.retroactivePay !== updated.originalValues.retroactivePay ||
     updated.perDiem !== updated.originalValues.perDiem ||
     updated.allowances !== updated.originalValues.allowances;
 
@@ -797,7 +826,17 @@ export function usePayrollCalculator({
         // has no leave type at all.
         "absenceHours",
       ];
-      const moneyFields = ["bonus", "perDiem", "allowances"];
+      const moneyFields = [
+        "bonus",
+        "perDiem",
+        "allowances",
+        // Both stay editable: the premium because the employer has the final say
+        // on a discretionary payment, and the retro because a mid-month
+        // effective date leaves a part-month `suggestRetroactivePay` refuses to
+        // price rather than guess at a working-day convention.
+        "attendancePremium",
+        "retroactivePay",
+      ];
 
       if (hourFields.includes(field)) {
         if (value < 0 || value > 744) return;
@@ -862,6 +901,8 @@ export function usePayrollCalculator({
             lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
             bonus: d.originalValues.bonus,
             bonusINSSCategory: d.originalValues.bonusINSSCategory,
+            attendancePremium: d.originalValues.attendancePremium,
+            retroactivePay: d.originalValues.retroactivePay,
             perDiem: d.originalValues.perDiem,
             allowances: d.originalValues.allowances,
             isEdited: false,
@@ -1139,7 +1180,7 @@ export function usePayrollCalculator({
       );
       const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
 
-      const updated: EmployeePayrollData = {
+      const withAttendance: EmployeePayrollData = {
         ...data,
         regularHours,
         overtimeHours,
@@ -1149,6 +1190,22 @@ export function usePayrollCalculator({
         absenceHours,
         lateArrivalMinutes,
         sickDays,
+      };
+      // The premium is decided off the absence the sync just measured, so it has
+      // to re-resolve here — the whole point of the feature is that "s/faltas"
+      // and "com desconto de N dias de falta" are one decision, not two. An
+      // operator who has hand-set the premium keeps their figure.
+      const premium = resolveAttendancePremium(withAttendance);
+      const updated: EmployeePayrollData = {
+        ...withAttendance,
+        attendancePremium:
+          data.attendancePremium === data.originalValues.attendancePremium
+            ? premium.amount
+            : data.attendancePremium,
+        originalValues: {
+          ...data.originalValues,
+          attendancePremium: premium.amount,
+        },
       };
 
       const isEdited = checkIsEdited(updated);
@@ -1348,7 +1405,6 @@ export function usePayrollCalculator({
         applicableMinimumWage !== null
         && salary > 0
         && salary < applicableMinimumWage
-        && !isShareholder(d.employee)
       ) {
         warnings.push({
           employeeName: name,
@@ -1475,6 +1531,16 @@ export function usePayrollCalculator({
     (includedData: EmployeePayrollData[]): string[] => {
       const allErrors: string[] = [];
       for (const data of includedData) {
+        const employeeName = `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`;
+        if (typeof data.employee.compensation?.isResident !== "boolean") {
+          allErrors.push(
+            `${employeeName}: ${
+              t("runPayroll.taxResidenceRequired") ||
+              "choose resident or non-resident for tax before running payroll"
+            }`,
+          );
+          continue;
+        }
         const monthlySalary = data.employee.compensation.monthlySalary || 0;
         const hourlyRate = calculateHourlyRate(
           monthlySalary,
@@ -1547,11 +1613,7 @@ export function usePayrollCalculator({
           payDate,
           effectiveFrequency,
         );
-        const isResident =
-          data.employee.compensation?.isResident ??
-          (data.employee.documents?.residencyStatus
-            ? data.employee.documents.residencyStatus !== "foreign_worker"
-            : true);
+        const isResident = data.employee.compensation.isResident;
         const ytd = ytdByEmployee[data.employee.id || ""];
         const recurring = recurringInputsByEmployee[data.employee.id || ""];
         // Must mirror calculateForEmployee so validation sees the same
@@ -1583,6 +1645,8 @@ export function usePayrollCalculator({
           ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
           bonus: data.bonus,
           bonusINSSCategory: data.bonusINSSCategory,
+          attendancePremium: data.attendancePremium,
+          retroactivePay: data.retroactivePay,
           commission: 0,
           perDiem: data.perDiem,
           foodAllowance: enrolled.foodAllowance,
@@ -1598,8 +1662,8 @@ export function usePayrollCalculator({
           nonCashBenefitINSSCategory: null,
           taxInfo: {
             isResident,
-            hasTaxExemption: isShareholder(data.employee),
-            inssExempt: isShareholder(data.employee),
+            hasTaxExemption: false,
+            inssExempt: false,
           },
           // Deductions & Advances register — must match calculateForEmployee
           // so validation sees the same inputs the run will persist.
@@ -1610,6 +1674,12 @@ export function usePayrollCalculator({
           ytdGrossPay: ytd?.ytdGrossPay || 0,
           ytdIncomeTax: ytd?.ytdIncomeTax || 0,
           ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
+          mtdWitTaxableIncome:
+            mtdWitByEmployee[data.employee.id || ""]?.mtdWitTaxableIncome || 0,
+          mtdIncomeTax:
+            mtdWitByEmployee[data.employee.id || ""]?.mtdIncomeTax || 0,
+          mtdNonCashBenefits:
+            mtdWitByEmployee[data.employee.id || ""]?.mtdNonCashBenefits || 0,
           monthsWorkedThisYear,
           hireDate,
         };
@@ -1630,6 +1700,7 @@ export function usePayrollCalculator({
       includeSubsidioAnual,
       ytdByEmployee,
       committedFinalPay,
+      mtdWitByEmployee,
       recurringInputsByEmployee,
       allowancesByEmployee,
       calculationConfig,
@@ -1669,17 +1740,20 @@ export function usePayrollCalculator({
         employeeId: d.employee.id || "",
         employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
         employeeNumber: d.employee.jobDetails.employeeId,
+        // Snapshotted onto the record so the as-sent payslip stays reproducible
+        // after a later profile edit — the same reason projectCode is copied.
+        employeeNiss:
+          d.employee.documents?.socialSecurityNumber?.number?.trim() || "",
         department: d.employee.jobDetails.department,
         position: d.employee.jobDetails.position,
         // Keep allocation dimensions with the payroll transaction so a later
         // employee edit cannot rewrite historical NGO/donor reporting.
         projectCode: d.employee.jobDetails.projectCode?.trim() || "",
         fundingSource: d.employee.jobDetails.fundingSource?.trim() || "",
-        isResident:
-          d.employee.compensation?.isResident ??
-          (d.employee.documents?.residencyStatus
-            ? d.employee.documents.residencyStatus !== "foreign_worker"
-            : true),
+        // Submission validation above requires this field. Keep the strict
+        // comparison here so a legacy missing value can never become resident
+        // merely because it was absent.
+        isResident: d.employee.compensation?.isResident === true,
         regularHours: d.regularHours,
         overtimeHours: d.overtimeHours,
         doubleTimeHours: 0,
@@ -1702,6 +1776,8 @@ export function usePayrollCalculator({
             "rest_day",
             "sick_pay",
             "bonus",
+            "attendance_premium",
+            "retroactive_pay",
             "subsidio_anual",
             "service_compensation",
             "non_cash_benefit",
@@ -1763,6 +1839,15 @@ export function usePayrollCalculator({
         ),
         ytdIncomeTax: d.calculation!.newYtdIncomeTax,
         ytdINSSEmployee: d.calculation!.newYtdINSSEmployee,
+        ytdINSSEmployer: addMoney(
+          ytdByEmployee[d.employee.id || ""]?.ytdINSSEmployer || 0,
+          d.calculation!.inssEmployer,
+        ),
+        // Effective dates of the salary changes this run's retro line pays off.
+        // Recorded as INTENT at build time rather than recomputed when the run is
+        // marked paid: an operator may edit the suggested figure, and stamping a
+        // change the run did not actually settle would bury arrears for good.
+        retroactiveSettles: d.retroactivePay > 0 ? d.retroactiveSettles : [],
       })),
     [tenantId, ytdByEmployee, calculationConfig],
   );

@@ -234,13 +234,15 @@ copy (`timor-leste.gov.tl/.../Law_2008_8_Taxes_and_Duties_.pdf`, saved to
 were truncated; this one is complete.
 
 Schedule VII makes the pooling mechanics nearly vacuous — **one pool, 100% rate**
-— so the deduction is full expensing of additions less disposals. Xefe's land
-handling and Form C options both check out. Detail in
+— so the deduction is full expensing of additions less disposals. Xefe's annual
+workpaper now applies that rate only; useful-life schedules remain book
+depreciation in the asset register. Detail in
 `docs/STATUTE_RECHECK_AUG2026.md` §6.
 
-**Newly open, small:** under full expensing the written-down value is always zero,
-so Sec. 36.11 makes disposal proceeds taxable income in the year. Whether Form C's
-`full_expensing` path nets disposals is unverified.
+Under full expensing the written-down value is zero, so Sec. 36.11 makes disposal
+proceeds taxable income in the year. The workpaper surfaces those proceeds for
+review and relies on the disposal journal to carry them to gross income, avoiding
+a second addition when the books already recorded them.
 
 **Also found:** a separate **Schedule X, "Depreciation and Amortisation for
 Contractors"**. Petroleum differs on depreciation as well as wage tax, which

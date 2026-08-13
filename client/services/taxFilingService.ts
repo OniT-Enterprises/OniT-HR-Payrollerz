@@ -1191,6 +1191,91 @@ class TaxFilingService {
   }
 
   /**
+   * Record an externally submitted services-tax or installment declaration.
+   * Xefe does not submit to e-Tax; this stores the operator-confirmed as-filed
+   * figures under that obligation's OWN type/period record.
+   */
+  async recordBusinessTaxAsFiled(
+    type: "services_tax" | "installment_tax",
+    period: string,
+    figures: { taxBase: number; rate: number; taxDue: number },
+    userId: string,
+    tenantId: string,
+    audit?: AuditContext,
+  ): Promise<string> {
+    if (!/^\d{4}-\d{2}$/.test(period)) {
+      throw new RangeError("Business-tax period must use YYYY-MM format");
+    }
+    for (const [label, value] of Object.entries(figures)) {
+      if (!Number.isFinite(value) || value < 0) {
+        throw new RangeError(`${label} must be a non-negative finite number`);
+      }
+    }
+
+    const existing = await this.getFilingByPeriod(type, period, tenantId);
+    if (existing && areDeclaredFiguresFrozen(existing)) return existing.id;
+
+    const dueDate = await this.adjustDueDateTL(
+      type === "services_tax"
+        ? getMonthlyServicesTaxDueDateBase(period)
+        : getInstallmentTaxDueDateBase(period),
+      tenantId,
+    );
+    const today = getTodayTL();
+    const filingId = existing?.id || `${tenantId}_${type}_${period}`;
+    const payload = {
+      tenantId,
+      type,
+      period,
+      status: "filed" as const,
+      statementStatus: "filed" as const,
+      dueDate,
+      statementDueDate: dueDate,
+      dataSnapshot: {
+        taxType: type,
+        period,
+        taxBase: roundMoney(figures.taxBase),
+        rate: figures.rate,
+        taxDue: roundMoney(figures.taxDue),
+        source: "operator_confirmed" as const,
+      },
+      // These payroll-oriented summary fields remain for document-shape and
+      // tracker compatibility. Business-tax figures live in dataSnapshot.
+      totalWages: 0,
+      totalWITWithheld: 0,
+      employeeCount: 0,
+      filedDate: today,
+      statementFiledDate: today,
+      submissionMethod: "etax" as const,
+      statementSubmissionMethod: "etax" as const,
+      filedBy: userId,
+      updatedAt: serverTimestamp(),
+    };
+    const filingRef = doc(db, "taxFilings", filingId);
+    if (existing) {
+      await updateDoc(filingRef, payload);
+    } else {
+      await setDoc(filingRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+        createdBy: userId,
+      });
+    }
+
+    if (audit) {
+      await auditLogService.logTaxAction({
+        ...audit,
+        tenantId,
+        action: "tax.business_filed",
+        filingId,
+        period,
+        metadata: { type, ...figures },
+      }).catch((error) => console.error("Audit log failed:", error));
+    }
+    return filingId;
+  }
+
+  /**
    * Mark a filing as filed
    */
   async markAsFiled(
@@ -1368,9 +1453,9 @@ class TaxFilingService {
     tenantId: string,
     months: number = 3,
   ): Promise<FilingDueDate[]> {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
+    const todayIso = getTodayTL();
+    const currentYear = Number(todayIso.slice(0, 4));
+    const currentMonth = Number(todayIso.slice(5, 7));
 
     // Build all periods to check
     const periods: { year: number; month: number; period: string }[] = [];
@@ -1516,16 +1601,13 @@ class TaxFilingService {
       });
     }
 
-    // Services tax + income-tax installment deadlines. Both are filed on the
-    // same ATTL consolidated monthly form as WIT (paper) or as sibling e-Tax
-    // declarations, so their filed/pending status follows the period's
-    // monthly-WIT filing record — Xefe keeps one "monthly form filed" fact.
-    // Derivation failures here must never break the core WIT/INSS deadlines.
+    // Services tax and income-tax installments are separate statutory
+    // obligations with their own e-Tax declarations/evidence. They must never
+    // inherit "filed" from a wage-WIT return for the same month.
     try {
       const extraDueDates = await this.buildTurnoverTaxDueDates(
         tenantId,
         periods,
-        monthlyResults,
       );
       dueDates.push(...extraDueDates);
     } catch (error) {
@@ -1570,6 +1652,7 @@ class TaxFilingService {
         status: due.status,
         hasFilingRecord: Boolean(due.filing),
         periodsWithPayroll: payrollPeriods,
+        hasTaxActivity: due.hasTaxActivity,
       }),
     );
 
@@ -1582,7 +1665,8 @@ class TaxFilingService {
   /**
    * Turnover-based ATTL deadlines:
    *
-   * - Services tax (Law 8/2008 Secs. 5-9, Annex I): hotel/restaurant tenants
+   * - Services tax (Law 8/2008 Secs. 5-9, Annex I): hotel, restaurant/bar and
+   *   telecommunications tenants
    *   owe a monthly form + payment by day 15 of the following month. The rate
    *   is 0% below $500/month and 5% on the WHOLE amount at/above $500, and a
    *   nil return is still due once ever liable — so liable-sector tenants get
@@ -1594,20 +1678,16 @@ class TaxFilingService {
    *   (otherwise) ends. Surfaced only for tenants with accounting activity
    *   (any prior-year or current-year revenue).
    *
-   * Both are declared alongside WIT on the consolidated monthly form, so the
-   * period's monthly-WIT filing record drives filed/pending status.
+   * Filing status always comes from the matching business-tax filing record;
+   * a wage-WIT filing is neither evidence nor a substitute.
    */
   private async buildTurnoverTaxDueDates(
     tenantId: string,
     periods: { year: number; month: number; period: string }[],
-    monthlyResults: { period: string; witFiling: TaxFiling | null }[],
   ): Promise<FilingDueDate[]> {
     const entries: FilingDueDate[] = [];
     const todayIso = getTodayTL();
     const currentPeriod = todayIso.slice(0, 7);
-    const witFilingByPeriod = new Map(
-      monthlyResults.map((r) => [r.period, r.witFiling]),
-    );
 
     // Heavy services are imported lazily: getFilingsDueSoon runs from the top
     // bar on every module, and these must not join the initial bundle.
@@ -1615,23 +1695,31 @@ class TaxFilingService {
     const { invoiceService } = await import("./invoiceService");
     const settings = await settingsService.getSettings(tenantId);
     const sector = settings?.companyStructure?.businessSector;
+    const servicesTaxReceiptMode =
+      settings?.companyStructure?.servicesTaxReceiptMode;
 
     if (isTLServicesTaxLiableSector(sector)) {
       for (const { year, month, period } of periods) {
-        const dueDate = await this.adjustDueDateTL(
-          getMonthlyServicesTaxDueDateBase(period),
-          tenantId,
-        );
+        const [dueDate, filing] = await Promise.all([
+          this.adjustDueDateTL(
+            getMonthlyServicesTaxDueDateBase(period),
+            tenantId,
+          ),
+          this.getFilingByPeriod("services_tax", period, tenantId),
+        ]);
         const days = getDaysUntilDue(dueDate);
-        const witFiling = witFilingByPeriod.get(period) || null;
         const status: TaxFilingStatus =
-          witFiling?.status === "filed"
+          filing?.status === "filed"
             ? "filed"
             : getFilingStatusFromDays(days);
 
-        // Amount only for months that have started; future months have no receipts.
+        // Estimate only when the tenant explicitly confirms all receipts are
+        // designated. Mixed businesses stay manual instead of being overtaxed.
         let estimatedAmount: number | undefined;
-        if (period <= currentPeriod) {
+        if (
+          servicesTaxReceiptMode === "all_designated" &&
+          period <= currentPeriod
+        ) {
           const lastDay = new Date(year, month, 0).getDate();
           const receipts = await invoiceService.getPaidInvoiceTotalByDateRange(
             tenantId,
@@ -1639,7 +1727,11 @@ class TaxFilingService {
             `${period}-${String(lastDay).padStart(2, "0")}`,
           );
           estimatedAmount = calculateTLServicesTax(
-            mapSectorReceiptsToDesignatedServices(sector, receipts),
+            mapSectorReceiptsToDesignatedServices(
+              sector,
+              receipts,
+              servicesTaxReceiptMode,
+            ),
           ).taxDue;
         }
 
@@ -1651,6 +1743,10 @@ class TaxFilingService {
           daysUntilDue: days,
           isOverdue: days < 0 && status !== "filed",
           estimatedAmount,
+          filing: filing || undefined,
+          // A configured liable sector is its own evidence. Never make this
+          // business-tax deadline depend on whether payroll happened.
+          hasTaxActivity: true,
         });
       }
     }
@@ -1659,7 +1755,6 @@ class TaxFilingService {
     // accounts exists, otherwise from issued invoices — the same dual path the
     // Profit & Loss page uses.
     const currentYear = Number(todayIso.slice(0, 4));
-    const priorTaxYear = currentYear - 1;
     const { accountService, trialBalanceService } = await import(
       "./accountingService"
     );
@@ -1683,44 +1778,62 @@ class TaxFilingService {
       return invoiceService.getRevenueTotalByDateRange(tenantId, start, end);
     };
 
-    const priorYearTurnover = await turnoverForRange(
-      `${priorTaxYear}-01-01`,
-      `${priorTaxYear}-12-31`,
-      priorTaxYear,
-    );
-    let hasActivity = priorYearTurnover > 0;
-    if (!hasActivity) {
-      const ytdTurnover = await turnoverForRange(
-        `${currentYear}-01-01`,
-        todayIso,
-        currentYear,
+    // Frequency is determined for EACH period's tax year from that year's
+    // immediately preceding turnover. This matters at a Dec/Jan sweep boundary.
+    const priorTurnoverByYear = new Map<number, number>();
+    const activityByYear = new Map<number, boolean>();
+    for (const taxYear of new Set(periods.map(({ year }) => year))) {
+      const priorYear = taxYear - 1;
+      const priorTurnover = await turnoverForRange(
+        `${priorYear}-01-01`,
+        `${priorYear}-12-31`,
+        priorYear,
       );
-      hasActivity = ytdTurnover > 0;
+      priorTurnoverByYear.set(taxYear, priorTurnover);
+
+      let taxYearTurnover = 0;
+      if (taxYear <= currentYear) {
+        taxYearTurnover = await turnoverForRange(
+          `${taxYear}-01-01`,
+          taxYear === currentYear ? todayIso : `${taxYear}-12-31`,
+          taxYear,
+        );
+      }
+      activityByYear.set(
+        taxYear,
+        priorTurnover > 0 || taxYearTurnover > 0,
+      );
     }
 
-    if (hasActivity) {
-      const frequency = getTLIncomeTaxInstallmentFrequency(priorYearTurnover);
-      for (const { period } of periods) {
-        if (frequency === "quarterly" && !isQuarterEndMonth(period)) continue;
-        const dueDate = await this.adjustDueDateTL(
+    for (const { year, period } of periods) {
+      const priorTurnover = priorTurnoverByYear.get(year) || 0;
+      const frequency = getTLIncomeTaxInstallmentFrequency(priorTurnover);
+      if (frequency === "quarterly" && !isQuarterEndMonth(period)) continue;
+
+      const [dueDate, filing] = await Promise.all([
+        this.adjustDueDateTL(
           getInstallmentTaxDueDateBase(period),
           tenantId,
-        );
-        const days = getDaysUntilDue(dueDate);
-        const witFiling = witFilingByPeriod.get(period) || null;
-        const status: TaxFilingStatus =
-          witFiling?.status === "filed"
-            ? "filed"
-            : getFilingStatusFromDays(days);
-        entries.push({
-          type: "installment_tax",
-          period,
-          dueDate,
-          status,
-          daysUntilDue: days,
-          isOverdue: days < 0 && status !== "filed",
-        });
-      }
+        ),
+        this.getFilingByPeriod("installment_tax", period, tenantId),
+      ]);
+      const hasActivity = activityByYear.get(year) === true;
+      if (!hasActivity && !filing) continue;
+      const days = getDaysUntilDue(dueDate);
+      const status: TaxFilingStatus =
+        filing?.status === "filed"
+          ? "filed"
+          : getFilingStatusFromDays(days);
+      entries.push({
+        type: "installment_tax",
+        period,
+        dueDate,
+        status,
+        daysUntilDue: days,
+        isOverdue: days < 0 && status !== "filed",
+        filing: filing || undefined,
+        hasTaxActivity: hasActivity,
+      });
     }
 
     return entries;

@@ -40,6 +40,7 @@ export type BusinessSector =
   | 'trading'
   | 'hotel'
   | 'restaurant'
+  | 'telecommunications'
   | 'manufacturing'
   | 'security'
   | 'construction'
@@ -94,6 +95,12 @@ export interface EmployeeGradeConfig {
 export interface CompanyStructure {
   businessSector: BusinessSector;
   businessSectorOther?: string;
+  /**
+   * Services-tax automation is safe only when every customer receipt belongs
+   * to a designated hotel, restaurant/bar or telecommunications service.
+   * Mixed businesses stay manual.
+   */
+  servicesTaxReceiptMode?: 'manual' | 'all_designated';
   workLocations: WorkLocation[];
   approximateEmployeeCount?: number;
   departments: DepartmentConfig[];
@@ -308,7 +315,12 @@ export interface PayrollConfig {
    * non-resident on $3,000/month is $300 under Schedule V against $600 under
    * Schedule IX — and Sec. 25.3 makes the shortfall the employer's liability.
    * `client/lib/tax/withholding-tl.ts` already refuses supplier withholding for
-   * the same reason.
+   * the same reason, and since 2026-08-13 so does the payroll ENGINE
+   * (`UnsupportedTLPetroleumPayrollError`) — the wizard screen was previously the
+   * only guard, so a non-wizard caller computed Schedule V silently.
+   *
+   * Verbatim rates, who is caught, and what implementing it would take:
+   * docs/PETROLEUM_SCHEDULE_IX.md.
    */
   petroleumContractor?: boolean;
 }
@@ -541,6 +553,7 @@ export const SECTOR_DEPARTMENT_PRESETS: Record<BusinessSector, string[]> = {
   trading: ['Sales', 'Purchasing', 'Warehouse', 'Finance', 'HR', 'Logistics'],
   hotel: ['Front Office', 'Housekeeping', 'F&B', 'Kitchen', 'Maintenance', 'HR', 'Finance', 'Security'],
   restaurant: ['Kitchen', 'Service', 'Bar', 'Management', 'Finance'],
+  telecommunications: ['Network Operations', 'Customer Service', 'Sales', 'IT', 'Finance', 'HR'],
   manufacturing: ['Production', 'Quality', 'Warehouse', 'Maintenance', 'HR', 'Finance', 'Logistics'],
   security: ['Operations', 'Field Supervisors', 'Guards', 'HR', 'Finance', 'Training', 'Control Room'],
   construction: ['Site Operations', 'Engineering', 'Procurement', 'Safety', 'HR', 'Finance'],

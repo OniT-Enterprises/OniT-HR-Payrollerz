@@ -45,8 +45,8 @@ The Autoridade Tributaria Timor-Leste (ATTL) requires employers to:
 ### 1.2 Monthly WIT Return
 
 #### Deadline
-- **Due:** 15th of the month following the pay period
-- Example: January wages → file by February 15th
+- **Due:** 15th of the month following the wage-payment month
+- Example: wages paid in January → file by February 15th
 
 #### Submission Methods
 1. **e-Tax Portal:** https://e-tax.mof.gov.tl/login

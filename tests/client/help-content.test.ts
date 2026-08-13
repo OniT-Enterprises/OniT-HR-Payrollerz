@@ -436,6 +436,23 @@ describe('the help page covers every open question we have written down', () => 
     B15: 'worker-student-minor',
     B16: 'notice-setoff',
     B17: 'art55-routes',
+    A11: 'subsidio-base-after-raise',
+    A12: 'retro-pay-tax-month',
+    A13: 'attendance-premium-inss',
+    // Section D is a practitioner's feature request we deliberately did NOT
+    // build, so there is no Xefe behaviour for a customer to check.
+    D1: {
+      exempt:
+        'We cannot identify what CAC is. Nothing in Xefe withholds it, so there is no position to publish — only a question for the reviewer.',
+    },
+    D2: {
+      exempt:
+        'A medical-expense deduction does not exist in Xefe and we believe it would be wrong under TDA 2008. The customer-facing consequence (a medical allowance IS taxable wages) belongs with the wage-tax entries, not as an open question.',
+    },
+    D3: {
+      exempt:
+        'Not a question about the law — it records that RunPayrollWizard already refuses a petroleum Contractor outright, and that the engine itself has no taxRegime guard. The customer already sees the refusal in the wizard, with the Schedule IX rates spelled out in runPayroll.petroleumBlockBody.',
+    },
   };
 
   const entryIds = new Set(
@@ -451,7 +468,9 @@ describe('the help page covers every open question we have written down', () => 
 
   it('maps every question heading in the doc, so a new one cannot slip past', () => {
     // Headings look like "### B16. May a notice shortfall be set off…".
-    const raised = [...nico.matchAll(/^### ([AB]\d+)\./gm)].map((m) => m[1]);
+    // Section D included: a question we chose not to build is still a question,
+    // and must be either published or explicitly exempted with a reason.
+    const raised = [...nico.matchAll(/^### ([ABD]\d+)\./gm)].map((m) => m[1]);
     const unique = [...new Set(raised)];
     expect(unique.length).toBeGreaterThan(15); // sanity: the doc parsed
 

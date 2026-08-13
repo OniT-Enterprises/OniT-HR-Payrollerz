@@ -20,6 +20,14 @@ end. Question IDs are unchanged so existing cross-references still resolve. If a
 the three closed readings looks wrong to you, that correction is more valuable than
 anything still open below.
 
+**Added 2026-08-13.** A6 gained urgency (see below), and five new items arrived from
+building a feature list an HR practitioner running SAP payroll for a large TL
+employer said their system has and ours did not. A11–A13 are readings Xefe had to
+pick a side on to ship, and each now carries a *pending confirmation* badge on the
+statutory rules card in Settings → Payroll, so an operator can see the figure is
+provisional. D1–D2 are the two items we deliberately did NOT build, and D3 records
+why that list may be a Schedule IX list rather than an ordinary-payroll one.
+
 ---
 
 ## A. Money-affecting — worth answering first
@@ -195,21 +203,97 @@ we pinned that in a test. So practice appears to use the calendar basis for both
 If that is simply what everyone does, say so and we will leave it; we would just
 rather it be a decision than an accident.
 
+### A11. After a mid-year pay rise, which salary does the Art. 44 subsídio use?
+
+Art. 44 sets a **floor**, and does not say which month's salary the floor is
+measured against:
+
+> 1. O trabalhador tem direito a um subsídio anual de valor **não inferior a 1
+>    salário mensal**, que deve ser pago pelo empregador até ao dia 20 de Dezembro
+>    de cada ano civil. 2. O cálculo do subsídio anual é proporcional aos meses de
+>    trabalho prestado em cada ano civil.
+
+A worker on $500 who rose to $600 in March is owed either $600 (the salary when it
+is paid) or about $584 (the year weighted by days at each rate).
+
+**The "não inferior a" wording argues for the current salary**, which is what Xefe
+uses. If the entitlement is a minimum of one monthly salary, a weighted average
+that comes in below one *current* monthly salary is arguably under the floor. That
+makes our choice defensible on the text rather than merely cautious — but it is
+still a reading, and 44(2) fixes only the month COUNT, not the rate.
+
+- **Impact:** on that example, $16. On a $2,000→$2,600 rise in July, about $300.
+- **Xefe today:** the salary in force when the subsídio is paid — the higher figure
+  whenever the year's movement was a rise, which it normally is. This is also
+  unchanged behaviour, so no existing tenant's figure moved when salary history
+  shipped.
+- **What we can now show you:** `timeWeightedMonthlySalary` computes the weighted
+  alternative from the recorded history. It is deliberately wired to nothing, so
+  answering this is a one-line change either way.
+- **Same question applies to** the Art. 32 untaken-leave payout and the Art. 56
+  severance month, which use the current salary for the same reason.
+
+### A12. Are back-dated pay arrears taxed in the month paid, or the months they relate to?
+
+A rise agreed in April but effective from March is paid as "retroativos" on the
+April run — we see this instruction from clients regularly, and "Retroativos" is a
+standing column on the payroll registers we have seen.
+
+- **Xefe today:** taxed in the month PAID. TL WIT is assessed monthly and our
+  month-to-date exemption ledger is per calendar month, so re-opening March would
+  contradict a DR that has already been filed for it.
+- **Why it matters:** with the $500 resident exemption assessed monthly, bunching
+  two months of arrears into one month can push a worker over a band they would not
+  have crossed had each month been assessed on its own. The month-paid treatment is
+  therefore the one that can withhold MORE, not less.
+- **What we need:** confirmation that month-paid is right, or the correct rule if
+  arrears must be reassessed against the month they relate to.
+
+### A13. Is an attendance premium (prémio de assiduidade) inside the INSS base?
+
+Employers here pay a fixed monthly premium that a period with unjustified absence
+forfeits. It is the most repeated payroll instruction we see.
+
+Read against the republished text (DL 30/2021), the question is sharper than
+"Art. 8 or Art. 9" — **two** limbs of Art. 8(2) reach it and one limb of Art. 9
+excludes it:
+
+> **8(2)** Considera-se igualmente base de incidência contributiva: a) A
+> remuneração variável, paga ao trabalhador com base no seu **desempenho ou
+> produtividade** […] f) Outros subsídios ou suplementos remuneratórios devidos por
+> força do exercício de atividade, **quando previstos em disposição legal, contrato
+> ou em acordo coletivo**.
+>
+> **9** Não se considera base de incidência contributiva: […] e) Outros
+> **benefícios extraordinários** concedidos pelo empregador.
+
+- **So the answer may depend on how the premium arises.** Written into the contract
+  it falls squarely in 8(2)(f). Handed out at the employer's discretion it starts to
+  resemble 9(e). If you confirm that distinction matters, Xefe needs a
+  contractual-vs-discretionary flag on the premium; today it has none.
+- **Xefe today:** always taxable AND contributable, on the 8(2)(a) reading. On a
+  $145 premium that is $5.80 employee INSS (4%) and $8.70 employer (6%).
+- **Why we chose that side:** it is the employer-costlier, worker-protective
+  reading, so a correction can only ever reduce a contribution and can never create
+  an arrear with INSS.
+- **It is also the answer A5's own principle gives.** A5 resolves the rest-day
+  premium by holding that a *specific* provision beats a *residual* one — Art. 9(c)
+  names trabalho extraordinário expressly, so it beats the residual inclusion in
+  8(2)(f). Apply that consistently here and the polarity reverses: 8(2)(a) names
+  variable pay for desempenho expressly, while 9(e) is the residual "outros
+  benefícios extraordinários". Specific inclusion beats residual exclusion, so the
+  premium is IN the base. We would rather you confirm the principle holds in both
+  directions than have us apply it only where it suits.
+
 ## B. Precision — smaller amounts, same certainty problem
 
 ### B6. For the $500 resident WIT exemption, is "month" the month wages were earned or paid?
-Xefe uses the wage-period month everywhere except one place, where the per-period
-slice of the $500 is divided by the number of paydays falling in the **pay-date**
-month.
-
-- **Impact:** ~$2.50 per affected employee-month, in the **over**-withholding
-  direction. A worked example: weekly Friday paydays, the last June period paid
-  3 July (a 5-payday month) → June-period income receives $475 of allowance
-  instead of $500.
-- **Xefe today:** as described. No code changed, because the fix depends on this
-  answer.
-- **Question:** earned-month or paid-month? If earned, the divisor should key on
-  the period month.
+**Resolved 2026-08-13:** payment month. Law 8/2008 ties withholding and
+remittance to wages paid, and ATTL describes the monthly liability by wages paid
+and tax deducted. Xefe now groups every committed run by `payDate`: a December
+salary paid in January shares January's $500 resident threshold with every other
+January wage payment. The calendar-month $20 benefits-in-kind test follows that
+same payment-month grouping.
 
 ### B7. Does a partial week of notice earn the Art. 53(4) job-search credit?
 Art. 53(4) gives a paid credit of "dois dias de trabalho por semana" during a
@@ -349,13 +433,94 @@ a new flag on the employee.
 
 ## C. Low stakes — answer if convenient
 
-- **Tax depreciation:** Schedule VII prints 100% first-year expensing, but
-  practitioners reportedly use useful-life rates. Which does ATTL actually accept
-  on Form C?
+- ~~**Tax depreciation**~~ **Resolved 2026-08-13:** Xefe follows Schedule VII's
+  printed 100% rate. The workpaper no longer offers a yearly useful-life choice;
+  changing statutory method requires the Tax Administration's written permission.
 - **Unjustified-absence seniority discount:** calendar days or working days?
 - **Annual-leave carry-over clock (Art. 32):** how long may an untaken balance be
   carried before it lapses — is there a 12-month use-by, and from when?
 - **In-kind wages:** lawful under Art. 40(1)? Moot while Xefe is 100% cash.
+
+## D. Raised by a practitioner, deliberately NOT built yet
+
+Both came from an HR practitioner running SAP payroll for a large TL employer, as
+features their system has and ours does not. We built the rest of that list. These
+two we stopped on, for opposite reasons.
+
+### D1. What is "retenção para a CAC"?
+
+We cannot identify the acronym, and we would rather ask than guess at something
+that withholds money from a worker's pay.
+
+- **What we checked:** Lei 4/2012, DL 18/19/20 2017, DL 30/2021, the Taxes and
+  Duties Act 2008 — no occurrence. An archive of 49,629 unique messages of TL
+  accounting correspondence spanning 2019–2026 (121,496 rows counting
+  per-mailbox copies): zero occurrences of `CAC` as a word, zero of
+  "cooperativa de aforro/crédito", zero in seven years of attachment filenames.
+  And the open web: in Timor-Leste the acronym resolves to the **Comissão
+  Anti-Corrupção** (Lei 8/2009), a state investigative body with no payroll
+  withholding attached to it. TL credit cooperatives do exist (the Lei das
+  Cooperativas, the Hanai Malu federation) but none of them is abbreviated CAC.
+  So please treat the search as exhausted rather than repeat it.
+- **Why that matters:** a deduction absent from all of that is unlikely to be a
+  general TL obligation. It is more likely specific to one large employer, or an
+  acronym we are simply reading wrong.
+- **What we need:** the full name, who the money is remitted to, whether it is a
+  percentage or a fixed amount, and whether it comes off gross (reducing the WIT
+  base) or net.
+- **What already exists if the answer is mundane:** the Deductions & Advances
+  register can carry it today as a recurring deduction. What it lacks is a named
+  type, a remittance report to whoever receives it, and a liability account.
+
+### D2. Medical expenses — we think a *deduction* would be the wrong treatment
+
+Asked for as "incorporação de dedução de despesas médicas". We believe TL law puts
+this the other way round, and would rather be corrected than ship it.
+
+- **What the statute says:** TDA 2008 §(g) makes "the reimbursement or discharge by
+  an employer of any expense of the employee, including utilities or **medical
+  expenses**" wage INCOME. Health-insurance premiums paid by an employer for an
+  employee are deductible to the employer but taxable to the employee. Only a
+  payout *from an insurance company* to a person is exempt income.
+- **Corroborating practice:** your own firm's audit finding against a client (May
+  2024) was precisely that they had *excluded* the medical allowance from the
+  wage-tax base — written up as an error, citing Tax Law 8/2008 Art. 1.
+- **So a "medical expense deduction" that reduced taxable pay** would manufacture
+  the very finding your firm bills to correct. What can legitimately exist is a
+  post-tax recovery of a company-paid medical bill, which the existing deductions
+  register already handles.
+- **We checked the one place it could have lived, and it is not there.** The
+  practitioner who asked runs payroll for a petroleum employer, whose staff are taxed
+  under Schedule IX rather than the ordinary Schedule V we build against. Schedule IX
+  read in full is three rates, a pro-rata rule and a flat $10/month personal credit:
+  no personal deductions of any kind, medical or otherwise. So **there is no
+  medical-expense relief anywhere in TL wage income tax**, on either schedule.
+- **What we need:** confirmation, or the instrument we have not read. The remaining
+  candidate is not wage tax at all — a medical cost may well be a deductible
+  *business expense* to the employer under corporate income tax, which is a different
+  tax and does nothing for the employee's take-home pay. If that is what the request
+  actually means, it is an expense-recording feature, not a payroll one.
+
+### D3. Xefe cannot run payroll for a petroleum Contractor at all — is that where this list came from?
+
+Worth stating plainly because it reframes D1 and D2. `RunPayrollWizard` replaces the
+whole wizard with a refusal when a tenant is flagged as a party to a Petroleum
+Agreement: Schedule IX is a different regime with a different filing desk, and
+running those employees at Schedule V rates under-withholds, which Sec. 25.3 makes
+the *employer's* liability.
+
+So if the features on this list come from a Schedule IX employer, some of them may be
+Schedule IX features rather than gaps in ordinary TL payroll. That does not devalue
+them — the attendance premium, back-dated raises and NISS-on-payslip are all clearly
+general-market and are now built — but it does mean **CAC and the medical deduction
+should be read as possibly petroleum-specific** before anyone treats them as
+missing general functionality.
+
+One engineering note while this is in view: the refusal lives in the WIZARD, not in
+`calculateTLPayroll`, which still has no `taxRegime` input. Any non-wizard caller
+would compute Schedule V silently. `withholding-tl.ts` throws
+`UnsupportedTLPetroleumTaxRegimeError` rather than guess; the engine has no
+equivalent. Tracked in `docs/TIME_LEAVE_BACKLOG.md`.
 
 ---
 

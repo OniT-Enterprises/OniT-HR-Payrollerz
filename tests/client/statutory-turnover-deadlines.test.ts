@@ -22,7 +22,7 @@ describe('Services-tax filing support (Law 8/2008 Secs. 5-9)', () => {
   });
 
   it('maps a hotel tenant’s monthly receipts to the hotel bucket', () => {
-    const receipts = mapSectorReceiptsToDesignatedServices('hotel', 1200);
+    const receipts = mapSectorReceiptsToDesignatedServices('hotel', 1200, 'all_designated');
     expect(receipts).toEqual({
       hotelServices: 1200,
       restaurantBarServices: 0,
@@ -31,11 +31,24 @@ describe('Services-tax filing support (Law 8/2008 Secs. 5-9)', () => {
   });
 
   it('maps a restaurant tenant’s monthly receipts to the restaurant/bar bucket', () => {
-    const receipts = mapSectorReceiptsToDesignatedServices('restaurant', 640.5);
+    const receipts = mapSectorReceiptsToDesignatedServices('restaurant', 640.5, 'all_designated');
     expect(receipts).toEqual({
       hotelServices: 0,
       restaurantBarServices: 640.5,
       telecommunicationsServices: 0,
+    });
+  });
+
+  it('maps a telecommunications tenant’s monthly receipts to the telecommunications bucket', () => {
+    const receipts = mapSectorReceiptsToDesignatedServices(
+      'telecommunications',
+      900,
+      'all_designated',
+    );
+    expect(receipts).toEqual({
+      hotelServices: 0,
+      restaurantBarServices: 0,
+      telecommunicationsServices: 900,
     });
   });
 
@@ -47,14 +60,22 @@ describe('Services-tax filing support (Law 8/2008 Secs. 5-9)', () => {
     });
   });
 
+  it('does not treat a sector label as proof that all receipts are designated', () => {
+    expect(mapSectorReceiptsToDesignatedServices('hotel', 1200)).toEqual({
+      hotelServices: 0,
+      restaurantBarServices: 0,
+      telecommunicationsServices: 0,
+    });
+  });
+
   it('feeds the 5%-at-$500 engine end to end: 0% below, 5% on the TOTAL at/above', () => {
-    const below = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('restaurant', 499.99));
+    const below = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('restaurant', 499.99, 'all_designated'));
     expect(below.taxDue).toBe(0);
 
-    const at = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('restaurant', 500));
+    const at = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('restaurant', 500, 'all_designated'));
     expect(at.taxDue).toBe(25); // 5% of the WHOLE $500, not just the excess
 
-    const above = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('hotel', 2000));
+    const above = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices('hotel', 2000, 'all_designated'));
     expect(above.taxDue).toBe(100);
   });
 

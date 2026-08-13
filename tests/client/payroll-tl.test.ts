@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateTLPayroll,
   calculateSubsidioAnual,
+  UnsupportedTLPetroleumPayrollError,
   validateTLPayrollInput,
   type TLPayrollInput,
 } from "@/lib/payroll/calculations-tl";
@@ -169,7 +170,7 @@ describe("TL payroll calculations", () => {
     expect(result.inssEmployer).toBe(60);
   });
 
-  it("uses the payroll configuration passed by the tenant settings flow", () => {
+  it("uses statutory WIT while retaining configurable non-WIT payroll policies", () => {
     const result = calculateTLPayroll(makeBaseInput({ monthlySalary: 800 }), {
       incomeTax: {
         residentRate: 0.08,
@@ -181,18 +182,18 @@ describe("TL payroll calculations", () => {
       minimumWage: 100,
     });
 
-    expect(result.incomeTax).toBe(32);
-    expect(result.witTaxableAmount).toBe(400);
+    expect(result.incomeTax).toBe(30);
+    expect(result.witTaxableAmount).toBe(300);
     expect(result.inssEmployee).toBe(24);
     expect(result.inssEmployer).toBe(40);
   });
 });
 
 // ============================================================
-// Statutory exemptions (shareholder distributions)
+// Explicit engine exemptions (not inferred from job or ownership type)
 // ============================================================
 
-describe("Statutory exemptions (shareholders)", () => {
+describe("Explicit engine exemptions", () => {
   const exemptTaxInfo = { isResident: true, hasTaxExemption: true, inssExempt: true };
 
   it("skips WIT when hasTaxExemption is set", () => {
@@ -243,11 +244,11 @@ describe("Statutory exemptions (shareholders)", () => {
     expect(result.warnings.some((w) => w.includes("exemption"))).toBe(true);
   });
 
-  it("allows below-minimum-wage amounts for fully exempt payees", () => {
+  it("does not let tax/INSS flags bypass the employment minimum wage", () => {
     const errors = validateTLPayrollInput(
       makeBaseInput({ monthlySalary: 0, taxInfo: exemptTaxInfo })
     );
-    expect(errors).toEqual([]);
+    expect(errors.some((e) => e.includes("minimum wage"))).toBe(true);
   });
 
   it("still enforces minimum wage when only WIT-exempt", () => {
@@ -537,6 +538,35 @@ describe("Month-to-date WIT exemption (monthly)", () => {
     );
     // Still weekly per-period: 10% * (200 - 125) = 7.50, MTD ignored.
     expect(result.incomeTax).toBeCloseTo(7.5, 1);
+  });
+});
+
+describe("Calendar-month non-cash benefit threshold", () => {
+  it("taxes the whole month's benefits when a later run crosses $20", () => {
+    const first = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 0,
+        nonCashBenefits: 15,
+        nonCashBenefitINSSCategory: "extraordinary",
+        taxInfo: { isResident: false, hasTaxExemption: false },
+      }),
+    );
+    expect(first.taxableIncome).toBe(0);
+    expect(first.incomeTax).toBe(0);
+
+    const second = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 0,
+        nonCashBenefits: 15,
+        mtdNonCashBenefits: 15,
+        nonCashBenefitINSSCategory: "extraordinary",
+        taxInfo: { isResident: false, hasTaxExemption: false },
+      }),
+    );
+    // $15 + $15 > $20, so Art. 1 treats all $30 as wages—not only $10.
+    expect(second.taxableIncome).toBe(30);
+    expect(second.incomeTax).toBe(3);
+    expect(second.grossPay).toBe(0);
   });
 });
 
@@ -973,5 +1003,139 @@ describe("withholding clamp gives way in the right order", () => {
     );
     expect(amountOf(result, "advance_repayment")).toBe(40);
     expect(result.warnings.some((w) => w.includes("exceeded gross pay"))).toBe(false);
+  });
+});
+
+// ============================================================
+// Attendance premium and retroactive pay
+// ============================================================
+
+describe("attendance premium and retroactive pay earnings", () => {
+  const earningOf = (
+    result: ReturnType<typeof calculateTLPayroll>,
+    type: string,
+  ) => result.earnings.find((e) => e.type === type);
+
+  it("adds no line when neither is supplied", () => {
+    const result = calculateTLPayroll(makeBaseInput());
+    expect(earningOf(result, "attendance_premium")).toBeUndefined();
+    expect(earningOf(result, "retroactive_pay")).toBeUndefined();
+    expect(result.attendancePremium).toBe(0);
+    expect(result.retroactivePay).toBe(0);
+  });
+
+  it("treats the premium as taxable and inside the INSS base", () => {
+    // DL 20/2017 Art. 8 — remuneration for individual performance. This is the
+    // employer-costlier reading and is with the reviewer (NICO A13).
+    const result = calculateTLPayroll(makeBaseInput({ attendancePremium: 145 }));
+    const earning = earningOf(result, "attendance_premium");
+    expect(earning).toMatchObject({ amount: 145, isTaxable: true, isINSSBase: true });
+    expect(result.attendancePremium).toBe(145);
+  });
+
+  it("treats retroactive pay as taxable and contributable, like the salary it is", () => {
+    const result = calculateTLPayroll(makeBaseInput({ retroactivePay: 100 }));
+    expect(earningOf(result, "retroactive_pay")).toMatchObject({
+      amount: 100,
+      isTaxable: true,
+      isINSSBase: true,
+    });
+    expect(result.retroactivePay).toBe(100);
+  });
+
+  it("raises gross, the taxable base and the INSS base by both amounts", () => {
+    const plain = calculateTLPayroll(makeBaseInput());
+    const withBoth = calculateTLPayroll(
+      makeBaseInput({ attendancePremium: 145, retroactivePay: 100 }),
+    );
+    expect(withBoth.grossPay).toBeCloseTo(plain.grossPay + 245, 2);
+    expect(withBoth.inssBase).toBeCloseTo(plain.inssBase + 245, 2);
+    expect(withBoth.taxableIncome).toBeGreaterThan(plain.taxableIncome);
+    // More INSS is withheld precisely because both sit in the contributable base.
+    expect(withBoth.inssEmployee).toBeGreaterThan(plain.inssEmployee);
+    expect(withBoth.inssEmployer).toBeGreaterThan(plain.inssEmployer);
+  });
+
+  it("keeps gross - deductions = net with both lines present", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ attendancePremium: 145, retroactivePay: 100 }),
+    );
+    expect(result.netPay).toBeCloseTo(result.cashGrossPay - result.totalDeductions, 2);
+  });
+
+  it("ignores negative inputs rather than reducing pay through an earning", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ attendancePremium: -145, retroactivePay: -100 }),
+    );
+    expect(result.attendancePremium).toBe(0);
+    expect(result.retroactivePay).toBe(0);
+    expect(earningOf(result, "attendance_premium")).toBeUndefined();
+  });
+
+  it("does not require a bonus INSS category — neither is a discretionary bonus", () => {
+    expect(() =>
+      calculateTLPayroll(
+        makeBaseInput({ attendancePremium: 145, retroactivePay: 100, bonusINSSCategory: null }),
+      ),
+    ).not.toThrow();
+  });
+
+  it("still docks absence alongside a premium the employer chose to pay anyway", () => {
+    // The corpus instruction pairs a dock with a (reduced) premium, so both must
+    // be able to appear on one payslip.
+    const result = calculateTLPayroll(
+      makeBaseInput({ absenceHours: 24, attendancePremium: 95 }),
+    );
+    expect(result.absenceDeduction).toBeGreaterThan(0);
+    expect(result.attendancePremium).toBe(95);
+  });
+});
+
+// ============================================================
+// Petroleum Contractor refusal (Lei 8/2008 Sec. 72.2 / Schedule IX)
+// ============================================================
+
+describe("petroleum Contractor payroll is refused, not guessed", () => {
+  it("throws before computing anything when the tenant is a Contractor", () => {
+    expect(() =>
+      calculateTLPayroll(makeBaseInput(), { petroleumContractor: true }),
+    ).toThrow(UnsupportedTLPetroleumPayrollError);
+  });
+
+  it("names Schedule IX in the message, so the reason is legible in a log", () => {
+    expect(() =>
+      calculateTLPayroll(makeBaseInput(), { petroleumContractor: true }),
+    ).toThrow(/Schedule IX/);
+  });
+
+  it("computes normally for an ordinary tenant, and when the flag is false", () => {
+    expect(() => calculateTLPayroll(makeBaseInput())).not.toThrow();
+    expect(() =>
+      calculateTLPayroll(makeBaseInput(), { petroleumContractor: false }),
+    ).not.toThrow();
+  });
+
+  it("reports it as a validation error rather than throwing, for roster pre-flight", () => {
+    // A caller checking a whole roster needs one message per employee, not an
+    // exception that hides every row after the first.
+    const errors = validateTLPayrollInput(makeBaseInput(), {
+      petroleumContractor: true,
+    });
+    expect(errors.some((e) => e.includes("Schedule IX"))).toBe(true);
+  });
+
+  it("would have under-withheld badly without the guard", () => {
+    // The size of the gap is why this refuses instead of warning. A non-resident
+    // on $3,000/month: Schedule V charges 10% ($300); Schedule IX charges 20%
+    // ($600). Sec. 25.3 puts the shortfall on the EMPLOYER.
+    const domestic = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 3000,
+        taxInfo: { isResident: false, hasTaxExemption: false },
+      }),
+    );
+    expect(domestic.incomeTax).toBeCloseTo(300, 2);
+    // Schedule IX (b) would be 20% of the same taxable wages.
+    expect(domestic.incomeTax * 2).toBeCloseTo(600, 2);
   });
 });

@@ -31,10 +31,16 @@ import {
 } from '@/lib/payroll/recurring-deductions';
 import {
   isRunFiguresStale,
+  payrollRunIsPaidInMonth,
   runTouchesFinalPayYear,
   type CommittedSubsidioRun,
 } from '@/lib/payroll/run-payroll-helpers';
 import { isTenantSubscribed } from '@/lib/packagePricing';
+import { paths } from '@/lib/paths';
+import {
+  stampRetroSettled,
+  type SalaryChange,
+} from '@/lib/payroll/salary-history';
 import { addMoney, subtractMoney } from '@/lib/currency';
 import { accountService, journalEntryService } from './accountingService';
 import { auditLogService } from './auditLogService';
@@ -54,6 +60,13 @@ export interface EmployeePayrollYTD {
   ytdNetPay: number;
   ytdIncomeTax: number;
   ytdINSSEmployee: number;
+  /**
+   * Accumulated EMPLOYER social-security contribution for the year. Read off the
+   * saved `inssEmployer` rather than recomputed, so a rate change (e.g. the
+   * DL 20/2017 Art. 86 small-employer discount being switched on mid-year) cannot
+   * retrospectively rewrite what was actually contributed.
+   */
+  ytdINSSEmployer: number;
   ytdSickDaysUsed: number;
   /** Subsídio anual (13th month) already paid this year — lets a leaver's
    * final-pay run net the Art. 44 entitlement instead of double-paying. */
@@ -694,9 +707,10 @@ class PayrollRunService {
     }
 
     const deductionPlan = await this.getRecurringDeductionSettlementPlan(payroll, id);
+    const retroPlan = await this.getRetroactiveSettlementPlan(payroll, id);
     // Journal + audit + counter + payroll + optional transfer consume fewer
     // than 10 writes; leave a wide margin under Firestore's 500-write limit.
-    if (deductionPlan.length > 400) {
+    if (deductionPlan.length + retroPlan.length > 400) {
       throw new Error(
         'This payroll has too many deduction settlements for one safe payment transaction. Contact support before marking it paid.',
       );
@@ -709,6 +723,9 @@ class PayrollRunService {
     const deductionRefs = deductionPlan.map((item) =>
       doc(db, 'recurringDeductions', item.id),
     );
+    const retroRefs = retroPlan.map((item) =>
+      doc(db, paths.employee(payment.tenantId, item.employeeId)),
+    );
 
     const settlementJournalEntryId = await runTransaction(db, async (transaction) => {
       // All reads precede createPayrollSettlement, which writes the journal.
@@ -716,6 +733,9 @@ class PayrollRunService {
       const transferSnap = transferRef ? await transaction.get(transferRef) : null;
       const deductionSnaps = await Promise.all(
         deductionRefs.map((ref) => transaction.get(ref)),
+      );
+      const retroSnaps = await Promise.all(
+        retroRefs.map((ref) => transaction.get(ref)),
       );
 
       if (!runSnap.exists()) {
@@ -788,6 +808,26 @@ class PayrollRunService {
         transaction.update(deductionRefs[index], updates);
       });
 
+      // Stamp the salary changes this run's arrears discharged. `stampRetroSettled`
+      // only ever fills an EMPTY `retroSettledPeriod`, so re-running the payment
+      // (or two runs racing) cannot re-stamp with a different month, and a change
+      // already settled by an earlier run keeps that earlier month.
+      retroSnaps.forEach((snapshot, index) => {
+        if (!snapshot.exists()) return;
+        const employee = snapshot.data() as { compensation?: { salaryHistory?: SalaryChange[] } };
+        const history = employee.compensation?.salaryHistory;
+        if (!Array.isArray(history) || history.length === 0) return;
+        const stamped = stampRetroSettled(
+          history,
+          retroPlan[index].effectiveDates,
+          periodMonth,
+        );
+        transaction.update(retroRefs[index], {
+          'compensation.salaryHistory': stamped,
+          updatedAt: serverTimestamp(),
+        });
+      });
+
       transaction.update(runRef, {
         status: 'paid',
         paidAt: serverTimestamp(),
@@ -855,6 +895,39 @@ class PayrollRunService {
    * balance never drops by more than min(scheduled, withheld). Docs the cap
    * squeezed to zero are not stamped and stay eligible next period month.
    */
+  /**
+   * Salary changes whose retroactive arrears this run's records paid off, ready
+   * to stamp `retroSettledPeriod` on so they are never suggested again.
+   *
+   * Reads INTENT off the saved records (`retroactiveSettles`), not a fresh
+   * recomputation: the operator may have adjusted the suggested figure, and only
+   * the record knows what the run actually paid. Runs before the transaction
+   * because a Firestore transaction may not query.
+   */
+  private async getRetroactiveSettlementPlan(
+    payroll: PayrollRun,
+    runId: string,
+  ): Promise<{ employeeId: string; effectiveDates: string[] }[]> {
+    const tenantId = payroll.tenantId;
+    if (!tenantId) return [];
+    const periodMonth = periodMonthOf(payroll.periodStart);
+    if (!/^\d{4}-\d{2}$/.test(periodMonth)) return [];
+
+    const records = await payrollRecordService.getPayrollRecordsByRunId(runId, tenantId);
+    const byEmployee = new Map<string, Set<string>>();
+    for (const record of records) {
+      const dates = record.retroactiveSettles;
+      if (!record.employeeId || !Array.isArray(dates) || dates.length === 0) continue;
+      const existing = byEmployee.get(record.employeeId) ?? new Set<string>();
+      dates.forEach((date) => existing.add(date));
+      byEmployee.set(record.employeeId, existing);
+    }
+    return [...byEmployee.entries()].map(([employeeId, dates]) => ({
+      employeeId,
+      effectiveDates: [...dates],
+    }));
+  }
+
   private async getRecurringDeductionSettlementPlan(
     payroll: PayrollRun,
     runId: string,
@@ -1210,6 +1283,7 @@ class PayrollRecordService {
           ytdNetPay: 0,
           ytdIncomeTax: 0,
           ytdINSSEmployee: 0,
+          ytdINSSEmployer: 0,
           ytdSickDaysUsed: 0,
           ytdSubsidioAnual: 0,
         };
@@ -1223,6 +1297,15 @@ class PayrollRecordService {
           ytdINSSEmployee: addMoney(
             current.ytdINSSEmployee,
             record.deductions?.find((deduction) => deduction.type === 'inss_employee')?.amount || 0,
+          ),
+          // The employer share is never an employee DEDUCTION, so it comes off
+          // the record's own field (or the employerTaxes line for older records
+          // written before `inssEmployer` was stored).
+          ytdINSSEmployer: addMoney(
+            current.ytdINSSEmployer,
+            record.inssEmployer ??
+              record.employerTaxes?.find((tax) => tax.type === 'inss_employer')?.amount ??
+              0,
           ),
           ytdSickDaysUsed: current.ytdSickDaysUsed + ((record.sickHoursUsed || 0) / 8),
           ytdSubsidioAnual: addMoney(
@@ -1334,37 +1417,42 @@ class PayrollRecordService {
   }
 
   /**
-   * Per-employee WIT already assessed this CALENDAR MONTH (by pay-period month),
+   * Per-employee WIT and benefits in kind already assessed this PAYMENT month,
    * so a new monthly run applies the resident $500/month exemption against the
    * remaining threshold instead of granting a fresh one. Counts committed runs
    * only (processing/approved/paid) — the draft being built is excluded. Keyed
-   * on `periodStart`'s YYYY-MM so a regular run and a same-month top-up run
-   * (e.g. a standalone 13th-month run) share one monthly threshold.
+   * on `payDate`'s YYYY-MM because WIT attaches when wages are paid. A regular
+   * run and a top-up paid in the same month therefore share both the resident
+   * $500 threshold and the benefit-in-kind $20 calendar-month test.
    *
    * `mtdWitTaxableIncome` is pre-threshold taxable income; `mtdIncomeTax` is WIT
    * withheld — both are what calculateIncomeTaxWithBase's monthToDate expects.
    */
   async getMonthToDateWITByEmployee(
     tenantId: string,
-    periodMonth: string, // 'YYYY-MM'
-  ): Promise<Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }>> {
-    // Bucket by the pay-PERIOD month, not the pay date: a December salary run and
-    // a December 13th-month run belong to the same WIT month even if paid in
-    // January — which is exactly why the payDate window must straddle the
-    // period month rather than stop at its calendar year.
-    const year = Number.parseInt(periodMonth.slice(0, 4), 10);
-    const month = Number.parseInt(periodMonth.slice(5, 7), 10);
+    paymentMonth: string, // 'YYYY-MM'
+  ): Promise<Record<string, {
+    mtdWitTaxableIncome: number;
+    mtdIncomeTax: number;
+    mtdNonCashBenefits: number;
+  }>> {
+    const year = Number.parseInt(paymentMonth.slice(0, 4), 10);
+    const month = Number.parseInt(paymentMonth.slice(5, 7), 10);
     const isoDay = (d: Date) => d.toISOString().slice(0, 10);
     const runIds = await this.getRunIdsByPeriod(
       tenantId,
       ['processing', 'approved', 'paid'],
       {
-        start: isoDay(new Date(Date.UTC(year, month - 2, 1))),
-        end: isoDay(new Date(Date.UTC(year, month + 2, 0))),
+        start: isoDay(new Date(Date.UTC(year, month - 1, 1))),
+        end: isoDay(new Date(Date.UTC(year, month, 0))),
       },
-      (run) => (run.periodStart || run.payDate || '').slice(0, 7) === periodMonth,
+      (run) => payrollRunIsPaidInMonth(run, paymentMonth),
     );
-    const totals: Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }> = {};
+    const totals: Record<string, {
+      mtdWitTaxableIncome: number;
+      mtdIncomeTax: number;
+      mtdNonCashBenefits: number;
+    }> = {};
 
     for (const runIdChunk of chunkArray(runIds, 10)) {
       if (runIdChunk.length === 0) continue;
@@ -1380,6 +1468,7 @@ class PayrollRecordService {
         const current = totals[record.employeeId] || {
           mtdWitTaxableIncome: 0,
           mtdIncomeTax: 0,
+          mtdNonCashBenefits: 0,
         };
         // Records written before taxableIncome existed would contribute 0
         // income while their WIT still lands in mtdIncomeTax, which makes the
@@ -1399,6 +1488,12 @@ class PayrollRecordService {
           mtdIncomeTax: addMoney(
             current.mtdIncomeTax,
             record.deductions?.find((d) => d.type === 'income_tax')?.amount || 0,
+          ),
+          mtdNonCashBenefits: addMoney(
+            current.mtdNonCashBenefits,
+            record.earnings
+              ?.filter((earning) => earning.type === 'non_cash_benefit')
+              .reduce((sum, earning) => addMoney(sum, earning.amount || 0), 0) || 0,
           ),
         };
       }

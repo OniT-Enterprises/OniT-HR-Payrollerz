@@ -157,7 +157,18 @@ export function CompanyStructureTab({
   };
 
   const loadSectorDepartments = async (sector: BusinessSector) => {
-    setStructure({ ...structure, businessSector: sector });
+    setStructure({
+      ...structure,
+      businessSector: sector,
+      // A sector selection does not prove every receipt is taxable. Require a
+      // fresh explicit confirmation before Xefe fills services-tax Section 3.
+      servicesTaxReceiptMode:
+        sector === 'hotel' ||
+        sector === 'restaurant' ||
+        sector === 'telecommunications'
+          ? 'manual'
+          : undefined,
+    });
     const presets = SECTOR_DEPARTMENT_PRESETS[sector] || [];
     if (presets.length === 0 || !tenantId) return;
     // Only seed presets that don't already exist.
@@ -249,6 +260,7 @@ export function CompanyStructureTab({
               <SelectItem value="security">{t('settings.structure.sectors.security')}</SelectItem>
               <SelectItem value="hotel">{t('settings.structure.sectors.hotel')}</SelectItem>
               <SelectItem value="restaurant">{t('settings.structure.sectors.restaurant')}</SelectItem>
+              <SelectItem value="telecommunications">{t('settings.structure.sectors.telecommunications')}</SelectItem>
               <SelectItem value="trading">{t('settings.structure.sectors.trading')}</SelectItem>
               <SelectItem value="manufacturing">{t('settings.structure.sectors.manufacturing')}</SelectItem>
               <SelectItem value="construction">{t('settings.structure.sectors.construction')}</SelectItem>
@@ -270,6 +282,35 @@ export function CompanyStructureTab({
               'Choosing a sector adds a starter list of teams.'}
           </p>
         </div>
+
+        {(structure.businessSector === 'hotel' ||
+          structure.businessSector === 'restaurant' ||
+          structure.businessSector === 'telecommunications') && (
+          <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+            <Label>{t('settings.structure.servicesTaxReceipts')}</Label>
+            <Select
+              value={structure.servicesTaxReceiptMode || 'manual'}
+              onValueChange={(value: 'manual' | 'all_designated') =>
+                setStructure({ ...structure, servicesTaxReceiptMode: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">
+                  {t('settings.structure.servicesTaxManual')}
+                </SelectItem>
+                <SelectItem value="all_designated">
+                  {t('settings.structure.servicesTaxAllDesignated')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t('settings.structure.servicesTaxReceiptsHelp')}
+            </p>
+          </div>
+        )}
 
         <Separator />
 

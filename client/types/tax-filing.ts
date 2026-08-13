@@ -18,7 +18,7 @@ export type TaxFilingType =
   | "annual_income_tax"
   | "inss_monthly"
   // Law 8/2008 Secs. 5-9 domestic services tax (hotel/restaurant receipts),
-  // filed on the same consolidated monthly form as WIT, due day 15.
+  // tracked with its own filing evidence, due day 15.
   | "services_tax"
   // Law 8/2008 Art. 64 income-tax installment (0.5% of turnover), due day 15
   // after the month/quarter ends.
@@ -32,6 +32,16 @@ export type SubmissionMethod =
   | "bnu_paper"
   | "inss_portal"
   | "not_filed";
+
+export interface BusinessTaxFilingSnapshot {
+  taxType: "services_tax" | "installment_tax";
+  period: string;
+  taxBase: number;
+  rate: number;
+  taxDue: number;
+  /** The operator reviewed these figures and confirmed the external filing. */
+  source: "operator_confirmed";
+}
 
 export type AnnualIncomeTaxPreparationStatus =
   | "in_progress"
@@ -292,7 +302,8 @@ export interface TaxFiling {
     | MonthlyWITReturn
     | AnnualWITReturn
     | MonthlyINSSReturn
-    | AnnualIncomeTaxPreparation;
+    | AnnualIncomeTaxPreparation
+    | BusinessTaxFilingSnapshot;
   preparationStatus?: AnnualIncomeTaxPreparationStatus;
 
   // Filing Details (when filed)
@@ -351,6 +362,8 @@ export interface FilingDueDate {
   daysUntilDue: number;
   isOverdue: boolean;
   filing?: TaxFiling;
+  /** Type-specific evidence that a past business-tax deadline is actionable. */
+  hasTaxActivity?: boolean;
   /**
    * Estimated amount payable for this deadline when Xefe can derive it (e.g.
    * services tax from the month's customer receipts). Informational only.

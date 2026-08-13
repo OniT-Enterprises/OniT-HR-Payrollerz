@@ -82,7 +82,7 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   },
   { id: "position", name: "Job Title/Position", category: "Job Details", required: false, type: "text" },
   { id: "hireDate", name: "Hire Date", category: "Job Details", required: false, type: "date" },
-  { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern", "Shareholder"] },
+  { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern"] },
   { id: "workLocation", name: "Work Location", category: "Job Details", required: false, type: "select", options: ["Office", "Remote", "Hybrid", "Field"] },
   { id: "manager", name: "Manager", category: "Job Details", required: false, type: "text" },
   { id: "projectCode", name: "Project Code", category: "Project & Donor", required: false, type: "text" },
@@ -100,6 +100,14 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   { id: "monthlySalary", name: "Monthly Salary", category: "Compensation", required: true, type: "number" },
   { id: "annualLeaveDays", name: "Annual Leave Days", category: "Compensation", required: false, type: "number" },
   { id: "benefitsPackage", name: "Benefits Package", category: "Compensation", required: false, type: "select", options: ["Basic", "Standard", "Premium", "Executive"] },
+  {
+    id: "taxResidence",
+    name: "Tax Residence",
+    category: "Compensation",
+    required: true,
+    type: "select",
+    options: ["resident", "non-resident"],
+  },
   // Documents
   { id: "employeeIdCard", name: "Employee ID Card Number", category: "Documents", required: false, type: "text" },
   { id: "employeeIdExpiryDate", name: "Employee ID Expiry Date", category: "Documents", required: false, type: "date" },

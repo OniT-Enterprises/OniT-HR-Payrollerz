@@ -363,7 +363,13 @@ async function executeSendPayslips({
   userId: string;
   selectedEmployees: EmployeeEmailInfo[];
   payrollRun: PayrollRun;
-  companyInfo: { name?: string; address?: string; phone?: string; email?: string };
+  companyInfo: {
+    name?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    niss?: string;
+  };
   setStatus: (status: SendStatus) => void;
   setProgress: (progress: { current: number; total: number }) => void;
   setResult: (result: SendPayslipsResult) => void;
@@ -422,6 +428,7 @@ export function SendPayslipsDialog({
     address?: string;
     phone?: string;
     email?: string;
+    niss?: string;
   }>({});
 
   // Load employee email info and company settings
@@ -461,6 +468,7 @@ export function SendPayslipsDialog({
             address: settings.companyDetails.registeredAddress,
             phone: undefined, // CompanyDetails doesn't have phone
             email: undefined, // CompanyDetails doesn't have email
+            niss: settings.companyDetails.employerNiss,
           });
         }
       } catch (error) {

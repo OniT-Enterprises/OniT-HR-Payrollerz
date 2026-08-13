@@ -59,6 +59,7 @@ export type AuditAction =
   | "tax.inss_exported"
   | "tax.annual_filed"
   | "tax.payment_recorded"
+  | "tax.business_filed"
   | "tax.form_c_preparation_updated"
   // Document actions
   | "document.upload"
@@ -367,6 +368,7 @@ export const auditLogService = {
       | "tax.inss_exported"
       | "tax.annual_filed"
       | "tax.payment_recorded"
+      | "tax.business_filed"
       | "tax.form_c_preparation_updated"
     >;
     filingId: string;

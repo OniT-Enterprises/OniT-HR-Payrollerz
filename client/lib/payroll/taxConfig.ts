@@ -1,7 +1,10 @@
 /**
- * Runtime Tax Configuration
- * Fetches TL tax rates and labor law constants from Firestore
- * Allows updating tax rates without redeploying the application
+ * Legacy runtime law-configuration reader.
+ *
+ * Nothing in the payroll calculation path imports this module. In particular,
+ * Schedule V WIT is sourced from versioned code constants and cannot be changed
+ * through Firestore or tenant settings. This reader remains only for backwards
+ * compatibility while old `system_config/tl_tax_config` documents exist.
  */
 
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,7 +15,7 @@ import { db } from '@/lib/firebase';
 // ============================================
 
 interface TLTaxConfig {
-  // Withholding Income Tax (WIT)
+  // Legacy display/migration data only; never a payroll-engine override.
   incomeTax: {
     rate: number;                  // e.g., 0.10 for 10%
     residentThreshold: number;     // e.g., 500 for $500 monthly threshold

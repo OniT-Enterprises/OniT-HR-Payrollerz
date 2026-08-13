@@ -35,6 +35,10 @@ type EarningType =
   | 'rest_day'
   | 'sick_pay'
   | 'bonus'
+  /** Prémio de assiduidade — forfeited or reduced by unjustified absence. */
+  | 'attendance_premium'
+  /** Wage arrears from a back-dated pay rise ("Retroativos"). */
+  | 'retroactive_pay'
   | 'subsidio_anual'
   | 'service_compensation'
   /** Art. 32 cash-out of annual leave left untaken at exit. */
@@ -115,6 +119,13 @@ export interface PayrollRecord {
   // Employee snapshot (denormalized for historical reference)
   employeeName: string;
   employeeNumber: string;
+  /**
+   * Employee's INSS registration number (NISS) as at the run. Printed on the
+   * payslip and snapshotted here so the as-sent PDF survives a later profile
+   * edit. Empty string when the worker has no NISS yet — payroll never blocks on
+   * it, because the number is needed to FILE the monthly DR, not to work out pay.
+   */
+  employeeNiss?: string;
   department: string;
   position: string;
   isResident?: boolean;
@@ -176,6 +187,20 @@ export interface PayrollRecord {
   ytdNetPay: number;
   ytdIncomeTax: number;
   ytdINSSEmployee: number;
+  /**
+   * Accumulated EMPLOYER social-security contribution for the year. Optional
+   * because records written before this field existed do not carry it, and the
+   * payslip omits the row rather than printing a wrong zero.
+   */
+  ytdINSSEmployer?: number;
+
+  /**
+   * `effectiveFrom` dates of the salary changes whose arrears this record's
+   * retroactive-pay earning discharges. Stamped onto the employee's
+   * `compensation.salaryHistory` when the run is marked paid, which is what stops
+   * a second run over the same period paying the same arrears again.
+   */
+  retroactiveSettles?: string[];
 
   // Metadata
   createdAt?: FirestoreTimestamp;

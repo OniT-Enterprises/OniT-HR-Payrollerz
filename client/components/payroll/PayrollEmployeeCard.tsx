@@ -44,6 +44,8 @@ interface OriginalValues {
   absenceHours: number;
   bonus: number;
   bonusINSSCategory: TLBonusINSSCategory | null;
+  attendancePremium: number;
+  retroactivePay: number;
   perDiem: number;
   allowances: number;
 }
@@ -56,10 +58,13 @@ interface EmployeePayrollRowData {
   holidayHours: number;
   restDayHours: number;
   absenceHours: number;
+  nonEmploymentAbsenceHours: number;
   sickDays: number;
   perDiem: number;
   bonus: number;
   bonusINSSCategory: TLBonusINSSCategory | null;
+  attendancePremium: number;
+  retroactivePay: number;
   allowances: number;
   calculation: TLPayrollResult | null;
   isEdited: boolean;
@@ -125,6 +130,72 @@ function LabeledNumber({
       />
     </label>
   );
+}
+
+/**
+ * Same control as LabeledNumber but sized for money and stepped in cents.
+ * Separate rather than a prop on LabeledNumber because that one exists for HOURS
+ * and its `step="any"` comment is specifically about fractional standard hours.
+ */
+function LabeledMoney({
+  label,
+  value,
+  originalValue,
+  employeeId,
+  field,
+  ariaLabel,
+  onInputChange,
+}: LabeledNumberProps) {
+  const isModified = value !== originalValue;
+  return (
+    <label className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <Input
+        type="number"
+        value={round2(value)}
+        onChange={(e) =>
+          onInputChange(employeeId, field, parseFloat(e.target.value) || 0)
+        }
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        aria-label={ariaLabel}
+        className={`h-9 w-24 text-right ${NO_SPINNER} ${
+          isModified
+            ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
+            : "border-border/50"
+        }`}
+        min={0}
+        step="any"
+      />
+    </label>
+  );
+}
+
+/**
+ * Explains the premium figure in terms of the absence that produced it, so the
+ * operator can see WHY it is reduced without opening the attendance page.
+ */
+function premiumHint(data: EmployeePayrollRowData, t: Translate): string {
+  const premium = data.employee.compensation?.attendancePremium;
+  const full = premium?.amount ?? 0;
+  const chargeable = Math.max(
+    0,
+    round2((data.absenceHours || 0) - (data.nonEmploymentAbsenceHours || 0)),
+  );
+  if (chargeable <= 0) {
+    return t("runPayroll.attendancePremiumClean", {
+      amount: formatCurrencyTL(full),
+    });
+  }
+  if (data.attendancePremium <= 0) {
+    return t("runPayroll.attendancePremiumForfeited", { hours: chargeable });
+  }
+  return t("runPayroll.attendancePremiumReduced", {
+    hours: chargeable,
+    full: formatCurrencyTL(full),
+  });
 }
 
 function BonusField({
@@ -316,6 +387,57 @@ function ExpandedDetails({
         </div>
       </div>
 
+      {/* Attendance premium — deliberately placed straight after the absence it
+          is decided from, because in practice an employer states both together
+          ("s/faltas, com prémio 145" / "com desconto de 3 dias de falta, com
+          prémio 95"). Only rendered for employees who actually have a standing
+          premium, so it adds nothing to the card for everyone else. */}
+      {data.employee.compensation?.attendancePremium?.active && (
+        <div>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            {t("runPayroll.attendancePremium")}
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <LabeledMoney
+              label={t("runPayroll.attendancePremiumAmount")}
+              value={data.attendancePremium}
+              originalValue={data.originalValues.attendancePremium}
+              employeeId={employeeId}
+              field="attendancePremium"
+              ariaLabel={`${t("runPayroll.attendancePremium")} - ${employeeName}`}
+              onInputChange={onInputChange}
+            />
+            <p className="text-[11px] text-muted-foreground max-w-md pb-2">
+              {premiumHint(data, t)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Retroactive pay — only shown when a back-dated rise or a hand-entered
+          figure makes it relevant. */}
+      {(data.retroactivePay > 0 || data.originalValues.retroactivePay > 0) && (
+        <div>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            {t("runPayroll.retroactivePay")}
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <LabeledMoney
+              label={t("runPayroll.retroactivePayAmount")}
+              value={data.retroactivePay}
+              originalValue={data.originalValues.retroactivePay}
+              employeeId={employeeId}
+              field="retroactivePay"
+              ariaLabel={`${t("runPayroll.retroactivePay")} - ${employeeName}`}
+              onInputChange={onInputChange}
+            />
+            <p className="text-[11px] text-muted-foreground max-w-md pb-2">
+              {t("runPayroll.retroactivePayHint")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Earnings */}
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -343,6 +465,12 @@ function ExpandedDetails({
           )}
           {calculation.untakenLeavePayout > 0 && (
             <EarningCard label={t("runPayroll.untakenLeavePayout")} value={calculation.untakenLeavePayout} />
+          )}
+          {calculation.attendancePremium > 0 && (
+            <EarningCard label={t("runPayroll.attendancePremium")} value={calculation.attendancePremium} />
+          )}
+          {calculation.retroactivePay > 0 && (
+            <EarningCard label={t("runPayroll.retroactivePay")} value={calculation.retroactivePay} />
           )}
         </div>
       </div>

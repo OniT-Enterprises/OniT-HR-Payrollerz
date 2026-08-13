@@ -176,6 +176,12 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
   await expect(page.getByLabel(/last name/i)).toHaveValue(EMPLOYEE.last);
   await expect(page.getByLabel(/monthly salary/i).first()).toHaveValue("600");
 
+  // Tax residence is a required tax fact — the create below cannot submit
+  // without it. Selected after the draft-recovery reload on purpose: the
+  // recovery assertions above only cover the drafted text fields.
+  await page.getByLabel(/tax residence/i).click();
+  await page.getByRole("option", { name: "Timor-Leste resident" }).click();
+
   const warningMessage = new Promise<string>((resolve) => {
     page.once("dialog", async (dialog) => {
       resolve(dialog.message());

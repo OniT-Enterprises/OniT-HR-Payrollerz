@@ -57,7 +57,14 @@ describe("Form C GL mapping (TADR-IT 1 lines)", () => {
     expect(lineOf(workpaper, "35").amount).toBe(18900);
     expect(lineOf(workpaper, "50").amount).toBe(6000);
     expect(lineOf(workpaper, "55").amount).toBe(800);
-    expect(lineOf(workpaper, "15").amount).toBe(2400);
+    // Books depreciation is replaced by the Schedule VII tax schedule. With no
+    // fixed-asset register row, Xefe must not invent a deduction.
+    expect(lineOf(workpaper, "15").amount).toBe(0);
+    expect(
+      workpaper.excluded.some(
+        (entry) => entry.reason === "books_depreciation_tax_method",
+      ),
+    ).toBe(true);
     expect(lineOf(workpaper, "70").amount).toBe(300);
     // INSS employer is NOT a payment to the employee — Other, not line 35.
     expect(lineOf(workpaper, "110").amount).toBe(1080 + 700);
@@ -255,38 +262,31 @@ describe("Form C depreciation schedule", () => {
     status: "active",
   };
 
-  it("computes a full prior-year asset row for the tax year", () => {
-    const [row] = buildFormCDepreciationSchedule([machine], 2025);
-    // 7 months in 2024 (Jun–Dec) = 700 opening accumulated.
-    expect(row.openingValue).toBe(2900);
-    expect(row.purchaseCost).toBeUndefined();
-    expect(row.yearDepreciation).toBe(1200);
-    expect(row.closingValue).toBe(1700);
-    expect(row.ratePercent).toBeCloseTo(33.33, 2);
+  it("omits a prior-year asset already expensed at the statutory 100% rate", () => {
+    expect(buildFormCDepreciationSchedule([machine], 2025)).toEqual([]);
   });
 
-  it("shows in-year purchases with cost and date, opening 0", () => {
+  it("expenses an in-year purchase at 100% with closing tax value zero", () => {
     const [row] = buildFormCDepreciationSchedule([machine], 2024);
     expect(row.openingValue).toBe(0);
     expect(row.purchaseCost).toBe(3600);
     expect(row.purchaseDate).toBe("2024-06-15");
-    expect(row.yearDepreciation).toBe(700);
-    expect(row.closingValue).toBe(2900);
+    expect(row.ratePercent).toBe(100);
+    expect(row.yearDepreciation).toBe(3600);
+    expect(row.closingValue).toBe(0);
   });
 
-  it("stops depreciation at the cumulative cap (fully depreciated)", () => {
+  it("omits an old fully-expensed asset with no current-year event", () => {
     const old: FormCAssetInput = {
       ...machine,
       depreciationStartPeriod: "2020-01",
       acquisitionDate: "2020-01-10",
       status: "fully_depreciated",
     };
-    const [row] = buildFormCDepreciationSchedule([old], 2025);
-    expect(row.yearDepreciation).toBe(0);
-    expect(row.closingValue).toBe(0);
+    expect(buildFormCDepreciationSchedule([old], 2025)).toEqual([]);
   });
 
-  it("stops at the disposal month and closes disposed assets at 0", () => {
+  it("surfaces disposal proceeds for a prior-year fully-expensed asset", () => {
     const disposed: FormCAssetInput = {
       ...machine,
       status: "disposed",
@@ -294,8 +294,7 @@ describe("Form C depreciation schedule", () => {
       disposalProceeds: 2500,
     };
     const [row] = buildFormCDepreciationSchedule([disposed], 2025);
-    // Jan–Mar 2025 = 3 months × 100.
-    expect(row.yearDepreciation).toBe(300);
+    expect(row.yearDepreciation).toBe(0);
     expect(row.disposalDate).toBe("2025-03-20");
     expect(row.disposalProceeds).toBe(2500);
     expect(row.closingValue).toBe(0);
@@ -317,18 +316,25 @@ describe("Form C depreciation schedule", () => {
     );
   });
 
-  it("warns when the GL depreciation and the register schedule disagree", () => {
+  it("replaces books depreciation with the statutory schedule", () => {
     const workpaper = build({
       glRows: [gl("5800", "Depreciation Expense", "expense", 500)],
-      assets: [machine],
+      assets: [{ ...machine, acquisitionDate: "2025-06-15" }],
     });
     const warning = workpaper.warnings.find(
-      (w) => w.code === "depreciation_schedule_mismatch",
+      (w) => w.code === "books_depreciation_replaced",
     );
-    expect(warning).toMatchObject({ glAmount: 500, scheduleAmount: 1200 });
+    expect(warning).toMatchObject({ glAmount: 500 });
+    expect(lineOf(workpaper, "15").amount).toBe(3600);
   });
 
-  it("stays quiet when books and schedule agree", () => {
+  it("normalizes a legacy useful-life argument to Schedule VII", () => {
+    const [row] = buildFormCDepreciationSchedule([machine], 2024, "useful_life");
+    expect(row.ratePercent).toBe(100);
+    expect(row.yearDepreciation).toBe(3600);
+  });
+
+  it("does not emit the removed useful-life mismatch warning", () => {
     const workpaper = build({
       glRows: [gl("5800", "Depreciation Expense", "expense", 1200)],
       assets: [machine],
@@ -436,14 +442,15 @@ describe("Form C tax depreciation methods", () => {
     ).toBe(true);
   });
 
-  it("useful life stays the default and unchanged", () => {
+  it("Schedule VII full expensing is the default", () => {
     const workpaper = build({
       glRows: [gl("5800", "Depreciation Expense", "expense", 1200)],
-      assets: [machine],
+      assets: [truck],
     });
     expect(workpaper.entityType).toBe("company");
-    expect(lineOf(workpaper, "15").amount).toBe(1200);
-    expect(workpaper.depreciationSchedule[0].yearDepreciation).toBe(1200);
+    expect(workpaper.taxDepreciationMethod).toBe("full_expensing");
+    expect(lineOf(workpaper, "15").amount).toBe(48100);
+    expect(workpaper.depreciationSchedule[0].yearDepreciation).toBe(48100);
   });
 });
 

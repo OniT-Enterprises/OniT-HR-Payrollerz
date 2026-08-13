@@ -59,8 +59,8 @@ from code alone.
       line-numbered Excel export (`/accounting/tax/annual-income-tax`, pure engine
       unit-tested in `tests/client/form-c.test.ts`).
 - [ ] **External — accountant sign-off:** have an accountant verify the workpaper
-      mapping and tax tables against current practice (incl. the Sch. VII
-      depreciation question) before claiming that Xefe calculates or files
+      mapping and tax tables against current practice (the engine now follows
+      Sch. VII's statutory 100% depreciation rate) before claiming that Xefe calculates or files
       the official TADR-IT 1. `officialFormSupported` stays `false` until then.
 
 ## P1 — report ownership and end-to-end usefulness
@@ -128,16 +128,16 @@ from code alone.
 
 ## Automated evidence
 
-- Unit suite: 87 files / 987 tests passed.
-- Rules suite: 20 files / 241 emulator tests passed.
-- Browser suite: 3/3 journeys passed. The accounting journey verifies invoice,
-  bill, settlement, reconciliation, fixed assets, A/R and A/P aging, trial
-  balance, income statement, balance sheet, cash flow, CSV downloads, and fiscal
-  close. The full journey verifies workforce/custom reports, real department
-  headcount, payroll approval and settlement, balanced payroll journals,
-  payslips, payroll/allocation/donor exports, WIT, monthly and annual INSS, and
-  the annual-income-tax preparation hand-off with its audit entry. The third
-  journey replays payroll using the real current month and business-day rules.
-- API suite: 9/9 authentication and tenant-isolation tests passed.
-- Production build: passed at 312.5 KiB gzip against the 314 KiB initial-page
+_Refreshed 2026-08-09 from green deployment workflow run `31335908490`._
+
+- Unit suite: 118 files / 1,435 tests passed.
+- Rules suite: 24 files / 295 emulator tests passed.
+- Browser suite: 6/6 journeys passed. Coverage includes balanced accounting and
+  fiscal close; invoice credit/refund adjustments; guarded bill uploads; the
+  full employee-to-payroll, statutory, export, and audit path; a real-month
+  payroll replay; and first-customer mobile recovery, forms, hiring, and
+  overnight-shift behavior.
+- API suite: 10 suites / 42 tests passed, including authentication,
+  tenant-isolation, rate-limit, validation, and bill-extraction safety checks.
+- Production build: passed at 338.8 KiB gzip against the 340 KiB initial-page
   budget.

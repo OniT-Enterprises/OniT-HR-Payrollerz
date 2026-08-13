@@ -14,7 +14,16 @@
 - **Accountant vs simple flow**: Read `docs/AUDIENCE_SPLIT.md` before touching supplier withholding, tax filing screens, VAT, the `accountant` role, or `advancedTaxMode`. One primitive — `useAdvancedTax()` — gates all accountant-grade controls; the simple flow applies safe defaults that yield no withholding. `isTenantFinanceAdmin` in rules must stay in sync with the role.
 - **Time & Leave**: Read `docs/TIME_LEAVE.md` before touching attendance, leave, shifts, timesheets, holiday handling, or their role boundaries. Attendance is the single hours-entry workflow; balances and timesheets are Cloud Functions-owned projections.
 - **Uploaded documents (bills, receipts, timesheets)**: Read `docs/DOCUMENT_EXTRACTION.md` before touching `server/xefe-api/extract.js`, `client/lib/extracted-*.ts`, `client/lib/attendance/spreadsheet-text.ts`, or the upload paths in QuickBillDialog/Expenses/Attendance. The document is **attacker-controlled**, so one rule is absolute: **never add a bare `allowedTools: ['Read']`** to the extractor options — it auto-approves before the workspace check AND before `canUseTool`, which left an arbitrary-file-read open on the box holding `serviceAccountKey.json`. Four guards decide what reaches a money field (foreign currency, future date, multi-document file, protected PDF), a payslip is never a bill, and Excel time cells live on the 1899 epoch — rendering them as dates destroyed every clock time in real timesheets. `server/xefe-api/` deploys ONLY via `workflow_dispatch`, so the client and server halves ship apart unless you run it.
-- **Payroll money chain**: Read `docs/MONEY_CHAIN.md` (diagrams) before touching payroll run statuses, settlement, payroll/tax journals, leaver final pay, or rules around `payruns`/`taxFilings` — it maps run lifecycle → journals → statutory filings and lists the non-negotiable invariants. §4a carries the **scope contract** for a leaver's once-only Art. 56 severance / Art. 44 subsídio / Art. 32 untaken-leave payout: entitlement and the amount netted off it must ALWAYS be computed over the same scope, from equally-recorded data. Four separate money bugs in Jul 2026 were that one mistake — three of them inside the fix for the previous one — so treat any change on one side as requiring the other. Adding the Art. 32 payout in Aug 2026 immediately inherited the same hazard (two runs over one termination period would each pay it), which is the fifth instance: **any new final-pay earning needs its own once-only guard before it ships.**
+- **Payroll money chain**: Read `docs/MONEY_CHAIN.md` (diagrams) before touching payroll run statuses, settlement, payroll/tax journals, leaver final pay, or rules around `payruns`/`taxFilings` — it maps run lifecycle → journals → statutory filings and lists the non-negotiable invariants. §4a carries the **scope contract** for a leaver's once-only Art. 56 severance / Art. 44 subsídio / Art. 32 untaken-leave payout: entitlement and the amount netted off it must ALWAYS be computed over the same scope, from equally-recorded data. Four separate money bugs in Jul 2026 were that one mistake — three of them inside the fix for the previous one — so treat any change on one side as requiring the other. Adding the Art. 32 payout in Aug 2026 immediately inherited the same hazard (two runs over one termination period would each pay it), which is the fifth instance: **any new final-pay earning needs its own once-only guard before it ships.** §4b covers the three earnings added on 2026-08-13 — effective-dated `compensation.salaryHistory`, back-dated `retroactive_pay` (once-only via a `retroSettledPeriod` stamp written from the record's persisted `retroactiveSettles`, never a recompute) and the attendance premium (which MUST net off `nonEmploymentAbsenceHours` before judging absence, or every new hire and leaver forfeits it). `compensation.monthlySalary` is still the only salary any money path reads.
+- **Petroleum Contractors**: Read `docs/PETROLEUM_SCHEDULE_IX.md` before touching the
+  wage-tax path or the `petroleumContractor` flag. A party to a Petroleum Agreement is
+  taxed under Lei 8/2008 **Schedule IX**, not Schedule V, and Xefe REFUSES to compute it
+  — at the screen (`RunPayrollWizard`) and, since 2026-08-13, in the engine
+  (`UnsupportedTLPetroleumPayrollError`, keyed off `TLPayrollCalculationConfig`, so any
+  caller threading tenant settings inherits the refusal). Schedule V under-withholds by
+  up to 9x and Sec. 25.3 makes the shortfall the EMPLOYER's. Subcontractors are NOT
+  caught — they are ordinary Schedule V and already work. The blocker on ever building
+  it is the petroleum directorate's own filing form, which we do not hold.
 - **Bank payments**: Read `docs/BANK_PAYMENTS.md` before touching `client/lib/bank-transfers/*` or the Bank Transfers page. BNU/BNCTL take salary batches by emailed Excel pack + signed payment order (evidence-based), NOT CSV upload; bank-facing text stays Portuguese.
 - **Accounting automations**: Read `docs/ACCOUNTING_AUTOMATIONS.md` before touching fixed assets, depreciation, or recurring journals. Recurring journal templates (`tenants/{tid}/recurringJournals`) post nightly via the `processRecurringJournals` Cloud Function; fixed-asset depreciation and disposal each post through `createJournalEntry` in ONE atomic transaction, guarded by append-only per-period docs (`fixedAssetPostings/{YYYY-MM}`, `recurringJournalPostings/{templateId}_{YYYY-MM}`) that make posting exactly-once — reversal = manual journal, never delete a guard. Depreciation math is straight-line **cumulative-cap** (accumulated never exceeds cost−residual, never a negative charge) using decimal.js money helpers, pure/unit-tested in `client/lib/accounting/{recurring,depreciation}.ts` — keep the CF copies in sync and `templateIsDue` lives in the functions module (tested=running). Acquisition posts NO GL journal (register-only, to avoid double-booking bill-acquired assets) — an open decision. Statutory Excel exports mirror OFFICIAL templates only (INSS portal DR, ATTL form — compliance); everything else (fixed-asset register, resumo sheets) is Xefe's own layout, never a client/firm workbook's.
 - **Bot / AI assistant**: XefeBot is the **web chat only**, and it runs on the Claude Agent SDK inside `server/xefe-api` (`agentChat.js`), as does document extraction (`extract.js`). **WhatsApp and the OpenClaw gateway were retired on 2026-08-09** — the container, its nginx `/openclaw/` route and `server/openclaw-xefe/` are gone (recoverable from git history; the box keeps `/opt/openclaw-xefe` and the Docker volumes). Don't reintroduce a WhatsApp write path: the plugin's 28 write tools were the last callers of the legacy payroll endpoints that now fail closed. `server/xefe-api` remains the only AI surface.
@@ -109,6 +118,7 @@ pnpm dev             # Dev server (Vite frontend, port 8080 strict)
 pnpm build           # Production build
 pnpm typecheck       # TypeScript check
 pnpm test            # Unit tests (vitest)
+pnpm e2e             # Playwright journeys with Firebase emulators
 pnpm emul:rules      # Firestore rules tests (emulator; needs Java 21)
 # On this machine, put Java 21 first on PATH as well as setting JAVA_HOME:
 PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
@@ -142,10 +152,13 @@ talking to Metro:
 #    8081 in client/lib/firebase-core.ts)
 ```
 
-Revert the JSON before committing. Also kill leftover emulators from a failed
-run before retrying — a stale `cloud-firestore-emulator` jar keeps the port and
-the next start dies with "port taken":
-`pgrep -fl cloud-firestore-emulator`.
+Revert the JSON before committing. Playwright's Firebase web server has a
+10-second graceful `SIGINT` shutdown so a normal run also stops the Firestore
+Java child process; preserve that setting in `playwright.config.ts`. A runner
+that is force-killed can still strand an emulator. If the next start reports
+"port taken", inspect the owner with
+`lsof -nP -iTCP:<port> -sTCP:LISTEN` and
+`pgrep -fl cloud-firestore-emulator`, then stop only the exact stale process.
 
 ### Verifying from a git worktree
 

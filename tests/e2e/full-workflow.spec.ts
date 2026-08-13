@@ -304,6 +304,12 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .getByRole("textbox")
     .first()
     .fill("TIN-EMP-12345");
+
+  // Tax residence is a required tax fact — payroll refuses to infer it from
+  // nationality, and the form refuses to submit without it.
+  await page.getByLabel(/tax residence/i).click();
+  await page.getByRole("option", { name: "Timor-Leste resident" }).click();
+
   await page
     .getByRole("button", { name: "Add Employee", exact: true })
     .last()
@@ -1084,9 +1090,9 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // wizard must therefore refuse, not compute. Last in the journey because it
   // deliberately blocks the thing every earlier step needed.
   await page.goto("/payroll/settings");
-  // The editable statutory rates sit behind a disclosure — a first-time owner
-  // should not meet them by accident.
-  await page.getByRole("button", { name: /change the legal rates/i }).click();
+  // Less-common payroll policies sit behind a disclosure. Schedule V rates are
+  // read-only, but the petroleum classification lives in this section.
+  await page.getByRole("button", { name: /advanced payroll policies/i }).click();
   const petroleumToggle = page.locator("#petroleum-contractor");
   await petroleumToggle.click();
   await expect(petroleumToggle).toHaveAttribute("data-state", "checked");
