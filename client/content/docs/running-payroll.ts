@@ -57,6 +57,18 @@ export const article: LocalizedDocArticle = {
           },
         ],
       },
+      { type: "heading", id: "pay-changes", text: "Raises, back pay and premiums" },
+      {
+        type: "prose",
+        body: "Two pay movements are handled from the employee's profile, so nothing is retyped into a run.",
+      },
+      {
+        type: "list",
+        items: [
+          "A raise is recorded by editing the employee's salary, with the month it takes effect and a reason. When a raise is agreed late and back-dated — agreed in April, effective from March — the next run suggests the missing amount as its own retroactive-pay line, computed from that recorded history. Adjust or clear the suggestion on the run if you disagree; once paid it is never suggested again, and it is taxed in the month it is paid, because Timor-Leste's wage tax follows wages paid (Law 8/2008). A raise effective mid-month is flagged for you to price by hand — Xefe only suggests whole months.",
+          "An attendance premium (prémio de assiduidade) is set on the employee's profile: the monthly amount, and whether unjustified absence forfeits it entirely or reduces it in proportion to hours missed. Each run resolves it against that period's absence automatically — approved leave and sick days never cost the premium, and someone who joined mid-period keeps theirs. The premium is wage income for tax and sits inside the INSS base.",
+        ],
+      },
       { type: "heading", id: "approval", text: "Approval" },
       {
         type: "prose",
@@ -136,6 +148,18 @@ export const article: LocalizedDocArticle = {
           },
         ],
       },
+      { type: "heading", id: "pay-changes", text: "Aumentos, retroativos e prémios" },
+      {
+        type: "prose",
+        body: "Dois movimentos salariais são tratados a partir do perfil do funcionário, sem voltar a digitar nada no processamento.",
+      },
+      {
+        type: "list",
+        items: [
+          "Um aumento regista-se editando o salário do funcionário, com o mês em que produz efeitos e o motivo. Quando o aumento é acordado tarde e com efeitos retroativos — acordado em abril, com efeitos desde março — o processamento seguinte sugere o valor em falta como linha própria de retroativos, calculada a partir desse histórico. Ajuste ou retire a sugestão se discordar; uma vez pago, nunca volta a ser sugerido, e é tributado no mês em que é pago, porque o imposto sobre salários de Timor-Leste segue os salários pagos (Lei 8/2008). Um aumento com efeitos a meio do mês fica assinalado para calcular à mão — o Xefe só sugere meses inteiros.",
+          "O prémio de assiduidade define-se no perfil do funcionário: o valor mensal e se uma falta injustificada o retira por inteiro ou o reduz na proporção das horas em falta. Cada processamento resolve-o automaticamente contra as faltas do período — licenças aprovadas e baixas por doença nunca custam o prémio, e quem entrou a meio do período mantém o seu. O prémio é rendimento salarial para efeitos de imposto e entra na base do INSS.",
+        ],
+      },
       { type: "heading", id: "approval", text: "Aprovação" },
       {
         type: "prose",
@@ -213,6 +237,18 @@ export const article: LocalizedDocArticle = {
             title: "Submete ba aprovasaun",
             body: "Pasu ida-ne'e hakerek prosesamentu no rejistu sira. Prepara no reviza folha grátis iha planu hotu — submete mós grátis. Prosesamentu agora hein ema seluk atu aprova.",
           },
+        ],
+      },
+      { type: "heading", id: "pay-changes", text: "Aumentu, retroativu no prémiu" },
+      {
+        type: "prose",
+        body: "Movimentu saláriu rua ne'e Xefe trata husi perfíl funsionáriu nian — la presiza hatama fila-fali iha prosesu saláriu.",
+      },
+      {
+        type: "list",
+        items: [
+          "Rejistu aumentu ida liu husi edita saláriu funsionáriu nian, ho fulan ne'ebé hahú vigora no razaun. Bainhira aumentu akorda tarde no ho efeitu retroativu — akorda iha abril, vigora husi marsu — prosesu tuir mai sujere osan ne'ebé falta nu'udar liña retroativu rasik, kalkula husi istória ne'ebé rejistu tiha ona. Bele muda ka hasai sujestaun iha prosesu se ita la konkorda; bainhira selu tiha ona, la sujere tan, no taxa iha fulan ne'ebé selu, tanba impostu saláriu Timor-Leste nian tuir saláriu ne'ebé selu (Lei 8/2008). Aumentu ne'ebé vigora iha fulan klaran fó sinál atu ita kalkula rasik — Xefe sujere de'it fulan tomak.",
+          "Prémiu asiduidade define iha perfíl funsionáriu nian: montante mensál, no falta injustifikada ida hasai prémiu tomak ka hamenus tuir proporsaun oras ne'ebé falta. Prosesu ida-idak rezolve automátikamente kontra falta períodu nian — lisensa aprovada no moras nunka hasai prémiu, no ema ne'ebé tama iha períodu klaran mantein nia prémiu. Prémiu ne'e rendimentu saláriu ba impostu no tama iha baze INSS.",
         ],
       },
       { type: "heading", id: "approval", text: "Aprovasaun" },

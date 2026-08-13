@@ -398,6 +398,18 @@
       "searchText": "running payroll running payroll from opening the wizard to handing out payslips — what happens at each step, and the one place xefe asks you to subscribe.\n\nevery payroll run in xefe follows the same path: build it, get someone else to approve it, pay it, and hand out payslips. the engine handles the tax and social-security arithmetic; you review the numbers before they go anywhere. run payroll pay run salary run payrol folha de pagamento processar salarios processamento salarial halo folha pagamentu halo salariu"
     },
     {
+      "key": "guide:running-payroll:en:pay-changes",
+      "locale": "en",
+      "kind": "guide",
+      "slug": "running-payroll",
+      "sectionId": "pay-changes",
+      "title": "Running payroll",
+      "heading": "Raises, back pay and premiums",
+      "helpPath": "/help/guide/running-payroll#pay-changes",
+      "text": "Two pay movements are handled from the employee's profile, so nothing is retyped into a run.\n\n- A raise is recorded by editing the employee's salary, with the month it takes effect and a reason. When a raise is agreed late and back-dated — agreed in April, effective from March — the next run suggests the missing amount as its own retroactive-pay line, computed from that recorded history. Adjust or clear the suggestion on the run if you disagree; once paid it is never suggested again, and it is taxed in the month it is paid, because Timor-Leste's wage tax follows wages paid (Law 8/2008). A raise effective mid-month is flagged for you to price by hand — Xefe only suggests whole months.\n- An attendance premium (prémio de assiduidade) is set on the employee's profile: the monthly amount, and whether unjustified absence forfeits it entirely or reduces it in proportion to hours missed. Each run resolves it against that period's absence automatically — approved leave and sick days never cost the premium, and someone who joined mid-period keeps theirs. The premium is wage income for tax and sits inside the INSS base.",
+      "searchText": "running payroll raises, back pay and premiums two pay movements are handled from the employee's profile, so nothing is retyped into a run.\n\n- a raise is recorded by editing the employee's salary, with the month it takes effect and a reason. when a raise is agreed late and back-dated — agreed in april, effective from march — the next run suggests the missing amount as its own retroactive-pay line, computed from that recorded history. adjust or clear the suggestion on the run if you disagree; once paid it is never suggested again, and it is taxed in the month it is paid, because timor-leste's wage tax follows wages paid (law 8/2008). a raise effective mid-month is flagged for you to price by hand — xefe only suggests whole months.\n- an attendance premium (premio de assiduidade) is set on the employee's profile: the monthly amount, and whether unjustified absence forfeits it entirely or reduces it in proportion to hours missed. each run resolves it against that period's absence automatically — approved leave and sick days never cost the premium, and someone who joined mid-period keeps theirs. the premium is wage income for tax and sits inside the inss base. "
+    },
+    {
       "key": "guide:running-payroll:en:payment",
       "locale": "en",
       "kind": "guide",
@@ -470,6 +482,18 @@
       "searchText": "como processar a folha de pagamento como processar a folha de pagamento desde abrir o assistente ate entregar os recibos — o que acontece em cada passo, e o unico ponto em que o xefe pede uma subscricao.\n\ncada processamento de folha no xefe segue o mesmo caminho: preparar, obter a aprovacao de uma segunda pessoa, pagar e entregar os recibos de vencimento. o motor calcula o imposto e a seguranca social; os valores ficam sempre visiveis para revisao antes de avancar. run payroll pay run salary run payrol folha de pagamento processar salarios processamento salarial halo folha pagamentu halo salariu"
     },
     {
+      "key": "guide:running-payroll:pt:pay-changes",
+      "locale": "pt",
+      "kind": "guide",
+      "slug": "running-payroll",
+      "sectionId": "pay-changes",
+      "title": "Como processar a folha de pagamento",
+      "heading": "Aumentos, retroativos e prémios",
+      "helpPath": "/help/guide/running-payroll#pay-changes",
+      "text": "Dois movimentos salariais são tratados a partir do perfil do funcionário, sem voltar a digitar nada no processamento.\n\n- Um aumento regista-se editando o salário do funcionário, com o mês em que produz efeitos e o motivo. Quando o aumento é acordado tarde e com efeitos retroativos — acordado em abril, com efeitos desde março — o processamento seguinte sugere o valor em falta como linha própria de retroativos, calculada a partir desse histórico. Ajuste ou retire a sugestão se discordar; uma vez pago, nunca volta a ser sugerido, e é tributado no mês em que é pago, porque o imposto sobre salários de Timor-Leste segue os salários pagos (Lei 8/2008). Um aumento com efeitos a meio do mês fica assinalado para calcular à mão — o Xefe só sugere meses inteiros.\n- O prémio de assiduidade define-se no perfil do funcionário: o valor mensal e se uma falta injustificada o retira por inteiro ou o reduz na proporção das horas em falta. Cada processamento resolve-o automaticamente contra as faltas do período — licenças aprovadas e baixas por doença nunca custam o prémio, e quem entrou a meio do período mantém o seu. O prémio é rendimento salarial para efeitos de imposto e entra na base do INSS.",
+      "searchText": "como processar a folha de pagamento aumentos, retroativos e premios dois movimentos salariais sao tratados a partir do perfil do funcionario, sem voltar a digitar nada no processamento.\n\n- um aumento regista-se editando o salario do funcionario, com o mes em que produz efeitos e o motivo. quando o aumento e acordado tarde e com efeitos retroativos — acordado em abril, com efeitos desde marco — o processamento seguinte sugere o valor em falta como linha propria de retroativos, calculada a partir desse historico. ajuste ou retire a sugestao se discordar; uma vez pago, nunca volta a ser sugerido, e e tributado no mes em que e pago, porque o imposto sobre salarios de timor-leste segue os salarios pagos (lei 8/2008). um aumento com efeitos a meio do mes fica assinalado para calcular a mao — o xefe so sugere meses inteiros.\n- o premio de assiduidade define-se no perfil do funcionario: o valor mensal e se uma falta injustificada o retira por inteiro ou o reduz na proporcao das horas em falta. cada processamento resolve-o automaticamente contra as faltas do periodo — licencas aprovadas e baixas por doenca nunca custam o premio, e quem entrou a meio do periodo mantem o seu. o premio e rendimento salarial para efeitos de imposto e entra na base do inss. "
+    },
+    {
       "key": "guide:running-payroll:pt:payment",
       "locale": "pt",
       "kind": "guide",
@@ -540,6 +564,18 @@
       "helpPath": "/help/guide/running-payroll#overview",
       "text": "Husi loke assistente to'o fó payslip — saida mak akontese iha pasu ida-idak, no fatin úniku ne'ebé Xefe husu subskrisaun.\n\nProsesamentu saláriu ida-idak iha Xefe lori dalan hanesan: prepara, husu ema seluk atu aprova, selu, no fó payslip. Motór trata kálkulu impostu no seguransa sosiál nian; valor sira kontinua vizível ba revizaun antes sira lao ba oin.",
       "searchText": "oinsa atu halo salariu oinsa atu halo salariu husi loke assistente to'o fo payslip — saida mak akontese iha pasu ida-idak, no fatin uniku ne'ebe xefe husu subskrisaun.\n\nprosesamentu salariu ida-idak iha xefe lori dalan hanesan: prepara, husu ema seluk atu aprova, selu, no fo payslip. motor trata kalkulu impostu no seguransa sosial nian; valor sira kontinua vizivel ba revizaun antes sira lao ba oin. run payroll pay run salary run payrol folha de pagamento processar salarios processamento salarial halo folha pagamentu halo salariu"
+    },
+    {
+      "key": "guide:running-payroll:tet:pay-changes",
+      "locale": "tet",
+      "kind": "guide",
+      "slug": "running-payroll",
+      "sectionId": "pay-changes",
+      "title": "Oinsá atu halo saláriu",
+      "heading": "Aumentu, retroativu no prémiu",
+      "helpPath": "/help/guide/running-payroll#pay-changes",
+      "text": "Movimentu saláriu rua ne'e Xefe trata husi perfíl funsionáriu nian — la presiza hatama fila-fali iha prosesu saláriu.\n\n- Rejistu aumentu ida liu husi edita saláriu funsionáriu nian, ho fulan ne'ebé hahú vigora no razaun. Bainhira aumentu akorda tarde no ho efeitu retroativu — akorda iha abril, vigora husi marsu — prosesu tuir mai sujere osan ne'ebé falta nu'udar liña retroativu rasik, kalkula husi istória ne'ebé rejistu tiha ona. Bele muda ka hasai sujestaun iha prosesu se ita la konkorda; bainhira selu tiha ona, la sujere tan, no taxa iha fulan ne'ebé selu, tanba impostu saláriu Timor-Leste nian tuir saláriu ne'ebé selu (Lei 8/2008). Aumentu ne'ebé vigora iha fulan klaran fó sinál atu ita kalkula rasik — Xefe sujere de'it fulan tomak.\n- Prémiu asiduidade define iha perfíl funsionáriu nian: montante mensál, no falta injustifikada ida hasai prémiu tomak ka hamenus tuir proporsaun oras ne'ebé falta. Prosesu ida-idak rezolve automátikamente kontra falta períodu nian — lisensa aprovada no moras nunka hasai prémiu, no ema ne'ebé tama iha períodu klaran mantein nia prémiu. Prémiu ne'e rendimentu saláriu ba impostu no tama iha baze INSS.",
+      "searchText": "oinsa atu halo salariu aumentu, retroativu no premiu movimentu salariu rua ne'e xefe trata husi perfil funsionariu nian — la presiza hatama fila-fali iha prosesu salariu.\n\n- rejistu aumentu ida liu husi edita salariu funsionariu nian, ho fulan ne'ebe hahu vigora no razaun. bainhira aumentu akorda tarde no ho efeitu retroativu — akorda iha abril, vigora husi marsu — prosesu tuir mai sujere osan ne'ebe falta nu'udar lina retroativu rasik, kalkula husi istoria ne'ebe rejistu tiha ona. bele muda ka hasai sujestaun iha prosesu se ita la konkorda; bainhira selu tiha ona, la sujere tan, no taxa iha fulan ne'ebe selu, tanba impostu salariu timor-leste nian tuir salariu ne'ebe selu (lei 8/2008). aumentu ne'ebe vigora iha fulan klaran fo sinal atu ita kalkula rasik — xefe sujere de'it fulan tomak.\n- premiu asiduidade define iha perfil funsionariu nian: montante mensal, no falta injustifikada ida hasai premiu tomak ka hamenus tuir proporsaun oras ne'ebe falta. prosesu ida-idak rezolve automatikamente kontra falta periodu nian — lisensa aprovada no moras nunka hasai premiu, no ema ne'ebe tama iha periodu klaran mantein nia premiu. premiu ne'e rendimentu salariu ba impostu no tama iha baze inss. "
     },
     {
       "key": "guide:running-payroll:tet:payment",
