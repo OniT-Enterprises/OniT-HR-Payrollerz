@@ -155,6 +155,11 @@ const ALLOWED: Array<{ match: string; reason: string }> = [
     reason: "INSS contribution rates are exact, not a floor — DL 20/2017 Art. 10 fixes both sides.",
   },
   {
+    match: "Two limbs of DL 20/2017 Art. 8(2) pull it into the contribution base",
+    reason:
+      "Attendance-premium entry: an in-or-out classification question (Art. 8 base vs Art. 9 exclusion), and the 4%/6% rates in its worked example are exact — there is no floor or ceiling to state.",
+  },
+  {
     match: "4% withheld from each worker",
     reason: "As above — an exact rate, not a range.",
   },
