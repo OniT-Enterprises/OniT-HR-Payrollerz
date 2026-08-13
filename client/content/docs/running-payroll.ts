@@ -26,7 +26,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
-          "Every employee needs a salary and contracted hours set on their profile — that's the starting point the engine uses for the period.",
+          "Every employee needs a salary, contracted hours and a tax residence (resident or non-resident) set on their profile — the run names anyone still missing one before it will compute.",
           "Attendance is the one hours-entry workflow in Xefe. Whatever you record there — worked hours, overtime, absences — flows into payroll automatically; you don't re-enter anything.",
           "Night hours (21:00–06:00, including shifts that cross midnight) are detected automatically and paid at the statutory premium.",
         ],
@@ -105,7 +105,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
-          "Cada funcionário precisa de um salário e de horas contratadas definidas no seu perfil — é o ponto de partida que o motor usa para o período.",
+          "Cada funcionário precisa de um salário, de horas contratadas e de uma residência fiscal (residente ou não residente) definidas no seu perfil — a folha identifica quem ainda não a tem antes de calcular.",
           "A Presença é o único fluxo de registo de horas no Xefe. Tudo o que aí regista — horas trabalhadas, horas extra, faltas — entra automaticamente na folha; não é preciso repetir nada.",
           "As horas noturnas (21h00–06h00, incluindo turnos que atravessam a meia-noite) são detetadas automaticamente e pagas com o acréscimo legal.",
         ],
@@ -184,7 +184,7 @@ export const article: LocalizedDocArticle = {
       {
         type: "list",
         items: [
-          "Trabalhador ida-idak presiza saláriu no oras kontratu ne'ebé konfigura iha nia perfíl — ne'e mak ponta partida ne'ebé motór uza ba períodu ne'e.",
+          "Trabalhador ida-idak presiza saláriu, oras kontratu no rezidénsia fiskál (rezidente ka la'ós rezidente) ne'ebé konfigura iha nia perfíl — folha fó sai naran ema ne'ebé seidauk iha molok kalkula.",
           "Prezensa mak fluxu úniku ba rejista oras iha Xefe. Buat hotu ne'ebé ita rejista iha ne'e — oras servisu, oras extra, falta — tama automátikamente ba saláriu; la presiza hakerek fila fali.",
           "Oras kalan (21:00–06:00, inklui turnu ne'ebé liu meia-noite) deteta automátikamente no selu ho aumentu legál.",
         ],
