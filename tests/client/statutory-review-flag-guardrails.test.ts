@@ -12,10 +12,30 @@
  *
  * The INSS page had already solved this with `getStatutoryReviewFlag`. That is
  * the drift this pins shut: same primitive, two screens, one of them wrong.
+ *
+ * The screen-level branch is only half of it. Statutory generation runs through
+ * useMutation, and the shared query client captures EVERY query/mutation error
+ * to Sentry from the cache-level onError — which query-core calls before the
+ * rejection reaches the component's catch. So the same alert kept arriving with
+ * a full stack trace after the console fix; the second block below pins the
+ * client-side filter that actually closes it.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { MutationObserver } from "@tanstack/react-query";
+import * as Sentry from "@sentry/react";
+import { createOptimizedQueryClient } from "@/lib/queryCache";
+import {
+  MissingStatutoryPayrollDataError,
+  MissingStatutorySourceDataError,
+} from "@/lib/tax/statutory-payroll-record";
+
+// queryCache.ts imports Sentry as a namespace and only ever calls
+// captureException; stub the module so the assertions count real calls.
+// (vitest hoists this above the imports above.)
+vi.mock("@sentry/react", () => ({ captureException: vi.fn() }));
+const captureException = vi.mocked(Sentry.captureException);
 
 const repoRoot = join(__dirname, "../..");
 const read = (p: string) => readFileSync(join(repoRoot, p), "utf8");
@@ -77,5 +97,68 @@ describe("statutory filing screens", () => {
         /} else \{\s*console\.error\(/,
       );
     }
+  });
+});
+
+describe("the shared query client", () => {
+  beforeEach(() => {
+    captureException.mockClear();
+  });
+
+  /** Fail a mutation the way `useGenerateMonthlyWIT` does and let it settle. */
+  const failMutationWith = async (error: unknown) => {
+    const client = createOptimizedQueryClient();
+    const observer = new MutationObserver(client, {
+      mutationFn: async () => {
+        throw error;
+      },
+    });
+    await observer.mutate().catch(() => {});
+  };
+
+  /** Fail a query and let it settle, with the retry off so it resolves fast. */
+  const failQueryWith = async (error: unknown) => {
+    const client = createOptimizedQueryClient();
+    await client
+      .fetchQuery({
+        queryKey: ["statutory-guardrail-probe"],
+        queryFn: async () => {
+          throw error;
+        },
+        retry: false,
+      })
+      .catch(() => {});
+  };
+
+  it("does not report a missing employer fact", async () => {
+    // The screens' console.warn branch cannot prevent this one: query-core
+    // calls the mutation cache's onError before `mutateAsync` rejects.
+    await failMutationWith(
+      new MissingStatutorySourceDataError("employer registered address"),
+    );
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("does not report a missing payroll fact", async () => {
+    await failMutationWith(new MissingStatutoryPayrollDataError("grossWages"));
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("filters the query path the same way", async () => {
+    await failQueryWith(
+      new MissingStatutorySourceDataError("employer NIF/TIN"),
+    );
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("still reports an unexpected mutation failure", async () => {
+    // The filter must stay narrow — a real fault is exactly what Sentry is for.
+    await failMutationWith(new Error("permission-denied"));
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("still reports an unexpected query failure", async () => {
+    await failQueryWith(new Error("permission-denied"));
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 });

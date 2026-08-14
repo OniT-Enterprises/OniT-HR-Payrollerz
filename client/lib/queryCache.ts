@@ -12,6 +12,7 @@ import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import { get, set, del, keys } from 'idb-keyval';
 import { isSafeQueryCacheKey } from '@/lib/queryCachePolicy';
+import { getStatutoryReviewFlag } from '@/lib/tax/statutory-payroll-record';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -125,12 +126,31 @@ export async function clearPersistedQueryCache(userId?: string): Promise<void> {
 }
 
 /**
+ * A statutory guard refusing to generate a filing (`MissingStatutorySourceDataError`
+ * / `MissingStatutoryPayrollDataError`) is incomplete TENANT DATA, not an app
+ * fault: Xefe will not invent an employer address or TIN for a government
+ * return, so the screens catch it, name the missing fact and point at the
+ * screen that fixes it.
+ *
+ * Those screens already log the classified case as console.warn instead of
+ * console.error (PR #67) for exactly this reason — but that only closes the
+ * console → Sentry path. Statutory generation runs through useMutation, and
+ * query-core calls this cache-level onError BEFORE the rejection reaches the
+ * component's catch, so without this filter every blank registered address
+ * still arrived as a high-priority alert.
+ */
+function isTenantDataCompletenessRefusal(error: unknown): boolean {
+  return getStatutoryReviewFlag(error) !== null;
+}
+
+/**
  * Create QueryClient with optimized settings for snappy UX
  */
 export function createOptimizedQueryClient(): QueryClient {
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
+        if (isTenantDataCompletenessRefusal(error)) return;
         Sentry.captureException(error, {
           tags: { queryKey: JSON.stringify(query.queryKey) },
         });
@@ -138,6 +158,7 @@ export function createOptimizedQueryClient(): QueryClient {
     }),
     mutationCache: new MutationCache({
       onError: (error) => {
+        if (isTenantDataCompletenessRefusal(error)) return;
         Sentry.captureException(error);
       },
     }),
