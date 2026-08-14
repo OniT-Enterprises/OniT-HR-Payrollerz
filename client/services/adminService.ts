@@ -4,8 +4,10 @@
  */
 
 import {
+  arrayRemove,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getCountFromServer,
   getDoc,
@@ -42,6 +44,21 @@ import {
 import { AdminAuditEntry, AuditLogEntry, UserProfile } from "@/types/user";
 
 export type { AuditLogEntry };
+
+/**
+ * Which tenant a user profile should point at once `removedTenantId` is gone,
+ * or null when there is nothing left to point at (the caller then deletes the
+ * field rather than writing a dead id back).
+ */
+export function nextActiveTenantId(
+  profile: { tenantId?: string; tenantIds?: string[] },
+  removedTenantId: string,
+): string | null {
+  const remaining = (profile.tenantIds ?? []).filter(
+    (id) => typeof id === "string" && id !== removedTenantId,
+  );
+  return remaining[0] ?? null;
+}
 
 export interface TenantProfileInput {
   name: string;
@@ -1241,6 +1258,60 @@ class AdminService {
     }
   }
 
+  /** Member uids, read before the members subcollection is swept. */
+  private async getMemberUids(tenantId: string): Promise<string[]> {
+    if (!db) return [];
+    try {
+      const snap = await getDocs(collection(db, paths.members(tenantId)));
+      return snap.docs.map((docSnap) => docSnap.id);
+    } catch (error) {
+      console.warn("deleteTenant: could not read member uids:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Drop a deleted tenant from each member's user profile. Best-effort and
+   * deliberately narrow: it removes the pointer only. Deciding whether the
+   * user doc or the Auth account itself should go needs ground-truth
+   * membership across EVERY tenant, which a client cannot scan — that stays
+   * with scripts/delete-tenant.mjs.
+   */
+  private async sweepMemberProfiles(
+    tenantId: string,
+    uids: string[],
+  ): Promise<void> {
+    if (!db || uids.length === 0) return;
+    for (const uid of uids) {
+      try {
+        const userRef = doc(db, paths.user(uid));
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) continue;
+        const profile = snap.data() as {
+          tenantId?: string;
+          tenantIds?: string[];
+        };
+        const patch: Record<string, unknown> = {
+          [`tenantAccess.${tenantId}`]: deleteField(),
+          tenantIds: arrayRemove(tenantId),
+          updatedAt: serverTimestamp(),
+        };
+        // A profile pinned to this tenant as its active one has to move, or the
+        // pointer survives the arrayRemove under a different field name.
+        if (profile.tenantId === tenantId) {
+          const next = nextActiveTenantId(profile, tenantId);
+          patch.tenantId = next ?? deleteField();
+        }
+        await updateDoc(userRef, patch);
+      } catch (error) {
+        console.warn(
+          `deleteTenant: could not clean users/${uid} tenant pointers:`,
+          error,
+        );
+      }
+    }
+  }
+
   /**
    * Fully delete a tenant and ALL its data. Firestore doc deletes do NOT
    * cascade, so a bare deleteDoc(tenants/{tid}) would leave every subcollection
@@ -1307,10 +1378,21 @@ class AdminService {
         await this.sweepTenantSubcollection(tenantId, sub);
       }
 
+      // Read the member uids while the docs still exist — once members are
+      // swept there is no way for a client to learn who belonged here, and
+      // their user profiles still point at this tenant.
+      const memberUids = await this.getMemberUids(tenantId);
+
       // 3) members LAST (revokes rules access), then the tenant root doc. These
       //    are security-critical — a failure must surface, not be swallowed.
       await this.sweepTenantSubcollection(tenantId, "members", true);
       await deleteDoc(tenantRef);
+
+      // 4) The members' user profiles keep a tenantAccess/tenantIds pointer.
+      //    Deleting the tenant does not cascade to them, so without this every
+      //    console deletion leaves its members listing a tenant that no longer
+      //    exists (found on a real account, 2026-08-14).
+      await this.sweepMemberProfiles(tenantId, memberUids);
 
       await this.logAdminAction({
         action: "tenant_deleted",
