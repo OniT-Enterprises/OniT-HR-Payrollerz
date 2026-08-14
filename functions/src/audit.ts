@@ -56,6 +56,12 @@ const TENANT_AUDIT_ACTIONS = new Set([
   "archive.delete_permanent",
 ]);
 
+// Anything the superadmin console can log has to be listed here or the callable
+// rejects it with invalid-argument — and adminService.logAdminAction swallows
+// that (an audit failure must not fail the action it describes), so a missing
+// entry means the event is dropped in silence. The four billing actions were
+// missing from the day the console gained them: every free-access grant,
+// offline payment and cancellation went unrecorded until 2026-08-14.
 const ADMIN_AUDIT_ACTIONS = new Set([
   "tenant_created",
   "tenant_suspended",
@@ -68,6 +74,10 @@ const ADMIN_AUDIT_ACTIONS = new Set([
   "user_superadmin_revoked",
   "user_added_to_tenant",
   "user_removed_from_tenant",
+  "manual_subscription_recorded",
+  "manual_subscription_cancelled",
+  "complimentary_subscription_granted",
+  "complimentary_subscription_ended",
 ]);
 
 const CRITICAL_TENANT_ACTIONS = new Set([
