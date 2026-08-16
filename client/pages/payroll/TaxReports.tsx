@@ -12,14 +12,14 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import { useAdvancedTax } from "@/contexts/TenantContext";
 import {
   TAX_DEADLINE_WINDOW_MONTHS,
-  useTaxFilingsDueSoon,
+  usePayrollTaxFilingsDueSoon,
 } from "@/hooks/useTaxFiling";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function TaxReports() {
   const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
-  const { data: dueDates = [], isLoading } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
+  const { data: dueDates = [], isLoading } = usePayrollTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
 
   const mostUrgent = dueDates
     .filter(

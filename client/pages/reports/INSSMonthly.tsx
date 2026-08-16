@@ -65,7 +65,7 @@ import {
   FILING_HISTORY_LIMIT,
   TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
-  useTaxFilingsDueSoon,
+  usePayrollTaxFilingsDueSoon,
   useGenerateMonthlyINSS,
   useSaveTaxFiling,
   useMarkTaxFilingAsFiled,
@@ -127,7 +127,7 @@ export default function INSSMonthly() {
     isError: duesError,
     isFetching: duesFetching,
     refetch: refetchDues,
-  } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
+  } = usePayrollTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
   const generateINSS = useGenerateMonthlyINSS();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();

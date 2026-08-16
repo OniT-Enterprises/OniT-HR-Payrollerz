@@ -33,7 +33,7 @@ import {
 } from "@/lib/tax/compliance";
 import {
   TAX_DEADLINE_WINDOW_MONTHS,
-  useTaxFilingsDueSoon,
+  usePayrollTaxFilingsDueSoon,
 } from "@/hooks/useTaxFiling";
 import {
   Users,
@@ -85,11 +85,13 @@ function XefeBotInline({
   t,
   firstName,
   summary,
+  summaryLoading = false,
   showControls = true,
 }: {
   t: (key: string) => string;
   firstName: string;
   summary: string;
+  summaryLoading?: boolean;
   showControls?: boolean;
 }) {
   const { setOpen, setPendingQuery } = useChatStore();
@@ -122,7 +124,11 @@ function XefeBotInline({
         <h2 className="text-lg font-bold tracking-tight">
           {greeting}{firstName ? `, ${firstName}` : ""}!
         </h2>
-        <p className="mt-0.5 text-sm text-foreground/75">{summary}</p>
+        {summaryLoading ? (
+          <Skeleton aria-hidden className="mt-1 h-4 w-64 max-w-full" />
+        ) : (
+          <p className="mt-0.5 text-sm text-foreground/75">{summary}</p>
+        )}
       </div>
       {showControls && (
         <>
@@ -164,88 +170,43 @@ function XefeBotInline({
   );
 }
 
-function DashboardSkeleton({ cardCount }: { cardCount: number }) {
-  const cards = Array.from({ length: Math.max(cardCount, 3) });
+function DashboardOverviewCardSkeleton({ hiddenOnPhone }: { hiddenOnPhone: boolean }) {
   return (
-    <div className="min-h-full bg-background">
-      <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
-        {/* ── Assistant strip ── */}
-        <div className="mb-6 rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Skeleton className="h-12 w-12 shrink-0 rounded-xl sm:h-14 sm:w-14" />
-            <div className="min-w-0 flex-1 space-y-2.5">
-              <div className="space-y-1">
-                <Skeleton className="h-5 w-44" />
-                <Skeleton className="h-4 w-64 max-w-full" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-11 flex-1 rounded-full md:h-9" />
-                <Skeleton className="h-11 w-11 shrink-0 rounded-full md:h-9 md:w-9" />
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <Skeleton className="h-6 w-28 rounded-full" />
-                <Skeleton className="h-6 w-24 rounded-full" />
-                <Skeleton className="h-6 w-20 rounded-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Overview cards ── */}
-        <div
-          className={`mb-6 grid grid-cols-2 gap-3 ${
-            cards.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
-          }`}
-        >
-          {cards.map((_, index) => (
-            <div
-              key={index}
-              className={`flex flex-col rounded-xl border border-border/70 bg-card p-4 ${
-                index >= 2 ? "hidden sm:flex" : ""
-              }`}
-            >
-              <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
-              <Skeleton className="h-7 w-16" />
-              <Skeleton className="mt-1.5 h-3 w-24" />
-              <Skeleton className="mt-1 h-3 w-28" />
-              <Skeleton className="mt-auto h-3 w-16 pt-2" />
-            </div>
-          ))}
-        </div>
-
-        {/* ── Things to do: mirrors the two urgency groups of the loaded list ── */}
-        <div className="mt-8">
-          <Skeleton className="mb-3 h-5 w-28" />
-          <Skeleton className="mb-2 h-3.5 w-32" />
-          <div className="space-y-2">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 sm:gap-4"
-              >
-                <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-3 w-56 max-w-full" />
-                </div>
-                <Skeleton className="h-4 w-4 shrink-0" />
-              </div>
-            ))}
-          </div>
-          <Skeleton className="mb-2 mt-5 h-3.5 w-24" />
-          <div className="space-y-2">
-            <div className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 sm:gap-4">
-              <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-3 w-56 max-w-full" />
-              </div>
-              <Skeleton className="h-4 w-4 shrink-0" />
-            </div>
-          </div>
-        </div>
+    <div
+      aria-hidden
+      className={`flex min-h-[13rem] flex-col rounded-2xl border border-border/70 bg-card p-4 sm:p-5 ${
+        hiddenOnPhone ? "hidden sm:flex" : ""
+      }`}
+    >
+      <Skeleton className="mb-4 h-10 w-10 rounded-full" />
+      <Skeleton className="h-8 w-16" />
+      <Skeleton className="mt-2 h-4 w-24" />
+      <Skeleton className="mt-1 h-3 w-28" />
+      <div className="mt-auto border-t border-border/60 pt-2.5">
+        <Skeleton className="h-3 w-20" />
       </div>
+    </div>
+  );
+}
+
+function DashboardTasksSkeleton({ label }: { label: string }) {
+  return (
+    <div role="status" aria-label={label} className="space-y-2">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div
+          key={index}
+          aria-hidden
+          className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 sm:gap-4"
+        >
+          <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-56 max-w-full" />
+          </div>
+          <Skeleton className="h-4 w-4 shrink-0" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -274,7 +235,7 @@ export default function Dashboard() {
 
   const employeeSummaryQuery = useActiveEmployeeSummary(shouldLoadEmployeeSummary);
   const leaveStatsQuery = useLeaveStats(hasTimeleave);
-  const dueDatesQuery = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS, hasPayroll);
+  const dueDatesQuery = usePayrollTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS, hasPayroll);
   const payrollRunsQuery = usePayrollRuns({ limit: 10 }, hasPayroll);
   const settingsQuery = useSettings(hasPayroll);
   const invoiceStatsQuery = useInvoiceStats(hasMoney);
@@ -284,13 +245,32 @@ export default function Dashboard() {
   const filingDueDates = dueDatesQuery.data ?? [];
   const payrollRuns = payrollRunsQuery.data ?? [];
   const moneyStats = hasMoney ? invoiceStatsQuery.data : undefined;
-  const loading =
-    (shouldLoadEmployeeSummary && employeeSummaryQuery.isLoading) ||
-    (hasTimeleave && leaveStatsQuery.isLoading) ||
-    (hasPayroll && dueDatesQuery.isLoading) ||
-    (hasPayroll && payrollRunsQuery.isLoading) ||
-    (hasPayroll && settingsQuery.isLoading) ||
-    (hasMoney && invoiceStatsQuery.isLoading);
+  // Independent home-page datasets must not form one long waterfall. Each
+  // card reveals only once its own source data is trustworthy; the assistant
+  // summary and "all good" state wait for every attention signal so loading
+  // can never be misread as a real zero.
+  const employeeDataReady =
+    !shouldLoadEmployeeSummary || employeeSummary !== undefined;
+  const leaveDataReady = !hasTimeleave || leaveStats !== undefined;
+  const dueDatesDataReady = !hasPayroll || dueDatesQuery.data !== undefined;
+  const payrollRunsDataReady =
+    !hasPayroll || payrollRunsQuery.data !== undefined;
+  const settingsDataReady = !hasPayroll || settingsQuery.data !== undefined;
+  const moneyDataReady = !hasMoney || moneyStats !== undefined;
+  const payrollCardReady =
+    employeeDataReady && payrollRunsDataReady && settingsDataReady;
+  const attentionDataReady =
+    employeeDataReady &&
+    leaveDataReady &&
+    dueDatesDataReady &&
+    payrollRunsDataReady &&
+    settingsDataReady;
+  const firstRunDataReady =
+    employeeDataReady &&
+    leaveDataReady &&
+    payrollRunsDataReady &&
+    moneyDataReady;
+  const dashboardSummaryReady = attentionDataReady && firstRunDataReady;
   const loadError =
     (shouldLoadEmployeeSummary && employeeSummaryQuery.isError && employeeSummary === undefined) ||
     (hasTimeleave && leaveStatsQuery.isError && leaveStats === undefined) ||
@@ -420,6 +400,7 @@ export default function Dashboard() {
   // replaces the duplicate "add employee" to-do row, and the overview grid is
   // suppressed solely when every number in it would read zero.
   const noStaffYet =
+    firstRunDataReady &&
     canManageTenant &&
     hasStaff &&
     activeEmployeeCount === 0 &&
@@ -516,16 +497,6 @@ export default function Dashboard() {
     };
   }, [setPageHeader, clearPageHeader, t]);
 
-  if (loading) {
-    return (
-      <DashboardSkeleton
-        cardCount={
-          [hasPayroll, hasStaff, hasTimeleave, hasMoney].filter(Boolean).length
-        }
-      />
-    );
-  }
-
   if (loadError) {
     return (
       <div className="min-h-full bg-background">
@@ -549,8 +520,12 @@ export default function Dashboard() {
     onClick: () => void;
   }> = [];
 
+  const loadingOverviewCards = new Set<string>();
+
   if (hasPayroll) {
-    overviewCards.push({
+    if (!payrollCardReady) {
+      loadingOverviewCards.add("payroll");
+    } else overviewCards.push({
       key: "payroll",
       icon: Calculator,
       // The payday countdown tile — shared signature with the Ekipa app's
@@ -595,7 +570,9 @@ export default function Dashboard() {
     });
   }
   if (hasStaff) {
-    overviewCards.push({
+    if (!employeeDataReady) {
+      loadingOverviewCards.add("staff");
+    } else overviewCards.push({
       key: "staff",
       icon: Users,
       big: <AnimatedNumber value={activeEmployeeCount} />,
@@ -610,7 +587,9 @@ export default function Dashboard() {
     });
   }
   if (hasTimeleave) {
-    overviewCards.push({
+    if (!leaveDataReady) {
+      loadingOverviewCards.add("leave");
+    } else overviewCards.push({
       key: "leave",
       icon: CalendarDays,
       big: <AnimatedNumber value={pendingLeave} />,
@@ -623,8 +602,10 @@ export default function Dashboard() {
       onClick: () => navigate("/time-leave/leave"),
     });
   }
-  if (hasMoney && moneyStats) {
-    overviewCards.push({
+  if (hasMoney) {
+    if (!moneyDataReady) {
+      loadingOverviewCards.add("money");
+    } else if (moneyStats) overviewCards.push({
       key: "money",
       icon: Wallet,
       big: (
@@ -644,6 +625,12 @@ export default function Dashboard() {
       onClick: () => navigate("/money"),
     });
   }
+
+  const overviewCardOrder = ["payroll", "staff", "leave", "money"].filter(
+    (key) =>
+      loadingOverviewCards.has(key) ||
+      overviewCards.some((card) => card.key === key),
+  );
 
   return (
     <div className="min-h-full bg-background">
@@ -677,6 +664,7 @@ export default function Dashboard() {
               t={t}
               firstName={firstName}
               summary={botSummary}
+              summaryLoading={!dashboardSummaryReady}
               showControls={!isFirstRun}
             />
           </div>
@@ -718,13 +706,24 @@ export default function Dashboard() {
         )}
 
         {/* ── Overview cards ── */}
-        {overviewCards.length > 0 && !(noStaffYet && !hasAnyRealNumbers) && (
+        {overviewCardOrder.length > 0 && !(noStaffYet && !hasAnyRealNumbers) && (
           <div
             className={`mb-6 grid grid-cols-2 gap-3 ${
-              overviewCards.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+              overviewCardOrder.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
             }`}
           >
-            {overviewCards.map((card, index) => (
+            {overviewCardOrder.map((key, index) => {
+              const card = overviewCards.find((item) => item.key === key);
+              if (!card) {
+                return (
+                  <DashboardOverviewCardSkeleton
+                    key={key}
+                    hiddenOnPhone={index >= 2}
+                  />
+                );
+              }
+
+              return (
               <button
                 key={card.key}
                 onClick={card.onClick}
@@ -762,7 +761,8 @@ export default function Dashboard() {
                   </p>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -809,6 +809,9 @@ export default function Dashboard() {
         {!isFirstRun && <div className="mt-8">
           <p className="mb-3 text-sm font-semibold">{t("dashboard.thingsToDo")}</p>
 
+          {!attentionDataReady ? (
+            <DashboardTasksSkeleton label={t("common.loading")} />
+          ) : <>
           {hasNeedsAttention && (
             <>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -916,6 +919,7 @@ export default function Dashboard() {
               <span>{t("dashboard.allGood")}</span>
             </div>
           )}
+          </>}
         </div>}
 
         {/* Optional professional support stays visible, but as a quiet

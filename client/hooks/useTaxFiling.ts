@@ -22,6 +22,7 @@ const taxFilingKeys = {
   byType: (tenantId: string, type: TaxFilingType) => [...taxFilingKeys.lists(tenantId), type] as const,
   byPeriod: (tenantId: string, type: TaxFilingType, period: string) => [...taxFilingKeys.all(tenantId), type, period] as const,
   dueSoon: (tenantId: string, months: number) => [...taxFilingKeys.all(tenantId), 'dueSoon', months] as const,
+  payrollDueSoon: (tenantId: string, months: number) => [...taxFilingKeys.all(tenantId), 'payrollDueSoon', months] as const,
   statusSummary: (tenantId: string) => [...taxFilingKeys.all(tenantId), 'statusSummary'] as const,
 };
 
@@ -67,6 +68,20 @@ export function useTaxFilingsDueSoon(
   return useQuery({
     queryKey: taxFilingKeys.dueSoon(tenantId, months),
     queryFn: () => taxFilingService.getFilingsDueSoon(tenantId, months),
+    staleTime: 5 * 60 * 1000,
+    enabled,
+  });
+}
+
+/** Fetch only payroll-related WIT and INSS deadlines. */
+export function usePayrollTaxFilingsDueSoon(
+  months: number = TAX_DEADLINE_WINDOW_MONTHS,
+  enabled: boolean = true,
+) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: taxFilingKeys.payrollDueSoon(tenantId, months),
+    queryFn: () => taxFilingService.getPayrollFilingsDueSoon(tenantId, months),
     staleTime: 5 * 60 * 1000,
     enabled,
   });

@@ -84,7 +84,7 @@ import {
   FILING_HISTORY_LIMIT,
   TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
-  useTaxFilingsDueSoon,
+  usePayrollTaxFilingsDueSoon,
   useGenerateMonthlyWIT,
   useMarkTaxFilingAsFiled,
   useSaveTaxFiling,
@@ -164,7 +164,7 @@ export default function ATTLMonthlyWIT() {
     isError: duesError,
     isFetching: duesFetching,
     refetch: refetchDues,
-  } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
+  } = usePayrollTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
   const generateWIT = useGenerateMonthlyWIT();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();

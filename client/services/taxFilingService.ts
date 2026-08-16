@@ -1452,6 +1452,7 @@ class TaxFilingService {
   async getFilingsDueSoon(
     tenantId: string,
     months: number = 3,
+    options: { includeBusinessTaxes?: boolean } = {},
   ): Promise<FilingDueDate[]> {
     const todayIso = getTodayTL();
     const currentYear = Number(todayIso.slice(0, 4));
@@ -1601,20 +1602,22 @@ class TaxFilingService {
       });
     }
 
-    // Services tax and income-tax installments are separate statutory
-    // obligations with their own e-Tax declarations/evidence. They must never
-    // inherit "filed" from a wage-WIT return for the same month.
-    try {
-      const extraDueDates = await this.buildTurnoverTaxDueDates(
-        tenantId,
-        periods,
-      );
-      dueDates.push(...extraDueDates);
-    } catch (error) {
-      console.error(
-        "Failed to derive services-tax/installment deadlines:",
-        error,
-      );
+    if (options.includeBusinessTaxes !== false) {
+      // Services tax and income-tax installments are separate statutory
+      // obligations with their own e-Tax declarations/evidence. They must
+      // never inherit "filed" from a wage-WIT return for the same month.
+      try {
+        const extraDueDates = await this.buildTurnoverTaxDueDates(
+          tenantId,
+          periods,
+        );
+        dueDates.push(...extraDueDates);
+      } catch (error) {
+        console.error(
+          "Failed to derive services-tax/installment deadlines:",
+          error,
+        );
+      }
     }
 
     // Check annual WIT for previous year if we're in Q1
@@ -1663,6 +1666,20 @@ class TaxFilingService {
   }
 
   /**
+   * Lightweight deadline sweep for payroll surfaces. These screens only show
+   * WIT and INSS, so do not make their first render wait for turnover reports,
+   * invoice totals, chart-of-accounts reads, or business-tax filing records.
+   */
+  async getPayrollFilingsDueSoon(
+    tenantId: string,
+    months: number = 3,
+  ): Promise<FilingDueDate[]> {
+    return this.getFilingsDueSoon(tenantId, months, {
+      includeBusinessTaxes: false,
+    });
+  }
+
+  /**
    * Turnover-based ATTL deadlines:
    *
    * - Services tax (Law 8/2008 Secs. 5-9, Annex I): hotel, restaurant/bar and
@@ -1689,8 +1706,8 @@ class TaxFilingService {
     const todayIso = getTodayTL();
     const currentPeriod = todayIso.slice(0, 7);
 
-    // Heavy services are imported lazily: getFilingsDueSoon runs from the top
-    // bar on every module, and these must not join the initial bundle.
+    // Heavy services are imported lazily so the full business-tax sweep does
+    // not add them to payroll-only bundles.
     const { settingsService } = await import("./settingsService");
     const { invoiceService } = await import("./invoiceService");
     const settings = await settingsService.getSettings(tenantId);

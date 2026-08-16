@@ -845,39 +845,37 @@ class EmployeeService {
 
     // Fetch active employees to compute salary/issue totals client-side
     // (getAggregateFromServer with sum() on nested map fields can fail with 400)
-    const [
-      activeDocs,
-      employeesWithIssuesSnapshot,
-      employeesWithBlockingIssuesSnapshot,
-      missingInssSnapshot,
-      missingContractSnapshot,
-      missingDepartmentSnapshot,
-    ] = await Promise.all([
-      getDocs(activeQuery),
-      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasIssues", "==", true))),
-      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasBlockingIssue", "==", true))),
-      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingInss", "==", true))),
-      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingContract", "==", true))),
-      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingDepartment", "==", true))),
-    ]);
+    const activeDocs = await getDocs(activeQuery);
 
     const monthlySalaries: number[] = [];
     let totalIssues = 0;
+    let employeesWithIssues = 0;
+    let employeesWithBlockingIssues = 0;
+    let missingInss = 0;
+    let missingContract = 0;
+    let missingDepartment = 0;
     activeDocs.forEach((doc) => {
       const data = doc.data();
       monthlySalaries.push(Number(data.compensation?.monthlySalary ?? 0));
       totalIssues += Number(data.compliance?.issueCount ?? 0);
+      if (data.compliance?.hasIssues === true) employeesWithIssues++;
+      if (data.compliance?.hasBlockingIssue === true) {
+        employeesWithBlockingIssues++;
+      }
+      if (data.compliance?.missingInss === true) missingInss++;
+      if (data.compliance?.missingContract === true) missingContract++;
+      if (data.compliance?.missingDepartment === true) missingDepartment++;
     });
 
     return {
       active: activeDocs.size,
       totalMonthlySalary: sumMoney(monthlySalaries),
       totalIssues,
-      employeesWithIssues: employeesWithIssuesSnapshot.data().count,
-      employeesWithBlockingIssues: employeesWithBlockingIssuesSnapshot.data().count,
-      missingInss: missingInssSnapshot.data().count,
-      missingContract: missingContractSnapshot.data().count,
-      missingDepartment: missingDepartmentSnapshot.data().count,
+      employeesWithIssues,
+      employeesWithBlockingIssues,
+      missingInss,
+      missingContract,
+      missingDepartment,
     };
   }
 

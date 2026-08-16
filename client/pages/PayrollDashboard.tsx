@@ -12,7 +12,7 @@ import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useSettings } from "@/hooks/useSettings";
 import {
   TAX_DEADLINE_WINDOW_MONTHS,
-  useTaxFilingsDueSoon,
+  usePayrollTaxFilingsDueSoon,
 } from "@/hooks/useTaxFiling";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -120,7 +120,7 @@ export default function PayrollDashboard() {
   );
   const payrollRunsQuery = usePayrollRuns({ limit: 6 });
   const settingsQuery = useSettings();
-  const taxDueQuery = useTaxFilingsDueSoon(
+  const taxDueQuery = usePayrollTaxFilingsDueSoon(
     TAX_DEADLINE_WINDOW_MONTHS,
     canManageTenant,
   );
