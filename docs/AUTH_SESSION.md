@@ -47,6 +47,13 @@ is still restoring gets **stranded**: the popup opens, the restore completes, th
 asking which account to use for a session that already exists. Bound the wait,
 don't remove it.
 
+Once Firebase has supplied a non-null `user`, the login form must stay hidden
+while the time-boxed profile/token refresh finishes. Showing the form merely
+because the 1.5-second grace elapsed makes an already-signed-in visitor see a
+false login screen before the dashboard. Public sign-in links also go directly
+to `https://app.xefe.tl/auth/login` with a native anchor, avoiding an unnecessary
+marketing-SPA route render before the browser crosses origins.
+
 ### `prompt: "select_account"` stays
 
 `authService.signInWithGoogle()` forces Google's account chooser. Dropping it

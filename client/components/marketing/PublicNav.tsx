@@ -17,6 +17,7 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/I18nProvider";
+import { APP_ORIGIN, isMarketingHost } from "@/lib/hosts";
 import {
   isLocalizedPublicPath,
   localeFromPath,
@@ -75,6 +76,12 @@ export function PublicNav() {
   // Links keep the visitor inside the language they are browsing in.
   const urlLocale = localeFromPath(location.pathname);
   const localized = (to: string) => withLocalePrefix(to, urlLocale);
+  // Auth belongs to app.xefe.tl. A native cross-origin link avoids first
+  // rendering /auth/login on the marketing SPA and then correcting the host,
+  // which could race the login page's existing-session redirect.
+  const signInHref = isMarketingHost()
+    ? `${APP_ORIGIN}/auth/login`
+    : "/auth/login";
 
   // "/landing" renders the same Landing page as "/", so Home stays lit there.
   const isActive = (to: string) => {
@@ -123,7 +130,7 @@ export function PublicNav() {
             asChild
             className="hidden text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
           >
-            <Link to="/auth/login">{t("auth.signIn")}</Link>
+            <a href={signInHref}>{t("auth.signIn")}</a>
           </Button>
           <Button
             asChild
@@ -165,13 +172,13 @@ export function PublicNav() {
             </Link>
           ))}
           <div className="mt-2 border-t border-white/[0.06] pt-3">
-            <Link
-              to="/auth/login"
+            <a
+              href={signInHref}
               onClick={() => setMenuOpen(false)}
               className="block rounded-md px-3 py-3 text-base text-zinc-300 hover:bg-white/5 hover:text-white"
             >
               {t("auth.signIn")}
-            </Link>
+            </a>
           </div>
         </div>
       )}

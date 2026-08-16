@@ -48,7 +48,7 @@ export default function Login() {
   // this page entirely when the profile read behind `authResolved` hung. Once
   // settled we only keep the spinner while a user is actually present, because
   // the effect above is already navigating away and the form would just flash.
-  if (!authSettled || (authResolved && user)) {
+  if (!authSettled || user) {
     return (
       <div className="dark flex min-h-screen items-center justify-center bg-[#0a0a0b]">
         <Loader2

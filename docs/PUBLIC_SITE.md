@@ -13,8 +13,10 @@ Marketing lives on **xefe.tl**; the authenticated app on **app.xefe.tl**
   head directories** — a marketing page missing from
   `scripts/generate-static-heads.ts` will 301 to app.xefe.tl and bounce
   back via HostGuard (two hops). Always register new pages.
-- `/auth/*` belongs to app.xefe.tl (nginx redirects; marketing CTAs may keep
-  relative links). `/i/` and `/apply/` share links stay on the apex forever.
+- `/auth/*` belongs to app.xefe.tl. Public sign-in links use a native absolute
+  `app.xefe.tl` URL so the marketing SPA never briefly renders an app route;
+  nginx and HostGuard remain backstops for other crossings. `/i/` and `/apply/`
+  share links stay on the apex forever.
 - Path ownership logic: `client/lib/hosts.ts` (used by HostGuard in App.tsx).
 - **Never redirect across the boundary based on auth state.** Firebase auth is
   scoped to an origin, so neither host can see whether the other holds a

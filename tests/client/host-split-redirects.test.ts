@@ -6,9 +6,15 @@
  * alternating every ~3s). These tests pin the two halves of the guarantee.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { pathBelongsToApp, pathBelongsToMarketing } from "@/lib/hosts";
 import { recordBounce, type BounceStore } from "@/lib/hostBounce";
+
+const repoRoot = process.cwd();
+const read = (relativePath: string) =>
+  readFileSync(join(repoRoot, relativePath), "utf8");
 
 /** Every shape of path either host can be asked for. */
 const PATHS = [
@@ -65,6 +71,21 @@ describe("host split routing", () => {
   it("keeps auth on the app origin, where the session is created", () => {
     expect(pathBelongsToApp("/auth/login")).toBe(true);
     expect(pathBelongsToMarketing("/auth/login")).toBe(false);
+  });
+
+  it("crosses directly from the public nav to the app login origin", () => {
+    const publicNav = read("client/components/marketing/PublicNav.tsx");
+
+    expect(publicNav).toContain('`${APP_ORIGIN}/auth/login`');
+    expect(publicNav.match(/href=\{signInHref\}/g)).toHaveLength(2);
+    expect(publicNav).not.toContain('<Link to="/auth/login">');
+  });
+
+  it("never flashes the login form after Firebase has found an existing user", () => {
+    const login = read("client/pages/auth/Login.tsx");
+
+    expect(login).toContain("if (!authSettled || user)");
+    expect(login).not.toContain("if (!authSettled || (authResolved && user))");
   });
 
   it("leaves the customer share surfaces on the apex", () => {
