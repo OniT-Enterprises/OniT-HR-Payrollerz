@@ -7,6 +7,7 @@
 import React, { lazy } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { isChunkLoadError, isReloadInFlight, reloadForFreshChunks } from "@/lib/chunkReload";
+import { PREFIXED_PUBLIC_LOCALES } from "@/lib/publicLocale";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 import { FeatureRoute } from "@/components/auth/FeatureRoute";
 import { MarketingRouteFallback } from "@/components/marketing/MarketingRouteFallback";
@@ -229,10 +230,19 @@ export const authRoutes = (
     <Route path="/docs" element={marketingRoute(<DocsIndex />)} />
     <Route path="/docs/payroll-money-chain" element={marketingRoute(<DocsMoneyChain />)} />
     <Route path="/docs/:slug" element={marketingRoute(<DocsArticle />)} />
-    {/* Locale-prefixed marketing pages (/tet/..., /pt/...) so each language is
-        crawlable at its own URL (hreflang). PublicLocaleSync inside PublicNav
-        switches the i18n locale from the prefix. English stays at the bare path. */}
-    {["tet", "pt"].map((prefix) => (
+    {/* Locale-prefixed marketing pages (/tet/..., /pt/..., /id/...) so each
+        language is crawlable at its own URL (hreflang). PublicLocaleSync inside
+        PublicNav switches the i18n locale from the prefix. English stays at the
+        bare path.
+
+        The prefix list MUST come from PREFIXED_PUBLIC_LOCALES, never a literal.
+        It was hardcoded as ["tet", "pt"] until 2026-08-18, so adding Indonesian
+        to publicLocale.ts gave /id a correct static <head>, a sitemap entry and
+        an hreflang link while the SPA had no route for it — every /id/* URL
+        rendered the 404 page (in Indonesian, which made it look intentional).
+        A curl checking status and <title> passes that, because both come from
+        the pre-rendered head, not from what React mounts. */}
+    {PREFIXED_PUBLIC_LOCALES.map((prefix) => (
       <React.Fragment key={prefix}>
         <Route path={`/${prefix}`} element={marketingRoute(<Landing />)} />
         <Route path={`/${prefix}/how-it-works`} element={marketingRoute(<ProductDetails />)} />
