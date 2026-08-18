@@ -10,14 +10,35 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { pathBelongsToApp, pathBelongsToMarketing } from "@/lib/hosts";
+import { isPublicPath } from "@/lib/publicPaths";
+import {
+  LOCALIZED_PUBLIC_PATHS,
+  PREFIXED_PUBLIC_LOCALES,
+  withLocalePrefix,
+} from "@/lib/publicLocale";
 import { recordBounce, type BounceStore } from "@/lib/hostBounce";
 
 const repoRoot = process.cwd();
 const read = (relativePath: string) =>
   readFileSync(join(repoRoot, relativePath), "utf8");
 
+/**
+ * Every localized marketing URL, derived rather than listed.
+ *
+ * This is derived on purpose. The list below used to name /tet and /pt by hand,
+ * so when Indonesian was added on 2026-08-18 nothing here covered /id — and
+ * isPublicPath() carried its own hardcoded /^\\/(tet|pt)/, which made every
+ * /id/<page> an APP path. HostGuard duly bounced them from xefe.tl to
+ * app.xefe.tl, where they are not routes. Deriving means a new locale is
+ * covered the moment it is added to PREFIXED_PUBLIC_LOCALES.
+ */
+const LOCALIZED_MARKETING_PATHS = PREFIXED_PUBLIC_LOCALES.flatMap((locale) =>
+  LOCALIZED_PUBLIC_PATHS.map((path) => withLocalePrefix(path, locale)),
+);
+
 /** Every shape of path either host can be asked for. */
 const PATHS = [
+  ...LOCALIZED_MARKETING_PATHS,
   "/",
   "/tet",
   "/pt",
@@ -62,10 +83,28 @@ describe("host split routing", () => {
     expect(contested).toEqual([]);
   });
 
-  it("keeps the home pages on the marketing apex in all three languages", () => {
-    for (const home of ["/", "/tet", "/pt"]) {
+  it("keeps the home pages on the marketing apex in every language", () => {
+    for (const home of ["/", ...PREFIXED_PUBLIC_LOCALES.map((l) => `/${l}`)]) {
       expect(pathBelongsToApp(home)).toBe(false);
     }
+  });
+
+  it("keeps every localized marketing page on the marketing apex", () => {
+    const bouncedToTheApp = LOCALIZED_MARKETING_PATHS.filter((path) =>
+      pathBelongsToApp(path),
+    );
+    expect(
+      bouncedToTheApp,
+      "these marketing URLs would be redirected to app.xefe.tl, which has no " +
+        "route for them — isPublicPath() is probably missing a locale prefix",
+    ).toEqual([]);
+  });
+
+  it("treats every localized marketing page as a public path", () => {
+    const notPublic = LOCALIZED_MARKETING_PATHS.filter(
+      (path) => !isPublicPath(path),
+    );
+    expect(notPublic).toEqual([]);
   });
 
   it("keeps auth on the app origin, where the session is created", () => {

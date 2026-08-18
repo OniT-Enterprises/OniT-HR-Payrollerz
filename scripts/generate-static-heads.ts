@@ -70,7 +70,7 @@ function escapeAttr(value: string): string {
     .replaceAll(">", "&gt;");
 }
 
-function prefixedUrl(bareUrl: string, locale: "en" | "tet" | "pt"): string {
+function prefixedUrl(bareUrl: string, locale: "en" | "tet" | "pt" | "id"): string {
   if (locale === "en") return bareUrl;
   return bareUrl === "/" ? `/${locale}` : `/${locale}${bareUrl}`;
 }
