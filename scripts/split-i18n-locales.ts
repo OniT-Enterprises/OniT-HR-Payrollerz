@@ -22,7 +22,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { translations } from "../client/i18n/translations";
 
-type Locale = "en" | "tet" | "pt";
+type Locale = "en" | "tet" | "pt" | "id";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +42,6 @@ function serializeLocale(locale: Locale) {
 
 mkdirSync(outDir, { recursive: true });
 
-for (const locale of ["en", "tet", "pt"] as const satisfies readonly Locale[]) {
+for (const locale of ["en", "tet", "pt", "id"] as const satisfies readonly Locale[]) {
   writeFileSync(path.join(outDir, `${locale}.ts`), serializeLocale(locale));
 }

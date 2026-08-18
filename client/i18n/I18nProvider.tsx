@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type TranslationParams = Record<string, string | number>;
-type Locale = "en" | "tet" | "pt";
+type Locale = "en" | "tet" | "pt" | "id";
 type TranslationTree = Record<string, unknown>;
 type TranslationBundle = Partial<Record<Locale, TranslationTree>>;
 
@@ -20,12 +20,14 @@ const localeLabels: Record<Locale, string> = {
   en: "English",
   tet: "Tetun",
   pt: "Português",
+  id: "Bahasa Indonesia",
 };
 
 const translationLoaders: Record<Locale, () => Promise<TranslationTree>> = {
   en: () => import("./locales/en").then((module) => module.default as TranslationTree),
   tet: () => import("./locales/tet").then((module) => module.default as TranslationTree),
   pt: () => import("./locales/pt").then((module) => module.default as TranslationTree),
+  id: () => import("./locales/id").then((module) => module.default as TranslationTree),
 };
 
 const resolvePath = (obj: unknown, path: string): unknown =>
@@ -53,7 +55,7 @@ const getInitialLocale = (): Locale => {
     return "en";
   }
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-  if (stored === "en" || stored === "tet" || stored === "pt") {
+  if (stored === "en" || stored === "tet" || stored === "pt" || stored === "id") {
     return stored;
   }
   const preferred = navigator.languages?.[0] || navigator.language || "en";
@@ -62,6 +64,12 @@ const getInitialLocale = (): Locale => {
   }
   if (preferred.toLowerCase().startsWith("pt")) {
     return "pt";
+  }
+  // Browsers still send the legacy "in" code for Indonesian (ISO 639-1 was
+  // renamed id in 1989; some Android builds never followed), so match both.
+  const lower = preferred.toLowerCase();
+  if (lower.startsWith("id") || lower.startsWith("in-") || lower === "in") {
+    return "id";
   }
   return "en";
 };

@@ -30,6 +30,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "Crie a sua conta Xefe, configure a sua empresa em Timor-Leste, adicione a equipa e prepare-se para a primeira folha.",
         },
+        id: {
+          title: "Memulai dengan Xefe — Dokumentasi",
+          description:
+            "Buat akun Xefe Anda, siapkan perusahaan Timor-Leste Anda, tambahkan tim dan bersiaplah untuk penggajian pertama Anda.",
+        },
       },
     },
     hub: {
@@ -47,6 +52,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Gía",
         title: "Hahu",
         desc: "Kria konta, konfigura empreza, aumenta ekipa no prepara folha pagamentu primeiru.",
+      },
+      id: {
+        tag: "Panduan",
+        title: "Memulai",
+        desc: "Buat akun, siapkan perusahaan, tambahkan tim Anda, dan bersiaplah untuk penggajian pertama.",
       },
     },
   },
@@ -71,6 +81,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "Das horas aos recibos: processe a folha com WIT e INSS legais, aprovação a duas pessoas, pacote bancário e recibos trilingues.",
         },
+        id: {
+          title: "Menjalankan Penggajian — Dokumentasi Xefe",
+          description:
+            "Jam kerja masuk, mesin menghitung WIT dan INSS, orang kedua menyetujui, lalu paket bank membayarkannya.",
+        },
       },
     },
     hub: {
@@ -88,6 +103,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Gía",
         title: "Halo folha pagamentu",
         desc: "Oras tama, motór kalkula WIT no INSS, ema segundu aprova, pakote banku selu.",
+      },
+      id: {
+        tag: "Panduan",
+        title: "Menjalankan penggajian",
+        desc: "Jam kerja masuk, mesin menghitung WIT dan INSS, orang kedua menyetujui, paket bank membayarkannya.",
       },
     },
   },
@@ -112,6 +132,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "O calendário legal de Timor-Leste no Xefe: WIT e INSS mensais, exportações em modelo oficial e as declarações anuais que o seu contabilista entrega.",
         },
+        id: {
+          title: "Pajak & Pelaporan Wajib — Dokumentasi Xefe",
+          description:
+            "Kalender bulanan, apa yang Xefe buat dalam templat resmi, dan bagaimana pelaporan tahunan bekerja.",
+        },
       },
     },
     hub: {
@@ -129,6 +154,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Gía",
         title: "Impostu & deklarasaun",
         desc: "Kalendáriu mensál, saida mak Xefe jera iha modelu ofisiál, no oinsá deklarasaun anuál sira serbisu.",
+      },
+      id: {
+        tag: "Panduan",
+        title: "Pajak & pelaporan wajib",
+        desc: "Kalender bulanan, apa yang Xefe buat dalam templat resmi, dan bagaimana pelaporan tahunan bekerja.",
       },
     },
   },
@@ -153,6 +183,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "Envie faturas com páginas privadas, registe contas e despesas, reconcilie o banco — cada documento regista o seu próprio lançamento equilibrado.",
         },
+        id: {
+          title: "Faktur, Tagihan & Pengeluaran — Dokumentasi Xefe",
+          description:
+            "Keuangan sehari-hari dengan pembukuan otomatis — halaman faktur daring, tagihan pemasok, dan rekonsiliasi bank.",
+        },
       },
     },
     hub: {
@@ -170,6 +205,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Gía",
         title: "Fatura, konta & despeza",
         desc: "Osan loron-loron ho kontabilidade automátiku — pájina fatura, konta fornesedór no rekonsiliasaun banku.",
+      },
+      id: {
+        tag: "Panduan",
+        title: "Faktur, tagihan & pengeluaran",
+        desc: "Keuangan sehari-hari dengan pembukuan otomatis — halaman faktur daring, tagihan pemasok, dan rekonsiliasi bank.",
       },
     },
   },
@@ -194,6 +234,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "Registe as horas uma vez e elas entram na folha: assiduidade, licenças legais de Timor-Leste, cobertura de turnos e saldos calculados no servidor.",
         },
+        id: {
+          title: "Kehadiran, Cuti & Shift — Dokumentasi Xefe",
+          description:
+            "Catat jam kerja sekali dan angkanya mengalir ke penggajian: kehadiran, jenis cuti wajib Timor-Leste, cakupan shift dan saldo yang dihitung server.",
+        },
       },
     },
     hub: {
@@ -211,6 +256,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Gía",
         title: "Prezensa, lisensa & turnu",
         desc: "Oras rejista dala ida tama ba folha — ho tipu lisensa legál Timor-Leste hotu.",
+      },
+      id: {
+        tag: "Panduan",
+        title: "Kehadiran, cuti & shift",
+        desc: "Jam yang dicatat sekali mengalir ke penggajian — lengkap dengan seluruh jenis cuti wajib Timor-Leste.",
       },
     },
   },
@@ -236,6 +286,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
           description:
             "De um processamento em rascunho a livros fechados: passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais de Timor-Leste e sete garantias impostas pelo sistema.",
         },
+        id: {
+          title: "Rantai Uang Penggajian — Dokumentasi Xefe",
+          description:
+            "Dari proses penggajian draf sampai pembukuan tertutup: langkah persetujuan, tiga jurnal yang menggerakkan uang, setiap tenggat wajib Timor-Leste, dan tujuh jaminan yang ditegakkan sistem.",
+        },
       },
     },
     hub: {
@@ -253,6 +308,11 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
         tag: "Arkitetura",
         title: "Kadeia osan folha nian",
         desc: "Oinsá prosesamentu sai livru taka — mákina estadu, lansamentu, prazu no garantia sira.",
+      },
+      id: {
+        tag: "Arsitektur",
+        title: "Rantai uang penggajian",
+        desc: "Bagaimana sebuah proses menjadi pembukuan tertutup — mesin status, jurnal, tenggat, dan jaminannya.",
       },
     },
   },

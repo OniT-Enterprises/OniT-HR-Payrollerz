@@ -26,6 +26,11 @@ const extra: Record<PayslipLocale, { food: string; caption: string }> = {
     caption:
       "This is the document every employee receives — no spreadsheets, no manual maths.",
   },
+  id: {
+    food: "Tunjangan Makan",
+    caption:
+      "Inilah dokumen yang diterima setiap karyawan — tanpa spreadsheet, tanpa hitung manual.",
+  },
   tet: {
     food: "Subsídiu Hahán",
     caption:

@@ -501,13 +501,14 @@ const formatShortDate = (dateString: string): string => {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Dili' });
 };
 
-// Format month label — "February 2026" / "Fulan Fevereiru 2026" / "Fevereiro 2026"
+// Format month label — "February 2026" / "Fulan Fevereiru 2026" / "Fevereiro 2026" / "Februari 2026"
 const formatMonth = (dateString: string, language: PayslipLocale): string => {
   const date = new Date(dateString);
   const localeMap: Record<PayslipLocale, string> = {
     en: 'en-GB',
     tet: 'pt-PT',
     pt: 'pt-PT',
+    id: 'id-ID',
   };
   return date.toLocaleDateString(localeMap[language], {
     month: 'long',

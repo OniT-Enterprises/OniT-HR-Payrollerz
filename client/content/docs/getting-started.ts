@@ -94,6 +94,92 @@ export const article: LocalizedDocArticle = {
       },
     ],
   },
+  id: {
+    titleTop: "Memulai",
+    titleAccent: "dengan Xefe",
+    lede: "Buat akun Anda, siapkan perusahaan Anda, tambahkan tim Anda, dan bersiaplah untuk penggajian pertama — kira-kira selama waktu yang dibutuhkan untuk membuat kopi.",
+    blocks: [
+      {
+        type: "prose",
+        body: "Xefe menyatukan HR, penggajian, waktu & cuti, penagihan, dan akuntansi untuk usaha di Timor-Leste, dengan aturan pajak dan ketenagakerjaan Timor-Leste sendiri — pemotongan pajak penghasilan upah (WIT), iuran INSS, dan cuti menurut undang-undang — yang sudah tertanam sebagai bawaan.\n\nSemua fitur gratis digunakan. Satu-satunya yang pernah memerlukan langganan adalah menyelesaikan sebuah proses penggajian. Menyiapkan perusahaan Anda, menambahkan tim, menyusun draf penggajian, membuat faktur, dan membuat laporan semuanya gratis sejak hari pertama.",
+      },
+      {
+        type: "heading",
+        id: "create-your-account",
+        text: "Buat akun Anda",
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Daftar",
+            body: "Buka halaman pendaftaran dan masukkan nama lengkap, email kerja, dan kata sandi Anda — atau lanjutkan dengan Google dalam satu klik. Tidak perlu kartu.",
+          },
+          {
+            title: "Beri nama perusahaan Anda",
+            body: "Masukkan nama perusahaan Anda. Xefe otomatis mengubahnya menjadi alamat perusahaan yang singkat, yang dapat Anda ubah jika ingin memilih sendiri. Buat akunnya dan Anda langsung masuk ke Xefe.",
+          },
+        ],
+      },
+      {
+        type: "heading",
+        id: "first-run-setup",
+        text: "Penyiapan saat pertama kali",
+      },
+      {
+        type: "prose",
+        body: "Saat pertama kali masuk, sebuah pemandu penyiapan singkat menuntun Anda melalui tiga langkah cepat. Anda dapat langsung melompat ke dasbor kapan saja — tidak ada yang Anda masukkan hilang, dan Xefe melanjutkan dari tempat Anda berhenti.",
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Detail perusahaan",
+            body: "Masukkan nama resmi perusahaan dan Nomor Pokok Wajib Pajak (TIN/NIF) — hanya dua isian ini yang wajib. Nama dagang, alamat, telepon, email, sektor, dan ukuran tim bersifat opsional dan bisa menyusul. NISS Pemberi Kerja Anda (nomor registrasi INSS) ditambahkan terpisah nanti, di Pengaturan → Detail Perusahaan, begitu Anda siap melapor INSS.",
+          },
+          {
+            title: "Pembayaran gaji",
+            body: "Pilih cara Anda membayar gaji: tunai, atau transfer bank. Tunai sama sekali tidak memerlukan detail bank. Transfer bank memerlukan nama bank dan nomor rekening — BNU, Bank Mandiri, ANZ, dan BNCTL semuanya tersedia sebagai pilihan.",
+          },
+          {
+            title: "Dasar-dasar penggajian",
+            body: "Pilih hari gajian bulanan Anda (tanggal berapa pun dari 1 sampai 28) dan konfirmasikan mata uang Anda — Timor-Leste memakai USD. Xefe menerapkan tarif bawaan Timor-Leste secara otomatis: pemotongan WIT di atas $500/bulan, INSS sebesar 4% karyawan / 6% pemberi kerja, pekan kerja standar maksimal 44 jam, dan hak cuti bawaan menurut hukum ketenagakerjaan Timor-Leste. Semuanya tetap dapat diubah nanti di Pengaturan.",
+          },
+        ],
+      },
+      {
+        type: "heading",
+        id: "add-your-team",
+        text: "Tambahkan tim Anda",
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Tambahkan seorang karyawan",
+            body: "Dari Orang, masukkan hal-hal pokok: nama depan dan belakang, tanggal mulai, jenis hubungan kerja, gaji bulanan dan status kependudukan pajak — penduduk atau bukan penduduk, karena itulah yang menetapkan tarif pajak upahnya. Email, tanggal lahir, departemen dan nama jabatan bisa menyusul. Untuk identifikasi, Xefe meminta Bilhete de Identidade bagi staf Timor dan paspor bagi staf asing, tetapi nomor-nomor itu juga opsional pada awalnya. Tidak satu pun menghalangi Anda menyimpan karyawan tersebut. Nomor INSS adalah yang pertama perlu dikejar, karena pelaporan INSS bulanan tidak dapat disampaikan tanpanya — pendaftarannya jatuh tempo paling lambat pada tanggal Anda menyampaikan pelaporan pertama yang memuat pekerja itu (DL 20/2017, Art. 3(2)), dan Xefe menyebutkan siapa saja yang belum memilikinya sebelum Anda melapor.",
+          },
+          {
+            title: "Undang rekan tim Anda",
+            body: "Buka Pengaturan → Akses tim untuk mengundang orang lewat email dan memberi masing-masing sebuah peran — Pemilik, Administrator HR, Akuntan, Manajer, atau Peninjau. Setiap peran dimulai dengan akses standar hanya ke bagian Xefe yang dibutuhkan pekerjaan itu, sehingga seorang akuntan melihat pembukuan tanpa pengelolaan anggota, dan seorang manajer hanya melihat timnya sendiri.",
+          },
+        ],
+      },
+      {
+        type: "heading",
+        id: "your-first-payroll",
+        text: "Penggajian pertama Anda",
+      },
+      {
+        type: "prose",
+        body: "Dengan tim Anda sudah siap, susun draf proses penggajian dan periksa setiap jumlah yang dihitung — upah, WIT, INSS, lembur — sebelum apa pun menjadi final. Orang kedua menyetujui prosesnya (tidak pernah orang yang sama yang menyusunnya), dan menyelesaikannya adalah satu-satunya langkah yang memerlukan langganan aktif. Lihat panduan Menjalankan penggajian kami untuk penelusuran lengkapnya, dari proses draf sampai slip gaji yang terbayar.",
+      },
+      {
+        type: "callout",
+        body: "Ada yang membuat Anda buntu? Kirim pesan kepada kami di WhatsApp +670 7337 1307 — dukungan tersedia dalam bahasa Inggris, Portugis, dan Tetun.",
+      },
+    ],
+  },
   pt: {
     titleTop: "Começar",
     titleAccent: "com o Xefe",

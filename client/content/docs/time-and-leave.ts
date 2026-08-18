@@ -149,6 +149,146 @@ export const article: LocalizedDocArticle = {
       },
     ],
   },
+  id: {
+    titleTop: "Kehadiran, cuti dan shift,",
+    titleAccent: "satu layar pemasukan jam",
+    lede: "Catat jam kerja sekali dan Xefe membawanya langsung ke penggajian — lembur, kerja malam, serta premi hari istirahat atau hari libur nasional dihitung sebagaimana diwajibkan Undang-Undang Ketenagakerjaan. Tanpa spreadsheet, tanpa memasukkan ulang.",
+    blocks: [
+      {
+        type: "heading",
+        id: "attendance",
+        text: "Kehadiran",
+      },
+      {
+        type: "prose",
+        body: "Kehadiran adalah satu-satunya tempat jam kerja dicatat — tidak ada layar pencatatan waktu terpisah yang harus dijaga tetap selaras. Jam kerja, istirahat, keterlambatan, dan lembur dihitung dengan cara yang sama, apa pun cara sebuah hari dimasukkan.",
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Absen masuk dan keluar",
+            body: "Tandai sebuah hari beserta waktu masuk dan keluarnya saat kejadiannya berlangsung.",
+          },
+          {
+            title: "Pemasukan massal",
+            body: "Masukkan jam kerja untuk satu tim sekaligus, alih-alih satu karyawan pada satu waktu.",
+          },
+          {
+            title: "Impor sebuah spreadsheet",
+            body: "Sudah menyimpan catatan di tempat lain? Impor langsung — tata letak apa pun bisa, dan Xefe juga membaca berkas yang berantakan, sehingga tidak perlu memformat ulang apa pun terlebih dahulu.",
+          },
+        ],
+      },
+      {
+        type: "list",
+        items: [
+          "Hari tanpa catatan diperlakukan sebagai belum tercatat, bukan sebagai ketidakhadiran — hanya ketidakhadiran yang dinyatakan tegas yang terhitung demikian.",
+          "Lembur, jam shift malam, serta premi hari istirahat atau hari libur nasional dihitung otomatis dari waktu yang tercatat. Tarif ganda mengikuti hari istirahat mingguan perusahaan Anda yang sebenarnya — hari Minggu secara bawaan, atau hari Anda tutup sebagai gantinya bila usaha tidak dapat berhenti pada hari Minggu (Art. 27(2), 30(2)).",
+          "Setiap penyesuaian pada sebuah catatan dicatat dalam log, sehingga selalu ada jejak yang jelas tentang siapa mengubah apa.",
+          "Manajer melihat dan menyesuaikan kehadiran timnya sendiri; pemilik dan admin HR melihat seluruh perusahaan.",
+        ],
+      },
+      {
+        type: "heading",
+        id: "leave",
+        text: "Cuti",
+      },
+      {
+        type: "prose",
+        body: "Karyawan mengajukan cuti, seorang manajer atau admin HR memutuskannya, dan cuti yang disetujui mengalir langsung ke penggajian dan catatan kehadiran untuk hari-hari tersebut — tidak ada yang perlu dimasukkan ulang. Cuti dihitung dalam hari kerja, dan hari mana saja itu mengikuti pekan kerja yang Anda tetapkan di Pengaturan. Pekan kerja normal Timor-Leste dapat berlangsung hingga 44 jam (Art. 25(1)), yang tidak muat dalam lima hari berdurasi 8 jam, sehingga pekan enam hari dengan istirahat pada hari Minggu lazim di sini — dan pada pekan seperti itu cuti di hari Sabtu MEMANG dipotong. Hari libur nasional tidak pernah mengurangi saldo, dan setengah hari didukung.\n\nXefe hadir dengan jenis-jenis cuti yang ditetapkan Undang-Undang Ketenagakerjaan Timor-Leste (UU 4/2012) yang sudah terkonfigurasi, dan sebuah perusahaan dapat menambahkan jenisnya sendiri di atas itu untuk apa pun yang tidak diatur undang-undang.",
+      },
+      {
+        type: "table",
+        headers: ["Jenis cuti", "Lama yang lazim", "Upah", "Dasar hukum"],
+        rows: [
+          ["Cuti tahunan", "Sekurang-kurangnya 12 hari kerja setahun", "Upah penuh", "Art. 32(2)"],
+          [
+            "Cuti sakit",
+            "Hingga 12 hari setahun, dengan surat keterangan dokter",
+            "6 hari pertama upah penuh, 6 hari berikutnya separuh upah",
+            "Art. 33(4)",
+          ],
+          [
+            "Cuti melahirkan",
+            "Sekurang-kurangnya 12 minggu, 10 di antaranya harus setelah kelahiran",
+            "Dibayar langsung oleh INSS kepada pekerja yang memenuhi syarat",
+            "Art. 59",
+          ],
+          [
+            "Cuti ayah",
+            "5 hari kerja",
+            "Dibayar langsung oleh INSS kepada pekerja yang memenuhi syarat",
+            "Art. 60",
+          ],
+          [
+            "Cuti setelah kehilangan kehamilan",
+            "4 minggu",
+            "Pengaturan INSS sama seperti cuti melahirkan",
+            "Art. 59(4)",
+          ],
+          [
+            "Cuti peristiwa keluarga",
+            "3 hari setahun, digabung",
+            "Upah penuh",
+            "Art. 33(3)",
+          ],
+          ["Cuti belajar", "Untuk mengikuti ujian", "Upah penuh", "Art. 76(3)"],
+          ["Cuti tanpa bayaran", "Sesuai kesepakatan", "Tanpa bayaran", "—"],
+          ["Jenis kustom", "Ditetapkan perusahaan", "Ditetapkan perusahaan", "—"],
+        ],
+      },
+      {
+        type: "list",
+        items: [
+          "Setiap angka dalam tabel itu adalah BATAS MINIMUM menurut hukum, bukan batas atas: Art. 1(2) Undang-Undang Ketenagakerjaan hanya mengizinkan kontrak menyimpang dari Kitab tersebut \"para estabelecer condições mais favoráveis ao trabalhador\" — lebih menguntungkan pekerja. Apa pun yang dijanjikan kontrak Anda di atas angka-angka ini tetap terutang. Satu-satunya pengecualian adalah cuti sakit, di mana Art. 33(4) membatasi hari BERBAYAR maksimal 12.",
+          "Cuti melahirkan, cuti ayah, dan cuti setelah kehilangan kehamilan dibayar langsung oleh lembaga jaminan sosial Timor-Leste (INSS) kepada pekerja yang memenuhi syarat iuran — Xefe membantu menyiapkan pelaporan yang dibutuhkan pekerja untuk klaim tersebut.",
+          "Cuti peristiwa keluarga adalah satu jatah gabungan yang mencakup pernikahan, kematian dalam keluarga, serta acara kemasyarakatan atau keagamaan — bukan tiga hak yang terpisah.",
+          "Menyusui dan pemeriksaan kehamilan adalah waktu berbayar, bukan cuti. Art. 62 memberi ibu yang kembali bekerja dua kali istirahat berbayar selama satu jam per hari sampai anaknya berusia enam bulan, dan memberi pekerja hamil waktu berbayar untuk pemeriksaan medis sesering yang diperlukan — keduanya 'sem perda de remuneração'. Xefe belum melacak keringanan setingkat jam ini secara otomatis: catat di kehadiran sebagai waktu kerja agar tidak dipotong.",
+          "Sebuah perusahaan dapat menambahkan jenis cutinya sendiri — misalnya praktik setempat yang tidak diatur undang-undang — berdampingan dengan jenis bawaannya.",
+        ],
+      },
+      {
+        type: "heading",
+        id: "shifts",
+        text: "Shift",
+      },
+      {
+        type: "prose",
+        body: "Shift direncanakan pada kisi mingguan, ditata menurut lokasi dan slot shift, sehingga seorang manajer dapat melihat cakupan satu pekan penuh sekilas. Begitu cakupan sepekan terlihat tepat, ia dapat disalin ke pekan berikutnya alih-alih disusun ulang dari nol.",
+      },
+      {
+        type: "heading",
+        id: "night-shifts",
+        text: "Shift malam",
+      },
+      {
+        type: "prose",
+        body: "Untuk shift yang melewati malam, masukkan hari dimulainya dan waktu berakhir yang lebih awal daripada waktu mulai — misalnya 22.00 sampai 06.00. Xefe memperlakukan waktu berakhirnya sebagai keesokan pagi. Jika baris Malam tersembunyi pada tampilan Cakupan, buka pengaturan slot shift untuk lokasi kerja tersebut dan aktifkan.",
+      },
+      {
+        type: "list",
+        items: [
+          "Shift yang terjadwal adalah rencananya, bukan bukti jam yang dikerjakan. Catat waktu masuk dan keluar karyawan yang sebenarnya di Kehadiran.",
+          "Xefe menghitung waktu kerja yang sebenarnya antara 21.00 dan 06.00 sebagai kerja malam dan membawa jam tersebut ke penggajian dengan tambahan sekurang-kurangnya 25% menurut undang-undang (Art. 28).",
+          "Draf shift tetap berada pada manajer. Terbitkan jadwalnya saat sudah siap dilihat karyawan di Ekipa.",
+        ],
+      },
+      {
+        type: "heading",
+        id: "balances-and-timesheets",
+        text: "Saldo dan lembar waktu kerja",
+      },
+      {
+        type: "prose",
+        body: "Saldo cuti dan lembar waktu kerja mingguan tidak pernah diubah dengan tangan — semuanya dihitung dari catatan kehadiran dan cuti yang telah disetujui, sehingga angka yang dilihat semua orang selalu sesuai dengan apa yang benar-benar terjadi. Itu juga berarti saldo tetap akurat secara otomatis seiring masuknya persetujuan, tanpa ada yang perlu direkonsiliasi oleh admin.",
+      },
+      {
+        type: "callout",
+        body: "Karyawan melihat slip gaji, saldo cuti, dan riwayat kehadiran mereka sendiri — dan dapat mengajukan cuti — di aplikasi Ekipa, langsung dari ponsel mereka. Setiap permintaan yang mereka kirim mengalir langsung ke manajer mereka untuk diputuskan.",
+      },
+    ],
+  },
   pt: {
     titleTop: "Presença, licenças e turnos,",
     titleAccent: "um único ecrã de registo",

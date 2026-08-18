@@ -5,17 +5,21 @@ export const seoConfig = {
   // Landing & Auth
   landing: {
     title: 'HR, Payroll & Accounting for Timor-Leste',
-    description: 'HR, payroll and accounting software built for Timor-Leste — WIT, INSS, subsídio anual, bank files and double-entry books. In Tetun, English and Portuguese.',
+    description: 'HR, payroll and accounting software built for Timor-Leste — WIT, INSS, subsídio anual, bank files and double-entry books. In Tetun, English, Portuguese and Indonesian.',
     keywords: 'HR software Timor-Leste, payroll software Timor-Leste, sistema folha de pagamento, INSS, WIT, subsidio anual, Lei Trabalho, accounting software Timor-Leste, Tetun payroll',
     url: '/',
     alternates: {
       tet: {
         title: 'RH, Folha Pagamentu no Kontabilidade ba Timor-Leste',
-        description: 'Software RH, folha pagamentu no kontabilidade ba Timor-Leste — WIT, INSS, subsídiu anuál no ficheiru banku. Iha Tetun, Inglés no Portugés.',
+        description: 'Software RH, folha pagamentu no kontabilidade ba Timor-Leste — WIT, INSS, subsídiu anuál no ficheiru banku. Iha Tetun, Inglés, Portugés no Indonézia.',
       },
       pt: {
         title: 'RH, Folha de Pagamento e Contabilidade para Timor-Leste',
-        description: 'Software de RH, folha de pagamento e contabilidade para Timor-Leste — WIT, INSS, subsídio anual e ficheiros bancários. Em tétum, inglês e português.',
+        description: 'Software de RH, folha de pagamento e contabilidade para Timor-Leste — WIT, INSS, subsídio anual e ficheiros bancários. Em tétum, inglês, português e indonésio.',
+      },
+      id: {
+        title: 'HR, Penggajian & Akuntansi untuk Timor-Leste',
+        description: 'Perangkat lunak HR, penggajian dan akuntansi yang dibangun untuk Timor-Leste — WIT, INSS, subsídio anual, berkas bank dan pembukuan berpasangan. Dalam bahasa Tetun, Inggris, Portugis dan Indonesia.',
       },
     },
   },
@@ -33,6 +37,10 @@ export const seoConfig = {
         title: 'Como o Xefe Funciona para Empresas e Contabilistas',
         description: 'Veja como o Xefe liga pessoas, folha de pagamento de Timor-Leste, ficheiros bancários, relatórios de WIT e INSS e contabilidade equilibrada — simples no dia a dia e revisível por contabilistas.',
       },
+      id: {
+        title: 'Bagaimana Xefe Bekerja untuk Usaha dan Akuntan',
+        description: 'Lihat bagaimana Xefe menghubungkan orang, penggajian Timor-Leste, berkas bank, pelaporan WIT dan INSS, serta akuntansi yang seimbang — sederhana untuk pemakaian sehari-hari dan dapat diperiksa akuntan.',
+      },
     },
   },
   pricing: {
@@ -48,6 +56,10 @@ export const seoConfig = {
       pt: {
         title: 'Preços — Um Preço Único por Trabalhador',
         description: 'Preços do Xefe para empresas de Timor-Leste: um preço único por trabalhador por mês, com todas as funcionalidades incluídas. Configure grátis — subscreva só quando finalizar uma folha real.',
+      },
+      id: {
+        title: 'Harga — Satu Harga Tetap Per Karyawan',
+        description: 'Harga Xefe untuk usaha di Timor-Leste: satu harga tetap per karyawan per bulan dengan semua fitur termasuk. Siapkan gratis — berlangganan hanya saat Anda menyelesaikan proses penggajian yang sebenarnya.',
       },
     },
   },
@@ -65,6 +77,10 @@ export const seoConfig = {
         title: 'Parceiros Contabilistas para Empresas de Timor-Leste',
         description: 'Escolha um parceiro de contabilidade Xefe, peça uma consulta e conceda acesso seguro de contabilista apenas quando estiver pronto.',
       },
+      id: {
+        title: 'Mitra Akuntan — Bantuan Profesional Saat Anda Menginginkannya',
+        description: 'Jalankan Xefe sendiri, lalu libatkan firma akuntan mitra untuk memeriksa pembukuan Anda. Anda mengendalikan persis kapan akses ke catatan Anda dimulai — dan dapat mencabutnya kapan saja.',
+      },
     },
   },
   security: {
@@ -80,6 +96,10 @@ export const seoConfig = {
       pt: {
         title: 'Segurança — Como o Xefe Protege o Seu Negócio',
         description: "Isolamento por empresa imposto no servidor, aprovação de folha a duas pessoas, faturação protegida, backups diários com recuperação pontual e uma suite de regras testada antes de cada deploy.",
+      },
+      id: {
+        title: 'Keamanan — Bagaimana Xefe Melindungi Usaha Anda',
+        description: 'Aturan keamanan sisi server, persetujuan dua orang untuk penggajian, isolasi perusahaan yang ketat, enkripsi, cadangan harian dan jejak audit — semuanya sudah berjalan hari ini.',
       },
     },
   },
@@ -97,6 +117,10 @@ export const seoConfig = {
         title: 'O Motor Xefe — Folha e Contabilidade Verificadas',
         description: 'Dentro do motor de folha e contabilidade do Xefe: a lei laboral, fiscal e de INSS de Timor-Leste implementada regra a regra, verificada contra a prática real e avaliações oficiais da autoridade tributária, ao cêntimo.',
       },
+      id: {
+        title: 'Mesin Xefe — Hukum Timor-Leste dalam Kode',
+        description: 'Hukum ketenagakerjaan, perpajakan dan jaminan sosial Timor-Leste diterapkan aturan demi aturan: WIT, INSS, lembur, kerja malam, batas potongan dan subsídio anual, dengan setiap angka tetap terlihat.',
+      },
     },
   },
   docsIndex: {
@@ -113,6 +137,10 @@ export const seoConfig = {
         title: 'Documentação Xefe — Como Funciona a Folha em Timor-Leste',
         description: 'Documentação em linguagem simples do Xefe: o que acontece ao dinheiro da folha, quando caem os prazos legais e que garantias o próprio sistema impõe.',
       },
+      id: {
+        title: 'Dokumentasi Xefe — Cara Kerjanya',
+        description: 'Dokumentasi berbahasa lugas tentang penggajian, pajak, cuti dan keuangan Timor-Leste di Xefe: apa yang terjadi pada uang Anda, kapan tenggatnya, dan jaminan mana yang ditegakkan sistem.',
+      },
     },
   },
   docsMoneyChain: {
@@ -128,6 +156,10 @@ export const seoConfig = {
       pt: {
         title: 'A Cadeia do Dinheiro da Folha — Documentação Xefe',
         description: 'De um processamento em rascunho a livros fechados: passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais de Timor-Leste e sete garantias impostas pelo sistema.',
+      },
+      id: {
+        title: 'Rantai Uang Penggajian — Dokumentasi Xefe',
+        description: 'Dari proses penggajian draf sampai pembukuan tertutup: langkah persetujuan, tiga jurnal yang menggerakkan uang, setiap tenggat wajib Timor-Leste, dan tujuh jaminan yang ditegakkan sistem.',
       },
     },
   },

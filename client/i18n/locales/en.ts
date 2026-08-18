@@ -872,7 +872,7 @@ const messages = {
           "Every amount stays visible for review before you finalize payroll.",
         trust: {
           noCard: "No card required to start",
-          languages: "Tetun, English and Portuguese",
+          languages: "Tetun, English, Portuguese and Indonesian",
           localSupport: "Local support in Timor-Leste",
         },
       },
@@ -939,7 +939,7 @@ const messages = {
         languages: {
           title: "Clear in every language",
           description:
-            "Use Xefe in Tetun, English or Portuguese, with local onboarding and WhatsApp support.",
+            "Use Xefe in Tetun, English, Portuguese or Indonesian, with local onboarding and WhatsApp support.",
         },
         payslipTitle: "A payslip every employee can understand",
         payslipDescription:
@@ -998,7 +998,7 @@ const messages = {
         q2: "Which Timor-Leste banks does Xefe support?",
         a2: "Xefe has a verified BNU salary pack. BNCTL, Mandiri and ANZ exports are available as best-effort templates that you must confirm with your bank.",
         q3: "Is Xefe available in Tetun?",
-        a3: "Yes — the whole app works in Tetun, English and Portuguese, and you can switch language at any time.",
+        a3: "Yes — the whole app works in Tetun, English, Portuguese and Indonesian, and you can switch language at any time.",
         q4: "How much does Xefe cost?",
         a4: "One flat price of $4 per employee per month, with every feature included. Setting up and building payroll is free; a subscription is only needed to finalize a real payroll run. Founding businesses that join now get 6 months free.",
         q5: "Do I need to install anything?",
@@ -1302,7 +1302,7 @@ const messages = {
         deliver: {
           title: "Deliver",
           description:
-            "Every employee receives a payslip PDF — in Tetun, Portuguese or English — with employer contributions, year-to-date figures and a signature block. Ekipa app users get a push notification the moment it is ready.",
+            "Every employee receives a payslip PDF — in Tetun, Portuguese, Indonesian or English — with employer contributions, year-to-date figures and a signature block. Ekipa app users get a push notification the moment it is ready.",
         },
         file: {
           title: "File",
@@ -1477,7 +1477,7 @@ const messages = {
       trust: {
         plain: "Plain language for everyday work",
         detail: "Full calculation and accounting detail",
-        languages: "Tetun, English and Portuguese",
+        languages: "Tetun, English, Portuguese and Indonesian",
       },
       proof: {
         eyebrow: "One connected record",
@@ -1516,7 +1516,7 @@ const messages = {
           guided: "Guided employee, payroll, invoice and payment screens",
           defaults:
             "Safe defaults keep specialist tax decisions out of the normal flow",
-          language: "Phone-friendly screens in Tetun, English and Portuguese",
+          language: "Phone-friendly screens in Tetun, English, Portuguese and Indonesian",
         },
       },
       professional: {
@@ -2217,7 +2217,7 @@ const messages = {
           "Up to 12 certified days per year: the first 6 at 100% pay, the next 6 at 50% (Labour Law Art. 33.4). An employer may be more generous.",
         severanceLabel: "Service compensation on termination",
         severanceValue:
-          "One month's salary per completed 5-year period of service (Labour Law Art. 56). The article says this is owed \u201cregardless of the reason\u201d the job ended; we are confirming with our accounting reviewers whether dismissal for cause is an exception.",
+          "At least one month's salary per completed 5-year period of service (Labour Law Art. 56). The article says this is owed \u201cregardless of the reason\u201d the job ended; we are confirming with our accounting reviewers whether dismissal for cause is an exception.",
         nonCashLabel: "Non-cash benefits",
         nonCashValue:
           "Taxed as wages only when worth more than $20/month (Tax Law 8/2008)",
@@ -2286,7 +2286,7 @@ const messages = {
       needsAttention: "{{count}} items need attention",
       fixedTermTitle: "Contract should be permanent",
       fixedTermElapsed:
-        "Hired on {{date}} on a fixed-term contract. Under the Timor-Leste Labour Law, continuous fixed-term employment past 3 years becomes permanent by operation of law. Review and convert this contract.",
+        "Hired on {{date}} on a fixed-term contract. Under the Timor-Leste Labour Law, continuous fixed-term employment cannot exceed 3 years — beyond that it becomes permanent by operation of law. Review and convert this contract.",
       fixedTermSpan:
         "This contract as dated ({{from}} to {{to}}) spans more than 3 years. Under the Timor-Leste Labour Law, fixed-term employment cannot exceed 3 years including renewals \u2014 it becomes permanent by operation of law. Review and convert this contract.",
       convertNow: "Convert now",
@@ -8787,6 +8787,7 @@ const messages = {
     en: "English",
     tet: "Tetun",
     pt: "Português",
+    id: "Bahasa Indonesia",
   },
 } as const;
 

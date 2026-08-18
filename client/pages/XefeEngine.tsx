@@ -88,7 +88,7 @@ export default function XefeEngine() {
     { value: "600+", labelKey: "enginePage.hero.statTests" },
     { value: "5", labelKey: "enginePage.hero.statStatutes" },
     { value: "77", labelKey: "enginePage.hero.statAccounts" },
-    { value: "3", labelKey: "enginePage.hero.statLanguages" },
+    { value: "4", labelKey: "enginePage.hero.statLanguages" },
   ];
 
   const lawCards = [

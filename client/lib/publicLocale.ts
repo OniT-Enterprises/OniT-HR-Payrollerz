@@ -1,8 +1,8 @@
 /**
  * Locale-prefixed URLs for the PUBLIC marketing pages only.
  *
- * English lives at the bare path (`/pricing`); Tetun and Portuguese live under
- * a path prefix (`/tet/pricing`, `/pt/pricing`) so crawlers can index each
+ * English lives at the bare path (`/pricing`); Tetun, Portuguese and Indonesian
+ * live under a path prefix (`/tet/pricing`, `/pt/pricing`, `/id/pricing`) so crawlers can index each
  * language as its own URL (hreflang cluster). The authenticated app keeps the
  * single-URL locale switcher — these helpers must never be applied to app
  * routes.
@@ -11,9 +11,9 @@
  * hreflang. Google may ignore an hreflang code it doesn't recognize, but the
  * pages still index normally via the sitemap and internal links.
  */
-export type PublicLocale = "en" | "tet" | "pt";
+export type PublicLocale = "en" | "tet" | "pt" | "id";
 
-export const PREFIXED_PUBLIC_LOCALES = ["tet", "pt"] as const;
+export const PREFIXED_PUBLIC_LOCALES = ["tet", "pt", "id"] as const;
 
 /** Marketing paths that exist in all three languages (bare, English form). */
 export const LOCALIZED_PUBLIC_PATHS = [

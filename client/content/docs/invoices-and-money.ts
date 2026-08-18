@@ -30,7 +30,7 @@ export const article: LocalizedDocArticle = {
           },
           {
             title: "Send it",
-            body: "Sending creates a private hosted page for that invoice, which you can share by WhatsApp or email — no login required. Your customer sees a clean page in Tetun, English or Portuguese, with a button to download the PDF. That PDF is frozen exactly as it looked the moment you sent it, even if you change your invoice template afterwards.",
+            body: "Sending creates a private hosted page for that invoice, which you can share by WhatsApp or email — no login required. Your customer sees a clean page in Tetun, English, Portuguese or Indonesian, with a button to download the PDF. That PDF is frozen exactly as it looked the moment you sent it, even if you change your invoice template afterwards.",
           },
           {
             title: "Record the payment when it arrives",
@@ -68,6 +68,63 @@ export const article: LocalizedDocArticle = {
       },
     ],
   },
+  id: {
+    titleTop: "Faktur, tagihan dan",
+    titleAccent: "pengeluaran",
+    lede: "Tempat uang sehari-hari berada: apa yang pelanggan utangkan kepada Anda, apa yang Anda utangkan kepada pemasok, dan apa yang telah dibelanjakan usaha Anda. Setiap dokumen yang Anda buat di sini otomatis membukukan entri jurnalnya sendiri yang seimbang ke pembukuan Anda.",
+    blocks: [
+      {
+        type: "prose",
+        body: "Inilah pekerjaan keuangan sehari-hari — mengirim faktur, membayar pemasok, mencatat kuitansi bahan bakar, mencocokkan rekening koran Anda. Anda mengerjakan tugas sehari-harinya dalam bahasa yang lugas; Xefe menjaga akuntansi di baliknya tetap selaras, secara otomatis.",
+      },
+      { type: "heading", id: "invoices", text: "Faktur" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Buat fakturnya",
+            body: "Tambahkan pelanggan Anda, baris itemnya dan syarat pembayaran Anda. Simpan sebagai draf selama Anda masih menimbang, atau kirim langsung.",
+          },
+          {
+            title: "Kirimkan",
+            body: "Mengirim akan membuat halaman pribadi untuk faktur tersebut, yang dapat Anda bagikan lewat WhatsApp atau email — tanpa perlu masuk. Pelanggan Anda melihat halaman yang rapi dalam bahasa Tetun, Inggris, Portugis atau Indonesia, dengan tombol untuk mengunduh PDF-nya. PDF itu dibekukan persis seperti tampilannya saat Anda mengirimnya, bahkan jika Anda mengubah templat faktur setelahnya.",
+          },
+          {
+            title: "Catat pembayarannya saat diterima",
+            body: "Catat tunai, transfer bank, kartu, uang seluler atau cek terhadap faktur tersebut. Sisa tagihannya langsung diperbarui, dan begitu lunas sepenuhnya faktur itu ditandai dibayar — tidak ada lagi yang perlu dikerjakan.",
+          },
+        ],
+      },
+      { type: "heading", id: "recurring-invoices", text: "Faktur berulang" },
+      {
+        type: "prose",
+        body: "Untuk pelanggan yang Anda tagih menurut jadwal — pekerjaan yang dibayar bulanan, sebuah langganan — siapkan sekali saja sebagai faktur berulang, dan Xefe otomatis membuat faktur baru pada interval yang Anda pilih. Jeda kapan pun kesepakatannya berubah; setiap faktur yang dihasilkannya bekerja persis seperti faktur yang Anda buat sendiri — kirim, bagikan, terima pembayarannya.",
+      },
+      { type: "heading", id: "bills-and-expenses", text: "Tagihan dan pengeluaran" },
+      {
+        type: "prose",
+        body: "Ini sisi lain dari koin yang sama: uang yang keluar alih-alih masuk.",
+      },
+      {
+        type: "list",
+        items: [
+          "Catat tagihan pemasok begitu tagihannya datang, lengkap dengan tanggal jatuh temponya, supaya tidak ada yang terlewat",
+          "Tandai sebuah tagihan sebagai dibayar begitu Anda melunasinya, dan sisa utang Anda diperbarui dengan sendirinya",
+          "Catat pengeluaran sehari-hari beserta kuitansinya — bahan bakar, perlengkapan, sewa, apa pun yang dibelanjakan usaha Anda",
+          "Pajak pemotongan pemasok secara bawaan berada di luar alur sehari-hari — tagihan biasa tidak memerlukan keputusan tambahan. Jika akuntan Anda menginginkan kendali yang lebih rinci atasnya, mengaktifkan mode pajak lanjutan di Pengaturan menambahkan kendali itu tanpa mengubah cara kerja orang lain",
+        ],
+      },
+      { type: "heading", id: "bank-reconciliation", text: "Rekonsiliasi bank" },
+      {
+        type: "prose",
+        body: "Impor rekening koran Anda dan Xefe menjajarkan setiap transaksi dengan faktur, tagihan dan pembayaran penggajian yang sudah Anda catat. Mencocokkan sebuah transaksi bukan sekadar merapikan daftar — ia melunasi pembukuan: faktur atau tagihan yang bersangkutan ditandai dibayar dan entri jurnal yang sesuai dibukukan, sehingga catatan Anda dan bank Anda sepakat.",
+      },
+      {
+        type: "callout",
+        body: "Akuntansi memegang sisi formal dari semua ini — entri jurnal, buku besar, neraca saldo, laporan laba rugi dan neraca. Anda tidak pernah perlu membukukan satu pun sendiri: setiap faktur, tagihan, pengeluaran, pembayaran dan transaksi terekonsiliasi di halaman ini mengaliri semuanya secara otomatis.",
+      },
+    ],
+  },
   pt: {
     titleTop: "Faturas, contas e",
     titleAccent: "despesas",
@@ -87,7 +144,7 @@ export const article: LocalizedDocArticle = {
           },
           {
             title: "Envie-a",
-            body: "Enviar cria uma página privada para essa fatura, que pode partilhar por WhatsApp ou email — sem necessidade de login. O cliente vê uma página limpa em Tétum, Inglês ou Português, com um botão para descarregar o PDF. Esse PDF fica congelado exatamente como estava no momento do envio, mesmo que altere o modelo da fatura depois.",
+            body: "Enviar cria uma página privada para essa fatura, que pode partilhar por WhatsApp ou email — sem necessidade de login. O cliente vê uma página limpa em Tétum, Inglês, Português ou Indonésio, com um botão para descarregar o PDF. Esse PDF fica congelado exatamente como estava no momento do envio, mesmo que altere o modelo da fatura depois.",
           },
           {
             title: "Registe o pagamento quando chegar",

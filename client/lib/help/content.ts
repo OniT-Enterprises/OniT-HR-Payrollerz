@@ -18,8 +18,9 @@
 import { MONTH_EN, LEAVER_EN, BOUNDARIES_EN } from "./guides-en";
 import { MONTH_PT, LEAVER_PT, BOUNDARIES_PT } from "./guides-pt";
 import { MONTH_TET, LEAVER_TET, BOUNDARIES_TET } from "./guides-tet";
+import { MONTH_ID, LEAVER_ID, BOUNDARIES_ID } from "./guides-id";
 
-export type ArticleLocale = "en" | "pt" | "tet";
+export type ArticleLocale = "en" | "pt" | "tet" | "id";
 
 /** How settled a position is. Drives the badge and the search filter. */
 export type PositionStatus =
@@ -595,6 +596,7 @@ const TRANSLATIONS: Record<ArticleLocale, HelpArticle[]> = {
   en: [],
   pt: [MONTH_PT, LEAVER_PT, BOUNDARIES_PT],
   tet: [MONTH_TET, LEAVER_TET, BOUNDARIES_TET],
+  id: [MONTH_ID, LEAVER_ID, BOUNDARIES_ID],
 };
 
 /**

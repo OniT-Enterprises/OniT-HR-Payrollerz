@@ -2,7 +2,7 @@
  * Rebuild client/i18n/translations.ts (the master bundle used by the i18n
  * check/split tooling) from the per-locale runtime files.
  *
- * The app loads client/i18n/locales/{en,tet,pt}.ts at runtime, and those files
+ * The app loads client/i18n/locales/{en,tet,pt,id}.ts at runtime, and those files
  * had drifted ahead of the master (new keys added directly). This regenerates
  * the master so master === locales, keeping `i18n:check` accurate and the
  * `split-i18n-locales` direction safe (idempotent).
@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import en from "../client/i18n/locales/en";
 import tet from "../client/i18n/locales/tet";
 import pt from "../client/i18n/locales/pt";
+import id from "../client/i18n/locales/id";
 
 type Obj = Record<string, unknown>;
 
@@ -33,17 +34,20 @@ const body = {
   en: strip(en as Obj),
   tet: strip(tet as Obj),
   pt: strip(pt as Obj),
+  id: strip(id as Obj),
 };
 
 const content =
   `// Auto-generated translations file\n` +
-  `// Rebuilt from client/i18n/locales/{en,tet,pt}.ts via scripts/rebuild-i18n-master.ts\n\n` +
+  `// Rebuilt from client/i18n/locales/{en,tet,pt,id}.ts via scripts/rebuild-i18n-master.ts\n\n` +
   `export const translations = ${JSON.stringify(body, null, 2)} as const;\n\n\n` +
   `// Add locale labels to each translation set dynamically\n` +
   `// These are referenced by I18nProvider for the language switcher\n` +
-  `(translations.en as Record<string, unknown>).locale = { en: 'English', tet: 'Tetun', pt: 'Português' };\n` +
-  `(translations.tet as Record<string, unknown>).locale = { en: 'English', tet: 'Tetun', pt: 'Português' };\n` +
-  `(translations.pt as Record<string, unknown>).locale = { en: 'English', tet: 'Tetun', pt: 'Português' };\n`;
+  `const LOCALE_LABELS = { en: 'English', tet: 'Tetun', pt: 'Português', id: 'Bahasa Indonesia' };\n` +
+  `(translations.en as Record<string, unknown>).locale = LOCALE_LABELS;\n` +
+  `(translations.tet as Record<string, unknown>).locale = LOCALE_LABELS;\n` +
+  `(translations.pt as Record<string, unknown>).locale = LOCALE_LABELS;\n` +
+  `(translations.id as Record<string, unknown>).locale = LOCALE_LABELS;\n`;
 
 writeFileSync(outPath, content);
 console.log(`Rebuilt ${path.relative(process.cwd(), outPath)} from locale files`);

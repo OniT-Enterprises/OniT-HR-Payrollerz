@@ -94,6 +94,88 @@ export const article: LocalizedDocArticle = {
       },
     ],
   },
+  id: {
+    titleTop: "Pajak dan",
+    titleAccent: "pelaporan wajib",
+    lede: "Setiap tanggal bulanan dan tahunan yang wajib dipenuhi pemberi kerja Timor-Leste kepada kantor pajak dan Jaminan Sosial — dan persis apa yang Xefe siapkan untuk masing-masingnya, langsung dari penggajian yang sudah Anda bayarkan.",
+    blocks: [
+      {
+        type: "prose",
+        body: "Xefe menghitung pajak penghasilan upah (WIT) dan iuran INSS Anda dari penggajian yang benar-benar Anda jalankan dan bayarkan — tidak pernah dari perkiraan. WIT mengikuti bulan saat upah dibayarkan, dan setiap karyawan harus ditandai sebagai penduduk atau bukan penduduk memakai uji kependudukan pajak; kewarganegaraan dan status pemegang saham tidak menciptakan pengecualian pajak. Anda tetap memegang kendali atas apa yang benar-benar disampaikan dan kapan: Xefe menyiapkan angka dan dokumennya, bukan klik yang menyampaikannya.",
+      },
+      { type: "heading", id: "calendar", text: "Kalender bulanan" },
+      {
+        type: "deadlines",
+        items: [
+          {
+            day: "10",
+            small: "bulan berikutnya",
+            title: "Laporan remunerasi INSS",
+            body: "Laporan remunerasi bulanan (DR), disusun dalam templat Excel resmi portal INSS, disampaikan melalui portal pemberi kerja.",
+          },
+          {
+            day: "15",
+            small: "bulan berikutnya",
+            title: "Pajak penghasilan upah (WIT)",
+            body: "Pelaporan pajak penghasilan upah bulanan ATTL beserta pembayarannya — keduanya jatuh tempo pada hari yang sama.",
+          },
+          {
+            day: "20",
+            small: "bulan berikutnya",
+            title: "Pembayaran INSS",
+            body: "Keterlambatan pembayaran dikenakan bunga 1% per bulan atau bagian dari bulan (Dekrit-Undang-Undang 20/2017, Art. 39). Xefe menandai saldo yang terlambat beserta perkiraan berjalannya.",
+          },
+        ],
+      },
+      { type: "heading", id: "generates", text: "Apa yang Xefe hasilkan" },
+      {
+        type: "list",
+        items: [
+          "Angka pelaporan WIT bulanan — pajak yang dipotong dan dasar kena pajak di baliknya, siap untuk formulir ATTL.",
+          "Pelaporan INSS Anda, disusun mengikuti templat Excel resmi portal INSS itu sendiri, siap diunggah apa adanya.",
+          "Sertifikat WIT tahunan setiap karyawan — catatan upah yang dibayarkan dan pajak yang dipotong sepanjang tahun.",
+          "Rekonsiliasi pajak upah pemberi kerja tahunan, mencocokkan dua belas bulan pelaporan terhadap tahun tersebut.",
+          "Bantuan pajak jasa untuk penerimaan hotel, restoran/bar dan telekomunikasi. Usaha campuran hanya memasukkan penerimaan jasa yang ditetapkan; Xefe tidak pernah mengenakan pajak atas seluruh peredaran usaha hanya berdasarkan label sektornya.",
+          "Angka angsuran pajak penghasilan sebesar 0,5% dari dasar peredaran usaha yang telah ditinjau, dengan frekuensi triwulanan/bulanan berdasarkan peredaran usaha tahun sebelumnya.",
+          "Angka kerja di balik pelaporan pajak penghasilan tahunan Anda (TADR-IT 1), termasuk daftar penyusutan fiskal 100% menurut Schedule VII, tertata untuk diperiksa dan dilaporkan oleh akuntan Anda.",
+        ],
+      },
+      {
+        type: "heading",
+        id: "return-vs-payment",
+        text: "Pelaporan vs pembayaran",
+      },
+      {
+        type: "prose",
+        body: "Sebuah pelaporan dan pembayarannya adalah kewajiban yang terpisah. Xefe melacak kedua statusnya untuk WIT dan INSS. Pajak jasa dan angsuran pajak penghasilan masing-masing memiliki catatan pelaporannya sendiri: melaporkan yang satu tidak pernah menandai yang lain sebagai dilaporkan hanya karena bulannya sama. Begitu sebuah pelaporan dicatat sebagai disampaikan, angka yang dinyatakannya dibekukan; buktinya masih dapat ditambahkan.",
+      },
+      {
+        type: "table",
+        headers: ["Kewajiban", "Pelaporan jatuh tempo", "Pembayaran jatuh tempo"],
+        rows: [
+          ["Laporan remunerasi INSS", "tanggal 10", "tanggal 20"],
+          ["Pajak penghasilan upah (WIT)", "tanggal 15", "tanggal 15"],
+        ],
+      },
+      {
+        type: "heading",
+        id: "assisted-filing",
+        text: "Pelaporan terpandu, sejujurnya",
+      },
+      {
+        type: "prose",
+        body: "Xefe menyiapkan angka yang eksak dan ekspor yang dibangun mengikuti templat pemerintah sendiri — laporan remunerasi portal INSS, formulir pajak upah ATTL. Penyampaiannya tetap terjadi di portal pemerintah sendiri, atas nama Anda. Untuk pelaporan pajak penghasilan tahunan, Xefe melangkah satu tahap lebih jauh dan menyiapkan kertas kerja lengkap berisi angka di baliknya — tetapi pelaporannya sendiri dibuat untuk diperiksa dan disampaikan oleh seorang akuntan. Xefe tidak pernah menyampaikan apa pun atas nama Anda.",
+      },
+      {
+        type: "callout",
+        body: "Xefe menghitung. Anda, atau akuntan Anda, yang menyampaikan. Pembagian itu disengaja: angkanya eksak, tetapi tanggung jawab atas pelaporannya tetap pada orang yang dapat menandatanganinya.",
+      },
+      {
+        type: "callout",
+        body: "Alur sederhana menerapkan bawaan yang aman, sehingga usaha kecil yang baru pertama kali memakainya tidak pernah diminta mengambil keputusan pajak secara tidak sengaja. Kedalaman setingkat akuntan — angka pelaporan satu per satu, rekonsiliasi, kertas kerja tahunan — tersedia begitu Anda membutuhkannya. Lihat halaman mitra akuntan untuk apa yang berubah setelah seorang akuntan bergabung dengan tim Anda.",
+      },
+    ],
+  },
   pt: {
     titleTop: "Impostos e",
     titleAccent: "obrigações fiscais",

@@ -28,7 +28,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 
-type Locale = "en" | "tet" | "pt";
+type Locale = "en" | "tet" | "pt" | "id";
 
 
 
@@ -37,6 +37,7 @@ function formatUSD(amount: number, locale: Locale): string {
     en: "en-US",
     tet: "pt-TL",
     pt: "pt-TL",
+    id: "id-ID",
   };
   return new Intl.NumberFormat(locales[locale], {
     style: "currency",

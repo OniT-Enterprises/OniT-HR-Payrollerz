@@ -16,9 +16,15 @@ import {
 
 const DEMO_EMPLOYEES = 10;
 
-function formatMoney(amount: number, locale: "en" | "tet" | "pt"): string {
+function formatMoney(amount: number, locale: "en" | "tet" | "pt" | "id"): string {
   const localeTag =
-    locale === "pt" ? "pt-PT" : locale === "tet" ? "tet-TL" : "en-US";
+    locale === "pt"
+      ? "pt-PT"
+      : locale === "tet"
+        ? "tet-TL"
+        : locale === "id"
+          ? "id-ID"
+          : "en-US";
   return new Intl.NumberFormat(localeTag, {
     style: "currency",
     currency: "USD",

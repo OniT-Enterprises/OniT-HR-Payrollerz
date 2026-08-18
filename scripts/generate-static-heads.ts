@@ -35,7 +35,7 @@ interface RouteMeta {
   description: string;
   keywords?: string;
   url: string;
-  alternates?: Partial<Record<"tet" | "pt", LocalizedMeta>>;
+  alternates?: Partial<Record<"tet" | "pt" | "id", LocalizedMeta>>;
 }
 
 const ROUTES: RouteMeta[] = [
@@ -132,7 +132,7 @@ function buildHtml(
     routeTags.push(
       `<link rel="alternate" hreflang="en" href="${BASE_URL}${route.url}" />`,
     );
-    for (const loc of Object.keys(route.alternates) as Array<"tet" | "pt">) {
+    for (const loc of Object.keys(route.alternates) as Array<"tet" | "pt" | "id">) {
       routeTags.push(
         `<link rel="alternate" hreflang="${loc}" href="${BASE_URL}${prefixedUrl(route.url, loc)}" />`,
       );
@@ -180,7 +180,7 @@ const template = readFileSync(join(DIST, "index.html"), "utf8");
 for (const route of ROUTES) {
   writeRoute(buildHtml(template, route, "en"), route.url);
   if (route.alternates) {
-    for (const loc of Object.keys(route.alternates) as Array<"tet" | "pt">) {
+    for (const loc of Object.keys(route.alternates) as Array<"tet" | "pt" | "id">) {
       writeRoute(buildHtml(template, route, loc), prefixedUrl(route.url, loc));
     }
   }

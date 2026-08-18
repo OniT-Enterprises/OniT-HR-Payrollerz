@@ -49,6 +49,7 @@ export interface LocalizedDocArticle {
   en: DocArticleContent;
   pt: DocArticleContent;
   tet: DocArticleContent;
+  id: DocArticleContent;
 }
 
 export interface DocsSeoAlternate {
@@ -69,11 +70,15 @@ export interface DocsManifestEntry {
     keywords?: string;
     /** Canonical bare path, e.g. "/docs/getting-started". */
     url: string;
-    alternates: { tet: DocsSeoAlternate; pt: DocsSeoAlternate };
+    alternates: {
+      tet: DocsSeoAlternate;
+      pt: DocsSeoAlternate;
+      id: DocsSeoAlternate;
+    };
   };
   /** Hub card copy per locale. */
   hub: Record<
-    "en" | "pt" | "tet",
+    "en" | "pt" | "tet" | "id",
     { tag: string; title: string; desc: string }
   >;
 }

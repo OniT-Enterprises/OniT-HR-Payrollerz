@@ -59,9 +59,15 @@ import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { AccountantPartnerBanner } from "@/components/settings/AccountantPartnerCard";
 import { useInvoiceStats } from "@/hooks/useInvoices";
 
-function formatCurrencyShort(amount: number, locale: "en" | "tet" | "pt") {
+function formatCurrencyShort(amount: number, locale: "en" | "tet" | "pt" | "id") {
   const numberLocale =
-    locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
+    locale === "en"
+      ? "en-US"
+      : locale === "pt"
+        ? "pt-PT"
+        : locale === "id"
+          ? "id-ID"
+          : "pt-TL";
   return new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency: "USD",

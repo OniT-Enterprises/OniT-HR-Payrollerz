@@ -93,11 +93,15 @@ const CITES_ARTICLE =
  * Tetun — it passed the whole Tetun leave table while flagging the identical
  * English and Portuguese rows. A guard that cannot see one of the three
  * languages we publish in is worse than no guard, because it reports green.
+ * Indonesian was added on 2026-08-18 for the same reason: it puts the number
+ * first like English ("12 hari", "44 jam"), but none of its units — hari,
+ * minggu, bulan, tahun, jam — were in this list, so every Indonesian leave and
+ * hours figure would have passed unchecked.
  */
 const STATES_A_NUMBER = new RegExp(
   [
-    // number then unit: "12 days", "12 dias", "44 horas"
-    String.raw`\b\d+(?:[.,]\d+)?\s*(?:days?|dias?|loron|weeks?|semanas?|semana|months?|meses|fulan|hours?|horas?|oras|%|percent|por cento)\b`,
+    // number then unit: "12 days", "12 dias", "44 horas", "12 hari", "44 jam"
+    String.raw`\b\d+(?:[.,]\d+)?\s*(?:days?|dias?|loron|hari|weeks?|semanas?|semana|minggu|months?|meses|fulan|bulan|years?|anos?|tahun|hours?|horas?|oras|jam|%|percent|por cento|persen)\b`,
     // unit then number, the Tetun order: "loron 12", "semana 4", "fulan 6"
     String.raw`\b(?:loron|semana|fulan|oras)(?:\s+\w+)?\s+\d+\b`,
     // bare money
@@ -120,12 +124,21 @@ const DIRECTION_WORDS = [
   // Portuguese
   "pelo menos", "mínimo", "mínima", "não inferior", "no mínimo",
   "até", "máximo", "máxima", "não superior", "acima", "abaixo",
-  "limite", "teto", "ou inferior", "no prazo", "exceder",
+  "limite", "teto", "ou inferior", "no prazo", "exceder", "máx", "mín",
   // Tetun. Both spellings of maximum/minimum: the app's Tetun is mixed
   // orthography (see .tulunrc), so "maksimu" and "máximu" both occur in
   // shipped strings and a guard that knows only one silently passes the other.
   "pelu menus", "menus", "to'o", "liu", "limite",
   "maksimu", "máximu", "maksimun", "mínimu", "minimu",
+  // Indonesian. "sekurang-kurangnya" and "paling sedikit" are the statutory
+  // floor phrasings; "maksimal"/"paling banyak" the ceiling ones. "melebihi"
+  // and "atau kurang" cover the comparative forms the app actually uses.
+  "sekurang-kurangnya", "sekurangnya", "paling sedikit", "minimal", "minimum",
+  "tidak kurang dari", "paling banyak", "paling lama", "maksimal", "maksimum",
+  "tidak lebih dari", "tidak boleh melebihi", "melebihi", "melampaui",
+  "hingga", "sampai", "di atas", "di bawah", "lebih dari", "kurang dari",
+  "atau kurang", "atau lebih", "batas", "dibatasi", "dalam waktu",
+  "paling lambat", "selambat-lambatnya", "paling cepat",
 ];
 
 /**

@@ -92,11 +92,102 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payslips", text: "Payslips" },
       {
         type: "prose",
-        body: "Every employee gets their own payslip as soon as the run is approved — you don't need to wait until it's paid. Each one is a PDF, trilingual in English, Portuguese and Tetun, with gross pay, every earning and deduction, and net pay laid out line by line.",
+        body: "Every employee gets their own payslip as soon as the run is approved — you don't need to wait until it's paid. Each one is a PDF, in English, Portuguese, Tetun and Indonesian, with gross pay, every earning and deduction, and net pay laid out line by line.",
       },
       {
         type: "callout",
         body: "Curious how a payroll run becomes closed books? The payroll money chain article walks through every state change, the journals that move the money, the statutory deadlines that follow, and the guarantees that hold it all together — see /docs/payroll-money-chain.",
+      },
+    ],
+  },
+  id: {
+    titleTop: "Menjalankan",
+    titleAccent: "penggajian",
+    lede: "Dari membuka pemandunya sampai membagikan slip gaji — apa yang terjadi pada setiap langkah, dan satu-satunya tempat Xefe meminta Anda berlangganan.",
+    blocks: [
+      {
+        type: "prose",
+        body: "Setiap proses penggajian di Xefe menempuh jalur yang sama: susun, mintakan persetujuan orang lain, bayarkan, lalu bagikan slip gajinya. Mesinnya menangani aritmetika pajak dan jaminan sosial; Anda memeriksa angkanya sebelum apa pun bergerak.",
+      },
+      { type: "heading", id: "before-you-run", text: "Sebelum Anda menjalankannya" },
+      {
+        type: "prose",
+        body: "Dua hal harus siap sebelum Anda membuka Jalankan Penggajian.",
+      },
+      {
+        type: "list",
+        items: [
+          "Setiap karyawan memerlukan gaji, jam kontrak dan status kependudukan pajak (penduduk atau bukan penduduk) yang tercatat di profilnya — prosesnya akan menyebutkan siapa saja yang belum lengkap sebelum ia mau menghitung.",
+          "Kehadiran adalah satu-satunya alur pemasukan jam kerja di Xefe. Apa pun yang Anda catat di sana — jam kerja, lembur, ketidakhadiran — otomatis mengalir ke penggajian; Anda tidak perlu memasukkan ulang apa pun.",
+          "Jam malam (21.00–06.00, termasuk shift yang melewati tengah malam) dideteksi otomatis dan dibayar dengan premi menurut undang-undang.",
+        ],
+      },
+      { type: "heading", id: "the-run", text: "Prosesnya" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Buka Jalankan Penggajian",
+            body: "Mulai proses baru dari menu Penggajian.",
+          },
+          {
+            title: "Konfirmasikan periodenya",
+            body: "Periode gaji dan tanggal bayar terisi otomatis dari frekuensi gaji yang Anda atur. Sesuaikan hanya jika proses ini memang sekali-kali saja.",
+          },
+          {
+            title: "Periksa setiap karyawan",
+            body: "Periksa jam kerja, lembur, bonus dan potongan untuk semua orang dalam daftar. Validasi menandai gaji yang belum diisi, jam nol, atau lembur yang melewati batas maksimal hukum 16 jam/minggu sebelum Anda dapat melanjutkan.",
+          },
+          {
+            title: "Biarkan mesinnya menghitung",
+            body: "Pajak pemotongan (WIT) dan iuran INSS dihitung per karyawan, mengikuti aturan undang-undang Timor-Leste — tidak pernah diperkirakan. Setiap angka tetap terlihat untuk diperiksa.",
+          },
+          {
+            title: "Ajukan untuk disetujui",
+            body: "Ini menuliskan prosesnya beserta catatannya. Menyusun dan memeriksa sebuah proses gratis pada semua paket — mengajukannya juga. Prosesnya kini menunggu orang lain menyetujuinya.",
+          },
+        ],
+      },
+      { type: "heading", id: "pay-changes", text: "Kenaikan gaji, rapelan dan premi" },
+      {
+        type: "prose",
+        body: "Dua pergerakan gaji ditangani dari profil karyawan, sehingga tidak ada yang perlu diketik ulang ke dalam sebuah proses.",
+      },
+      {
+        type: "list",
+        items: [
+          "Kenaikan gaji dicatat dengan mengubah gaji karyawan, lengkap dengan bulan mulai berlakunya dan alasannya. Ketika kenaikan disepakati terlambat dan berlaku surut — disepakati bulan April, berlaku sejak Maret — proses berikutnya menyarankan jumlah yang kurang sebagai baris upah berlaku surut tersendiri, dihitung dari riwayat yang tercatat itu. Sesuaikan atau kosongkan saran tersebut pada prosesnya jika Anda tidak setuju; begitu dibayar ia tidak pernah disarankan lagi, dan ia dikenai pajak pada bulan saat dibayarkan, karena pajak upah Timor-Leste mengikuti upah yang dibayarkan (UU 8/2008). Kenaikan yang berlaku di tengah bulan ditandai agar Anda hitung sendiri — Xefe hanya menyarankan bulan penuh.",
+          "Premi kehadiran (prémio de assiduidade) diatur pada profil karyawan: jumlah bulanannya, dan apakah ketidakhadiran tanpa alasan menghanguskannya seluruhnya atau menguranginya sebanding dengan jam yang hilang. Setiap proses menyelesaikannya terhadap ketidakhadiran periode itu secara otomatis — cuti yang disetujui dan hari sakit tidak pernah menghilangkan premi, dan orang yang masuk di tengah periode tetap mendapatkannya. Premi ini merupakan penghasilan upah untuk keperluan pajak dan berada di dalam dasar INSS.",
+        ],
+      },
+      { type: "heading", id: "approval", text: "Persetujuan" },
+      {
+        type: "prose",
+        body: "Sebuah proses penggajian tidak dapat disetujui oleh orang yang membuatnya. Orang kedua yang memiliki akses penggajian harus membukanya dan menyetujuinya — sebuah aturan basis data, bukan sekadar layar, sehingga permintaan yang melangkahi aplikasi pun ditolak bila penyetuju dan pembuatnya sama.\n\nMenyetujui juga merupakan satu-satunya langkah berbayar di seluruh Xefe. Menyusun, memeriksa dan membuat laporan tetap gratis pada semua paket; menyetujui sebuah proses — yang Xefe sebut menyelesaikannya — memerlukan langganan aktif. Jika Anda memakai paket gratis, Anda baru akan diminta berlangganan pada langkah ini.",
+      },
+      { type: "heading", id: "payment", text: "Pembayaran" },
+      {
+        type: "prose",
+        body: "Setelah sebuah proses disetujui, tandai sebagai dibayar. Xefe meminta tanggal pembayaran dan referensi bank — keduanya wajib, dan begitu dilekatkan pada prosesnya, bukti itu tidak dapat diubah; kekeliruan diperbaiki dengan entri pembalik, tidak pernah dengan menulis ulang catatannya.\n\nJika Anda membayar lewat transfer bank, menandai sebuah proses sebagai dibayar juga menghasilkan paket bank gaji Anda. (Membayar tunai adalah jalur kelas satu di Xefe — ia dibukukan terhadap kas di tangan, dan tidak ada paket yang perlu dikirim.) Untuk BNU, itu berupa daftar transfer Excel yang dikirim lewat email dan surat perintah bayar bertanda tangan yang memang diharapkan bank — paket bergaya sama tersedia untuk BNCTL sebagai tata letak upaya-terbaik, yang sebaiknya dikonfirmasikan dengan kantor cabang Anda.",
+      },
+      {
+        type: "ledger",
+        title: "Jurnal pelunasan",
+        when: "saat dibayar",
+        foot: "Gaji keluar dari bank melalui proses gaji kolektif bank itu sendiri, dengan surat perintah bayar bertanda tangan.",
+        rows: [
+          { code: "2210", name: "Gaji bersih yang harus dibayar", side: "dr" },
+          { code: "11xx", name: "Kas / bank", side: "cr" },
+        ],
+      },
+      { type: "heading", id: "payslips", text: "Slip gaji" },
+      {
+        type: "prose",
+        body: "Setiap karyawan mendapat slip gajinya sendiri begitu prosesnya disetujui — Anda tidak perlu menunggu sampai dibayar. Masing-masing berupa PDF dalam bahasa Inggris, Portugis, Tetun dan Indonesia, memuat gaji bruto, setiap penghasilan dan potongan, serta gaji bersih yang dirinci baris demi baris.",
+      },
+      {
+        type: "callout",
+        body: "Penasaran bagaimana sebuah proses penggajian menjadi pembukuan yang tertutup? Artikel rantai uang penggajian menelusuri setiap perubahan status, jurnal yang menggerakkan uangnya, tenggat menurut undang-undang yang menyusul, dan jaminan yang menyatukan semuanya — lihat /docs/payroll-money-chain.",
       },
     ],
   },
@@ -183,7 +274,7 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payslips", text: "Recibos de vencimento" },
       {
         type: "prose",
-        body: "Cada funcionário recebe o seu recibo assim que o processamento é aprovado — não é preciso esperar que seja pago. Cada recibo é um PDF trilingue, em inglês, português e tétum, com o salário bruto, cada rendimento e dedução, e o salário líquido, linha a linha.",
+        body: "Cada funcionário recebe o seu recibo assim que o processamento é aprovado — não é preciso esperar que seja pago. Cada recibo é um PDF em inglês, português, tétum e indonésio, com o salário bruto, cada rendimento e dedução, e o salário líquido, linha a linha.",
       },
       {
         type: "callout",
@@ -274,7 +365,7 @@ export const article: LocalizedDocArticle = {
       { type: "heading", id: "payslips", text: "Payslip" },
       {
         type: "prose",
-        body: "Trabalhador ida-idak simu nia payslip rasik hafoin prosesamentu aprovadu — la presiza hein to'o selu ona. Payslip ida-idak mak PDF trilingue, iha Ingles, Portugés no Tetun, ho saláriu brutu, rendimentu no dedusaun ida-idak, no saláriu líkidu, liña ba liña.",
+        body: "Trabalhador ida-idak simu nia payslip rasik hafoin prosesamentu aprovadu — la presiza hein to'o selu ona. Payslip ida-idak mak PDF iha Ingles, Portugés, Tetun no Indonézia, ho saláriu brutu, rendimentu no dedusaun ida-idak, no saláriu líkidu, liña ba liña.",
       },
       {
         type: "callout",

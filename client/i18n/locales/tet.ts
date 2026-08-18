@@ -872,7 +872,7 @@ const messages = {
         calculationNote: "Reviza montante hotu molok finaliza folha pagamentu.",
         trust: {
           noCard: "La presiza kartaun atu hahú",
-          languages: "Tetun, Inglés no Portugés",
+          languages: "Tetun, Inglés, Portugés no Indonézia",
           localSupport: "Suporte lokal iha Timor-Leste",
         },
       },
@@ -939,7 +939,7 @@ const messages = {
         languages: {
           title: "Klaru iha lian ida-idak",
           description:
-            "Uza Xefe iha Tetun, Inglés ka Portugés, ho onboarding lokal no suporte WhatsApp.",
+            "Uza Xefe iha Tetun, Inglés, Portugés ka Indonézia, ho onboarding lokal no suporte WhatsApp.",
         },
         payslipTitle: "Payslip ne'ebé funsionáriu hotu bele komprende",
         payslipDescription:
@@ -998,7 +998,7 @@ const messages = {
         q2: "Xefe suporta banku Timor-Leste saida sira?",
         a2: "Xefe iha pakote saláriu BNU ne'ebé verifika ona. Exportasaun BNCTL, Mandiri no ANZ mak modelu best-effort ne'ebé Ita tenke konfirma ho banku.",
         q3: "Xefe disponível iha Tetun ka lae?",
-        a3: "Sin — aplikasaun tomak servisu iha Tetun, Ingles no Portugés, no ita bele troka lian iha kualkér momentu.",
+        a3: "Sin — aplikasaun tomak servisu iha Tetun, Ingles, Portugés no Indonézia, no ita bele troka lian iha kualkér momentu.",
         q4: "Xefe nia presu hira?",
         a4: "Presu úniku $4 kada funsionáriu kada fulan, inklui funsionalidade hotu. Konfigura no prepara folha de pagamentu grátis; presiza subskrisaun de'it atu finaliza folha loos ida. Negósiu fundadór ne'ebé tama agora hetan fulan 6 grátis.",
         q5: "Presiza instala buat ruma ka lae?",
@@ -1305,7 +1305,7 @@ const messages = {
         deliver: {
           title: "Entrega",
           description:
-            "Trabalhador ida-idak simu payslip PDF — iha Tetun, Portugés ka Inglés — ho kontribuisaun empregador nian, totál tinan nian no fatin asina. Uza-na'in aplikasaun Ekipa simu notifikasaun push bainhira prontu.",
+            "Trabalhador ida-idak simu payslip PDF — iha Tetun, Portugés, Indonézia ka Inglés — ho kontribuisaun empregador nian, totál tinan nian no fatin asina. Uza-na'in aplikasaun Ekipa simu notifikasaun push bainhira prontu.",
         },
         file: {
           title: "Deklara",
@@ -1479,7 +1479,7 @@ const messages = {
       trust: {
         plain: "Liafuan klaru ba servisu loron-loron",
         detail: "Kalkulasaun no kontabilidade ho detallu kompletu",
-        languages: "Tetun, Inglés no Portugés",
+        languages: "Tetun, Inglés, Portugés no Indonézia",
       },
       proof: {
         eyebrow: "Rejistu ida ne'ebé ligadu",
@@ -1519,7 +1519,7 @@ const messages = {
           guided: "Pájina orientadu ba trabalhador, folha, fatura no pagamentu",
           defaults:
             "Valór seguru automátiku hasai desizaun impostu espesialista husi fluxu normal",
-          language: "Pájina ba telefone iha Tetun, Inglés no Portugés",
+          language: "Pájina ba telefone iha Tetun, Inglés, Portugés no Indonézia",
         },
       },
       professional: {
@@ -2205,7 +2205,7 @@ const messages = {
           "To'o loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50% (Lei Trabálhu Art. 33.4). Empregadór bele fó liu tan.",
         severanceLabel: "Kompensasaun servisu iha terminasaun",
         severanceValue:
-          "Saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu \u201cla haree ba motivu\u201d ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
+          "Pelu menus saláriu fulan ida kada períodu tinan 5 kompletu (Lei Trabálhu Art. 56). Artigu ne'e dehan katak tenke selu \u201cla haree ba motivu\u201d ramata servisu nian; ami konfirma hela ho ami-nia revizór kontabilidade nian se hasai husi servisu ho justa kauza mak esesaun.",
         nonCashLabel: "Benefísiu la'ós osan",
         nonCashValue:
           "Sai impostu hanesan saláriu de'it bainhira valor liu $20/fulan (Lei Impostu 8/2008)",
@@ -8767,6 +8767,7 @@ const messages = {
     en: "English",
     tet: "Tetun",
     pt: "Português",
+    id: "Bahasa Indonesia",
   },
 } as const;
 

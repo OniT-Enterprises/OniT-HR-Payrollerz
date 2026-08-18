@@ -882,7 +882,7 @@ const messages = {
           "Todos os valores ficam visíveis para revisão antes de finalizar a folha.",
         trust: {
           noCard: "Não precisa de cartão para começar",
-          languages: "Tétum, Inglês e Português",
+          languages: "Tétum, Inglês, Português e Indonésio",
           localSupport: "Suporte local em Timor-Leste",
         },
       },
@@ -949,7 +949,7 @@ const messages = {
         languages: {
           title: "Claro em todos os idiomas",
           description:
-            "Use o Xefe em Tétum, Inglês ou Português, com integração local e suporte por WhatsApp.",
+            "Use o Xefe em Tétum, Inglês, Português ou Indonésio, com integração local e suporte por WhatsApp.",
         },
         payslipTitle: "Um recibo que todos os funcionários entendem",
         payslipDescription:
@@ -1009,7 +1009,7 @@ const messages = {
         q2: "Que bancos de Timor-Leste é que o Xefe suporta?",
         a2: "O Xefe tem um pacote salarial BNU verificado. As exportações BNCTL, Mandiri e ANZ são modelos de melhor esforço que devem ser confirmados com o banco.",
         q3: "O Xefe está disponível em Tétum?",
-        a3: "Sim — toda a aplicação funciona em Tétum, Inglês e Português, e pode mudar de idioma a qualquer momento.",
+        a3: "Sim — toda a aplicação funciona em Tétum, Inglês, Português e Indonésio, e pode mudar de idioma a qualquer momento.",
         q4: "Quanto custa o Xefe?",
         a4: "Um preço único de 4 USD por funcionário por mês, com todas as funcionalidades incluídas. Configurar e preparar a folha é grátis; só precisa de subscrição para finalizar um processamento real. As empresas fundadoras que aderirem agora têm 6 meses grátis.",
         q5: "Preciso de instalar alguma coisa?",
@@ -1494,7 +1494,7 @@ const messages = {
       trust: {
         plain: "Linguagem clara para o trabalho diário",
         detail: "Detalhe completo de cálculos e contabilidade",
-        languages: "Tétum, Inglês e Português",
+        languages: "Tétum, Inglês, Português e Indonésio",
       },
       proof: {
         eyebrow: "Um registo conectado",
@@ -1536,7 +1536,7 @@ const messages = {
             "Ecrãs guiados para trabalhadores, folha, faturas e pagamentos",
           defaults:
             "Valores seguros por defeito mantêm decisões fiscais especializadas fora do fluxo normal",
-          language: "Ecrãs adaptados ao telemóvel em Tétum, Inglês e Português",
+          language: "Ecrãs adaptados ao telemóvel em Tétum, Inglês, Português e Indonésio",
         },
       },
       professional: {
@@ -2246,7 +2246,7 @@ const messages = {
           "Até 12 dias certificados por ano: os primeiros 6 a 100% e os 6 seguintes a 50% (Lei do Trabalho, art. 33.º/4). O empregador pode ser mais generoso.",
         severanceLabel: "Compensação por antiguidade na cessação",
         severanceValue:
-          "Um mês de salário por cada período completo de 5 anos de serviço (Lei do Trabalho, art. 56.º). O artigo diz que é devido \u201cindependentemente do motivo\u201d da cessação; estamos a confirmar com os nossos revisores de contabilidade se o despedimento com justa causa é uma exceção.",
+          "Pelo menos um mês de salário por cada período completo de 5 anos de serviço (Lei do Trabalho, art. 56.º). O artigo diz que é devido \u201cindependentemente do motivo\u201d da cessação; estamos a confirmar com os nossos revisores de contabilidade se o despedimento com justa causa é uma exceção.",
         nonCashLabel: "Benefícios em espécie",
         nonCashValue:
           "Tributados como salário apenas quando valem mais de $20/mês (Lei Fiscal 8/2008)",
@@ -2316,7 +2316,7 @@ const messages = {
       needsAttention: "{{count}} itens precisam de aten\u00e7\u00e3o",
       fixedTermTitle: "O contrato deve passar a permanente",
       fixedTermElapsed:
-        "Contratado a {{date}} com contrato a termo. Segundo a Lei do Trabalho de Timor-Leste, o trabalho a termo cont\u00ednuo para al\u00e9m de 3 anos converte-se em permanente por for\u00e7a da lei. Reveja e converta este contrato.",
+        "Contratado a {{date}} com contrato a termo. Segundo a Lei do Trabalho de Timor-Leste, o trabalho a termo cont\u00ednuo n\u00e3o pode exceder 3 anos \u2014 para al\u00e9m disso converte-se em permanente por for\u00e7a da lei. Reveja e converta este contrato.",
       fixedTermSpan:
         "Este contrato, tal como datado ({{from}} a {{to}}), ultrapassa 3 anos. Segundo a Lei do Trabalho de Timor-Leste, o trabalho a termo n\u00e3o pode exceder 3 anos incluindo renova\u00e7\u00f5es \u2014 converte-se em permanente por for\u00e7a da lei. Reveja e converta este contrato.",
       convertNow: "Converter agora",
@@ -8924,6 +8924,7 @@ const messages = {
     en: "English",
     tet: "Tetun",
     pt: "Português",
+    id: "Bahasa Indonesia",
   },
 } as const;
 

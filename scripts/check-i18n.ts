@@ -3,7 +3,7 @@
  *
  * Reads the LOCALE FILES, not the generated master.
  *
- * `client/i18n/I18nProvider.tsx` loads `client/i18n/locales/{en,tet,pt}.ts` at
+ * `client/i18n/I18nProvider.tsx` loads `client/i18n/locales/{en,tet,pt,id}.ts` at
  * runtime; `client/i18n/translations.ts` is a generated artifact nothing loads.
  * Checking the master therefore validated something no user ever sees, and the
  * two drift the moment somebody edits a locale without running
@@ -23,6 +23,7 @@
 import en from "../client/i18n/locales/en";
 import tet from "../client/i18n/locales/tet";
 import pt from "../client/i18n/locales/pt";
+import id from "../client/i18n/locales/id";
 import { translations } from "../client/i18n/translations";
 
 type Obj = Record<string, unknown>;
@@ -55,6 +56,7 @@ const locales: Record<string, Obj> = {
   en: strip(en as Obj),
   tet: strip(tet as Obj),
   pt: strip(pt as Obj),
+  id: strip(id as Obj),
 };
 
 let hasIssues = false;

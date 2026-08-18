@@ -37,6 +37,7 @@ const OG_LOCALES: Record<PublicLocale, string> = {
   en: 'en_US',
   tet: 'tet_TL',
   pt: 'pt_TL',
+  id: 'id_ID',
 };
 
 const DEFAULT_DESCRIPTION = 'Streamline your HR operations with Xefe. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';

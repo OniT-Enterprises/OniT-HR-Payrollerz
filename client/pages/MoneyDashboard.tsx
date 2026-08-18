@@ -78,8 +78,15 @@ function MoneyDashboardSkeleton() {
   );
 }
 
-function formatCurrency(amount: number, locale: "en" | "tet" | "pt") {
-  const numberLocale = locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
+function formatCurrency(amount: number, locale: "en" | "tet" | "pt" | "id") {
+  const numberLocale =
+    locale === "en"
+      ? "en-US"
+      : locale === "pt"
+        ? "pt-PT"
+        : locale === "id"
+          ? "id-ID"
+          : "pt-TL";
   return new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency: "USD",
