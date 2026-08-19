@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import { IllustratedEmptyState } from '@/components/IllustratedEmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -393,19 +394,21 @@ export default function Vendors() {
         {/* Vendor List */}
         {filteredVendors.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/xefe-empty.webp" alt="No vendors yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
-              <p className="text-muted-foreground mb-4">
-                {searchTerm
-                  ? t('money.vendors.noResults') || 'No vendors found'
-                  : t('money.vendors.empty') || 'No vendors yet'}
-              </p>
-              {!searchTerm && canManageTenant && (
-                <Button onClick={openAddDialog} variant="outline">
+            <CardContent className="p-0">
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-contacts-v2.webp"
+                description={
+                  searchTerm
+                    ? t('money.vendors.noResults') || 'No vendors found'
+                    : t('money.vendors.empty') || 'No vendors yet'
+                }
+                action={!searchTerm && canManageTenant ? (
+                  <Button onClick={openAddDialog} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.vendors.addFirst') || 'Add your first vendor'}
-                </Button>
-              )}
+                  </Button>
+                ) : undefined}
+              />
             </CardContent>
           </Card>
         ) : (

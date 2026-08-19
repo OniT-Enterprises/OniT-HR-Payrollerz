@@ -59,6 +59,7 @@ import { getTodayTL } from "@/lib/dateUtils";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { IllustratedEmptyState } from "@/components/IllustratedEmptyState";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import {
   FileText,
@@ -1237,15 +1238,15 @@ export default function PayrollHistory() {
                 </CardHeader>
                 <CardContent>
                   {filteredRuns.length === 0 ? (
-                    <div className="text-center py-12">
-                      <img src="/images/illustrations/xefe-card-payroll.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
-                      <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
-                      {canManageTenant && (
+                    <IllustratedEmptyState
+                      imageSrc="/images/illustrations/empty-payroll.webp"
+                      description={t("payrollHistory.noRunsFound")}
+                      action={canManageTenant ? (
                         <Button onClick={() => navigate("/payroll/run")}>
                           {t("payrollHistory.runFirstPayroll")}
                         </Button>
-                      )}
-                    </div>
+                      ) : undefined}
+                    />
                   ) : (
                     <>
                     {/* Mobile Card View - All Runs */}

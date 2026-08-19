@@ -42,6 +42,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { IllustratedEmptyState } from "@/components/IllustratedEmptyState";
 import {
   SquarePen,
   Plus,
@@ -1152,19 +1153,11 @@ export default function JournalEntries() {
           </CardHeader>
           <CardContent>
             {filteredEntries.length === 0 ? (
-              <div className="text-center py-12">
-                <img
-                  src="/images/illustrations/xefe-card-accounting.webp"
-                  alt="No journal entries yet"
-                  className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg"
-                />
-                <p className="text-muted-foreground mb-2">
-                  {t("accounting.journalEntries.noEntriesFound")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mb-4">
-                  {t("accounting.journalEntries.noEntriesDesc")}
-                </p>
-              </div>
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-accounting.webp"
+                title={t("accounting.journalEntries.noEntriesFound")}
+                description={t("accounting.journalEntries.noEntriesDesc")}
+              />
             ) : (
               <div className="space-y-2">
                 {filteredEntries.map((entry) => {

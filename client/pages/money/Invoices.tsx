@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import { IllustratedEmptyState } from '@/components/IllustratedEmptyState';
 import { ContextualHelpLink } from '@/components/help/ContextualHelpLink';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -524,19 +525,21 @@ export default function Invoices() {
           </Card>
         ) : filteredInvoices.length === 0 && !hasNextPage ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/xefe-card-money.webp" alt="No invoices yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== 'all'
-                  ? t('money.invoices.noResults') || 'No invoices found'
-                  : t('money.invoices.empty') || 'No invoices yet'}
-              </p>
-              {canManageTenant && !searchTerm && statusFilter === 'all' && (
-                <Button onClick={() => navigate('/money/invoices/new')} variant="outline">
+            <CardContent className="p-0">
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-invoices.webp"
+                description={
+                  searchTerm || statusFilter !== 'all'
+                    ? t('money.invoices.noResults') || 'No invoices found'
+                    : t('money.invoices.empty') || 'No invoices yet'
+                }
+                action={canManageTenant && !searchTerm && statusFilter === 'all' ? (
+                  <Button onClick={() => navigate('/money/invoices/new')} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.invoices.createFirst') || 'Create your first invoice'}
-                </Button>
-              )}
+                  </Button>
+                ) : undefined}
+              />
             </CardContent>
           </Card>
         ) : (

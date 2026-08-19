@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
+import { IllustratedEmptyState } from "@/components/IllustratedEmptyState";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
@@ -349,10 +350,10 @@ export default function GeneralLedger() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : allEntries.length === 0 && openingBalance === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <img src="/images/illustrations/empty-accounting.webp" alt="No transactions yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
-                <p>{t("accounting.generalLedger.noTransactions")}</p>
-              </div>
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-accounting.webp"
+                description={t("accounting.generalLedger.noTransactions")}
+              />
             ) : (
               <>
                 <Table>

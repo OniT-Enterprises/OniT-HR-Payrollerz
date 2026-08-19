@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageHeader from "@/components/layout/PageHeader";
+import { IllustratedEmptyState } from "@/components/IllustratedEmptyState";
 import { ContextualHelpLink } from "@/components/help/ContextualHelpLink";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useSmartEmployees, employeeKeys } from "@/hooks/useEmployees";
@@ -1684,23 +1685,20 @@ export default function AllEmployees() {
                       </Button>
                     </>
                   ) : (
-                    <>
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                        <Users className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        {t("employees.empty.noEmployeesTitle")}
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        {searchTerm
+                    <IllustratedEmptyState
+                      imageSrc="/images/illustrations/empty-employees.webp"
+                      title={t("employees.empty.noEmployeesTitle")}
+                      description={
+                        searchTerm
                           ? t("employees.empty.noEmployeesSearch")
-                          : t("employees.empty.noEmployeesStart")}
-                      </p>
-                      {canManageTenant && <Button onClick={() => navigate("/people/add")}>
+                          : t("employees.empty.noEmployeesStart")
+                      }
+                      action={canManageTenant ? <Button onClick={() => navigate("/people/add")}>
                         <Plus className="mr-2 h-4 w-4" />
                         {t("employees.buttons.addFirstEmployee")}
-                      </Button>}
-                    </>
+                      </Button> : undefined}
+                      className="py-0"
+                    />
                   )}
                 </div>
               )}

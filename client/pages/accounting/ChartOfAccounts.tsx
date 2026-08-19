@@ -38,6 +38,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import { IllustratedEmptyState } from "@/components/IllustratedEmptyState";
 import {
   BookOpen,
   Plus,
@@ -884,13 +885,11 @@ export default function ChartOfAccounts() {
             </CardHeader>
             <CardContent>
               {accounts.length === 0 ? (
-                <div className="text-center py-12">
-                  <img src="/images/illustrations/empty-accounting.webp" alt="No accounts yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
-                  <p className="font-medium">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
-                  <p className="mx-auto mb-4 mt-1 max-w-md text-sm text-muted-foreground">
-                    {t("accounting.chartOfAccounts.noAccountsDescription")}
-                  </p>
-                  {canManageTenant && <Button onClick={handleInitialize} disabled={initializing}>
+                <IllustratedEmptyState
+                  imageSrc="/images/illustrations/empty-accounting.webp"
+                  title={t("accounting.chartOfAccounts.noAccountsFound")}
+                  description={t("accounting.chartOfAccounts.noAccountsDescription")}
+                  action={canManageTenant ? <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -899,8 +898,8 @@ export default function ChartOfAccounts() {
                     ) : (
                       t("accounting.chartOfAccounts.initializeDefault")
                     )}
-                  </Button>}
-                </div>
+                  </Button> : undefined}
+                />
               ) : groupedAccounts.all.length === 0 ? (
                 <div className="text-center py-12">
                   <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />

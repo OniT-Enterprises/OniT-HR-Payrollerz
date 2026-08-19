@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import { IllustratedEmptyState } from '@/components/IllustratedEmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -287,19 +288,21 @@ export default function Payments() {
         {/* Payment List */}
         {filteredPayments.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/empty-invoices.webp" alt="No payments yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || methodFilter !== 'all'
-                  ? t('money.payments.noResults') || 'No payments found'
-                  : t('money.payments.empty') || 'No payments recorded yet'}
-              </p>
-              {!searchTerm && methodFilter === 'all' && (
-                <Button onClick={() => navigate('/money/invoices')} variant="outline">
+            <CardContent className="p-0">
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-payments-v2.webp"
+                description={
+                  searchTerm || methodFilter !== 'all'
+                    ? t('money.payments.noResults') || 'No payments found'
+                    : t('money.payments.empty') || 'No payments recorded yet'
+                }
+                action={!searchTerm && methodFilter === 'all' ? (
+                  <Button onClick={() => navigate('/money/invoices')} variant="outline">
                   <FileText className="h-4 w-4 mr-2" />
                   {t('money.payments.viewInvoices') || 'View Invoices'}
-                </Button>
-              )}
+                  </Button>
+                ) : undefined}
+              />
             </CardContent>
           </Card>
         ) : (

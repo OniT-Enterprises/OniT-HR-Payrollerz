@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import { IllustratedEmptyState } from '@/components/IllustratedEmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -486,19 +487,21 @@ export default function Bills() {
           </Card>
         ) : filteredBills.length === 0 && !hasNextPage ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/xefe-empty.webp" alt="No bills yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== 'all'
-                  ? t('money.bills.noResults') || 'No bills found'
-                  : t('money.bills.empty') || 'No bills yet'}
-              </p>
-              {canManageTenant && !searchTerm && statusFilter === 'all' && (
-                <Button onClick={() => navigate('/money/bills/new')} variant="outline">
+            <CardContent className="p-0">
+              <IllustratedEmptyState
+                imageSrc="/images/illustrations/empty-bills-v2.webp"
+                description={
+                  searchTerm || statusFilter !== 'all'
+                    ? t('money.bills.noResults') || 'No bills found'
+                    : t('money.bills.empty') || 'No bills yet'
+                }
+                action={canManageTenant && !searchTerm && statusFilter === 'all' ? (
+                  <Button onClick={() => navigate('/money/bills/new')} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.bills.createFirst') || 'Add your first bill'}
-                </Button>
-              )}
+                  </Button>
+                ) : undefined}
+              />
             </CardContent>
           </Card>
         ) : (
