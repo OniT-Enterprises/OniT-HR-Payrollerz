@@ -2170,154 +2170,11 @@ async function assertPeriodOpen(tenantId, year, month) {
 
 // ── PAYROLL ENDPOINTS ──────────────────────────────────────────────────────
 
-/**
- * POST /api/tenants/:tenantId/payroll/calculate
- * Dry-run payroll calculation. Does NOT write to Firestore.
- * Fetches active employees and calculates TL payroll (WIT, INSS).
- * Body: { periodStart, periodEnd, payDate, payFrequency? }
- */
-router.post('/payroll/calculate', async (req, res) => {
-  try {
-    const { periodStart, periodEnd, payDate, payFrequency = 'monthly' } = req.body;
-    const tid = req.tenantId;
-
-    if (!periodStart || !periodEnd || !payDate) {
-      return res.status(400).json({ success: false, message: 'periodStart, periodEnd, and payDate are required' });
-    }
-
-    // Fetch active employees
-    const empSnap = await tenantCol(tid, 'employees')
-      .where('status', '==', 'active')
-      .get();
-
-    if (empSnap.empty) {
-      return res.status(400).json({ success: false, message: 'No active employees found' });
-    }
-
-    // Fetch recurring deductions. NOTE: the client writes these to the
-    // TOP-LEVEL `recurringDeductions` collection with a tenantId field (see
-    // client/services/payrollService.ts RecurringDeductionService), NOT a
-    // tenant subcollection — querying tenants/{tid}/recurringDeductions
-    // always came back empty.
-    const deductionsSnap = await tenantTopCol(tid, 'recurringDeductions')
-      .where('status', '==', 'active')
-      .get();
-    const recurringByEmployee = {};
-    deductionsSnap.docs.forEach((doc) => {
-      const d = doc.data();
-      if (!recurringByEmployee[d.employeeId]) recurringByEmployee[d.employeeId] = [];
-      recurringByEmployee[d.employeeId].push({ id: doc.id, ...d });
-    });
-
-    const records = [];
-    const warnings = [];
-    let totalGross = 0, totalNet = 0, totalWIT = 0;
-    let totalINSSEmployee = 0, totalINSSEmployer = 0;
-
-    empSnap.docs.forEach((doc) => {
-      const emp = doc.data();
-      const empId = doc.id;
-      const name = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim();
-      const salary = Number(emp.jobDetails?.salary || emp.compensationDetails?.baseSalary || 0);
-
-      if (salary <= 0) {
-        warnings.push(`${name}: No salary configured — skipped`);
-        return;
-      }
-
-      // Gross pay (base salary for the period)
-      let grossPay = salary;
-      if (payFrequency === 'weekly') grossPay = Math.round(salary / 4.33 * 100) / 100;
-      else if (payFrequency === 'biweekly') grossPay = Math.round(salary / 2.17 * 100) / 100;
-
-      // WIT (Withholding Income Tax)
-      const isResident = emp.personalInfo?.isResident !== false;
-      let witAmount;
-      if (isResident) {
-        // Residents: 10% on monthly income above $500
-        const monthlyEquiv = salary;
-        const witMonthly = monthlyEquiv > 500 ? (monthlyEquiv - 500) * 0.10 : 0;
-        if (payFrequency === 'weekly') witAmount = Math.round(witMonthly / 4.33 * 100) / 100;
-        else if (payFrequency === 'biweekly') witAmount = Math.round(witMonthly / 2.17 * 100) / 100;
-        else witAmount = Math.round(witMonthly * 100) / 100;
-      } else {
-        witAmount = Math.round(grossPay * 0.10 * 100) / 100;
-      }
-
-      // INSS (base salary only, excludes overtime/bonuses/allowances)
-      const inssBase = grossPay;
-      const inssEmployee = Math.round(inssBase * 0.04 * 100) / 100;
-      const inssEmployer = Math.round(inssBase * 0.06 * 100) / 100;
-
-      // Recurring deductions
-      let otherDeductions = 0;
-      const deductionLines = [];
-      (recurringByEmployee[empId] || []).forEach((d) => {
-        const amt = d.isPercentage ? Math.round(grossPay * (d.percentage / 100) * 100) / 100 : d.amount;
-        otherDeductions += amt;
-        deductionLines.push({ type: d.type, description: d.description, amount: amt });
-      });
-
-      const totalDeductions = witAmount + inssEmployee + otherDeductions;
-      const netPay = Math.round((grossPay - totalDeductions) * 100) / 100;
-
-      if (netPay < 0) {
-        warnings.push(`${name}: Net pay is negative ($${netPay}) — check deductions`);
-      }
-
-      totalGross += grossPay;
-      totalNet += netPay;
-      totalWIT += witAmount;
-      totalINSSEmployee += inssEmployee;
-      totalINSSEmployer += inssEmployer;
-
-      records.push({
-        employeeId: empId,
-        employeeName: name,
-        employeeNumber: emp.employeeId || '',
-        department: emp.jobDetails?.departmentName || emp.jobDetails?.department || '',
-        position: emp.jobDetails?.positionTitle || emp.jobDetails?.position || '',
-        monthlySalary: salary,
-        grossPay,
-        witAmount,
-        inssEmployee,
-        inssEmployer,
-        otherDeductions,
-        deductionLines,
-        totalDeductions,
-        netPay,
-        isResident,
-      });
-    });
-
-    res.json({
-      success: true,
-      summary: {
-        employeeCount: records.length,
-        totalGross: Math.round(totalGross * 100) / 100,
-        totalNet: Math.round(totalNet * 100) / 100,
-        totalWIT: Math.round(totalWIT * 100) / 100,
-        totalINSSEmployee: Math.round(totalINSSEmployee * 100) / 100,
-        totalINSSEmployer: Math.round(totalINSSEmployer * 100) / 100,
-        periodStart,
-        periodEnd,
-        payDate,
-        payFrequency,
-      },
-      records,
-      warnings,
-    });
-  } catch (error) {
-    console.error('[payroll/calculate]', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
-
 // The legacy bot payroll writers target payrollRuns/payrollRecords and bypass
 // the canonical payruns engine's subscription gate, fresh-figure check,
 // two-person approval, settlement journal, immutable payment evidence, and
-// server audit callables. Keep reads and the calculation preview available,
-// but fail every mutation closed until this API delegates to that engine.
+// server audit callables. Keep reads available, but fail every mutation — and
+// the calculation preview — closed until this API delegates to that engine.
 const LEGACY_PAYROLL_MUTATION_ERROR = Object.freeze({
   success: false,
   code: 'LEGACY_PAYROLL_MUTATION_DISABLED',
@@ -2329,6 +2186,31 @@ function rejectLegacyPayrollMutation(_req, res) {
   res.set('Cache-Control', 'no-store');
   return res.status(503).json(LEGACY_PAYROLL_MUTATION_ERROR);
 }
+
+// The read-only dry-run preview is disabled too, with its own code: it carried
+// a SECOND copy of the WIT/INSS math and drifted from the canonical engine —
+// residency read from personalInfo.isResident (canonical is
+// compensation.isResident) with a missing value DEFAULTED to resident, so a
+// non-resident was shown the $500 threshold; salary read from jobDetails.salary
+// rather than compensation.monthlySalary; no petroleum refusal, Art. 86
+// discount, or INSS base classification. Do not re-enable it by fixing fields
+// in place — any preview must delegate to the canonical engine.
+const LEGACY_PAYROLL_PREVIEW_ERROR = Object.freeze({
+  success: false,
+  code: 'LEGACY_PAYROLL_PREVIEW_DISABLED',
+  retryable: false,
+  message:
+    'The legacy payroll preview is disabled: its duplicate tax math drifted from the canonical Xefe payroll engine. Run payroll from the Xefe app.',
+});
+
+/**
+ * POST /api/tenants/:tenantId/payroll/calculate
+ * Disabled legacy dry-run preview (read-only, but its figures were wrong).
+ */
+router.post('/payroll/calculate', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  return res.status(503).json(LEGACY_PAYROLL_PREVIEW_ERROR);
+});
 
 /**
  * POST /api/tenants/:tenantId/payroll/runs

@@ -168,7 +168,7 @@ describe("xefe-api", () => {
     assert.doesNotMatch(names, /Secret Person/);
   });
 
-  it("preserves canonical payroll reads and the calculation-only preview", async () => {
+  it("preserves canonical payroll reads and fails the legacy preview closed", async () => {
     const runsResponse = await get("/api/tenants/tenant-a/payroll/runs", {
       "x-api-key": "test-api-key",
     });
@@ -181,6 +181,9 @@ describe("xefe-api", () => {
     const beforeRunCount = (await legacyRuns.get()).size;
     const beforeRecordCount = (await legacyRecords.get()).size;
 
+    // The preview carried its own copy of the WIT/INSS math and drifted from
+    // the canonical engine (residency field/default, salary field), so it now
+    // fails closed like the mutations instead of returning wrong figures.
     const previewResponse = await request(
       "/api/tenants/tenant-a/payroll/calculate",
       "POST",
@@ -190,10 +193,11 @@ describe("xefe-api", () => {
         payDate: "2026-08-31",
       },
     );
-    assert.equal(previewResponse.status, 200);
+    assert.equal(previewResponse.status, 503);
     const previewBody = await previewResponse.json();
-    assert.equal(previewBody.success, true);
-    assert.equal(previewBody.summary.employeeCount, 1);
+    assert.equal(previewBody.success, false);
+    assert.equal(previewBody.code, "LEGACY_PAYROLL_PREVIEW_DISABLED");
+    assert.equal(previewBody.retryable, false);
     assert.equal((await legacyRuns.get()).size, beforeRunCount);
     assert.equal((await legacyRecords.get()).size, beforeRecordCount);
   });

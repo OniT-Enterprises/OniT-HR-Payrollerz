@@ -8,7 +8,10 @@
 > Its delivery mechanism does not: **OpenClaw and WhatsApp were retired.** The
 > container, the nginx `/openclaw/` route and `server/openclaw-xefe/` are gone
 > (in git history if needed), and the five legacy payroll write endpoints the
-> plan builds on now fail closed with 503 — see §1.1.
+> plan builds on now fail closed with 503 — see §1.1. The read-only
+> `/payroll/calculate` preview followed on 2026-08-19: it carried its own copy
+> of the WIT/INSS math and had drifted from the canonical engine (residency
+> field and default, salary field), so it fails closed too.
 >
 > Two things changed underneath it:
 >
