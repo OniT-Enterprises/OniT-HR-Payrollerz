@@ -485,6 +485,20 @@
       ]
     },
     {
+      "collectionGroup": "bill_payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "billId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "accounts",
       "queryScope": "COLLECTION",
       "fields": [
