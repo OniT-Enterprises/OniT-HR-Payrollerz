@@ -1440,7 +1440,7 @@ const messages = {
         clearing: "Pelunasan kewajiban menurut undang-undang",
         clearingWhen: "saat disetorkan",
         clearingFoot:
-          "Pajak dan jaminan sosial adalah dua pembayaran terpisah, masing-masing dengan jurnalnya sendiri — akun kewajiban kembali nol untuk periode itu.",
+          "Pajak dan jaminan sosial adalah pembayaran terpisah, masing-masing dengan jurnalnya sendiri — akun kewajiban penggajian kembali nol untuk periode itu. Pajak usaha dibukukan dengan cara yang sama: angsuran pajak penghasilan disimpan sebagai pajak dibayar di muka, bukan beban.",
       },
       acct: {
         salaries: "Gaji & upah (bruto)",
@@ -1455,7 +1455,7 @@ const messages = {
         eyebrow: "3 · Tenggat menurut undang-undang",
         title:
           "Sebuah pelaporan dan pembayarannya tidak pernah merupakan kewajiban yang sama",
-        body: "Pelaporan yang sudah disampaikan tetapi pajaknya belum dibayar tetap tampak terlambat di Xefe. Pelaporan upah ada di Penggajian; pelaporan tahunan usaha ada di Akuntansi.",
+        body: "Pelaporan yang sudah disampaikan tetapi pajaknya belum dibayar tetap tampak terlambat di Xefe. Kedua bagiannya dicatat: pelaporannya, dan transfer yang membayarnya — ke rekening penerimaan yang tepat, dengan keterangan yang dipakai kantor pajak untuk merekonsiliasi. Pelaporan upah ada di Penggajian; pajak usaha ada di Akuntansi.",
         d10Small: "bulan berikutnya",
         d10Title: "Laporan INSS",
         d10Body:
@@ -1463,7 +1463,7 @@ const messages = {
         d15Small: "bulan berikutnya",
         d15Title: "Pajak penghasilan upah",
         d15Body:
-          "Pelaporan bulanan ATTL beserta pembayarannya — keduanya jatuh tempo pada tanggal 15.",
+          "Pelaporan bulanan ATTL beserta pembayarannya — keduanya jatuh tempo pada tanggal 15, dan tanggal yang sama juga untuk pajak jasa dan angsuran pajak penghasilan.",
         d20Small: "bulan berikutnya",
         d20Title: "Pembayaran INSS",
         d20Body:
@@ -1844,6 +1844,10 @@ const messages = {
       tinPlaceholder: "Nomor Perusahaan Unik / NPWP",
       employerNiss: "NISS Pemberi Kerja",
       employerNissPlaceholder: "Nomor registrasi pemberi kerja INSS",
+      installmentFrequency: "Frekuensi angsuran pajak penghasilan",
+      installmentFrequencyAuto: "Ikuti undang-undang (dari peredaran usaha)",
+      installmentFrequencyMonthly: "Bulanan (terdaftar di ATTL)",
+      installmentFrequencyHelp: "Undang-undang menetapkan angsuran triwulanan bila peredaran usaha tahun lalu $1 juta atau kurang. Pilih bulanan hanya jika ATTL memang menerbitkan penetapan Domestic Installment Tax bulanan untuk Anda.",
       addressTitle: "Alamat",
       registeredAddress: "Alamat Terdaftar *",
       registeredAddressPlaceholder: "Alamat jalan, nama gedung, dsb.",
@@ -3731,6 +3735,17 @@ const messages = {
         pending: "Menunggu",
         rejected: "Ditolak",
         cancelled: "Dibatalkan",
+      },
+      calendar: {
+        listView: "Daftar",
+        calendarView: "Kalender",
+        today: "Hari ini",
+        month: "Bulan",
+        week: "Minggu",
+        department: "Departemen",
+        allDepartments: "Semua departemen",
+        holiday: "Hari libur nasional",
+        more: "+{{count}} lagi",
       },
       leaveTypes: {
         miscarriage: "Cuti Keguguran",
@@ -7836,6 +7851,33 @@ const messages = {
     deleteSuccess: "Potongan dihapus.",
     deleteError: "Gagal menghapus potongan.",
   },
+  taxPayment: {
+    title: "Bayar di bank",
+    description: "Melapor dan membayar adalah dua hal terpisah. Transfer jumlahnya ke rekening penerimaan ATTL di bawah, lalu catat di sini agar masuk ke buku besar.",
+    beneficiary: "Penerima",
+    bank: "Bank",
+    account: "Rekening",
+    iban: "IBAN",
+    creditDescription: "Keterangan transfer",
+    amount: "Jumlah",
+    downloadOrder: "Unduh perintah pembayaran bertanda tangan",
+    dateLabel: "Tanggal pembayaran",
+    referenceLabel: "Referensi bank *",
+    referenceRequired: "Masukkan referensi bank dari transfer",
+    assessmentNumberLabel: "No. penetapan (dari surat)",
+    penaltyLabel: "Denda",
+    interestLabel: "Bunga",
+    penaltyHelp: "Masukkan denda dan bunga hanya sebagaimana ditetapkan ATTL dalam suratnya — Xefe tidak pernah memperkirakannya.",
+    record: "Catat pembayaran ini",
+    recorded: "Pembayaran dicatat",
+    recordedDescription: "Pembayaran sudah masuk ke buku besar.",
+    alreadyRecorded: "Pembayaran dicatat",
+    amountInvalid: "Denda dan bunga harus berupa jumlah nol atau lebih",
+    lateTitle: "Pembayaran ini melewati jatuh tempo",
+    lateBody: "Pajak tambahan sekitar {{total}} dapat dikenakan: 5% dari pajak yang belum dibayar ({{initial}}), ditambah 1% untuk masing-masing {{stamps}} tanggal pengenaan bulanan sejak jatuh tempo ({{monthly}}). {{basis}}.",
+    lateFormCharge: "Termasuk {{amount}} karena pelaporannya sendiri disampaikan setelah jatuh tempo.",
+    lateDisclaimer: "Perkiraan untuk dicocokkan dengan surat Anda, bukan angka yang Xefe laporkan. Kantor pajak menetapkan jumlahnya dan dapat menurunkannya, serta dapat mengenakan lebih bila menemukan kelalaian atau penghindaran. Masukkan sesuai surat.",
+  },
   paymentOrders: {
     action: "Surat perintah bayar (bank)",
     downloadedTitle: "Surat perintah bayar terunduh",
@@ -8312,6 +8354,8 @@ const messages = {
             "{{account}} ({{amount}}) dikeluarkan — bunga hanya dapat dikurangkan bagi lembaga keuangan (UU Pajak §31). Tambahkan kembali dengan sebuah penyesuaian jika itu berlaku.",
           incomeTaxExcluded:
             "{{account}} ({{amount}}) dikeluarkan — pajak penghasilan itu sendiri bukan beban yang dapat dikurangkan.",
+          penaltiesExcluded:
+            "{{account}} ({{amount}}) dikeluarkan — denda, sanksi dan bunga keterlambatan tidak dapat dikurangkan.",
           soleTraderOwnSalary:
             "Usaha perorangan tidak dapat mengurangkan pembayaran kepada dirinya sendiri (formulir Q.1). Hapus gaji pemilik dari baris 35 dengan penyesuaian negatif.",
           depreciationMismatch:
