@@ -23,14 +23,23 @@ import {
   PREFIXED_PUBLIC_LOCALES,
   withLocalePrefix,
 } from "../../client/lib/publicLocale";
+import { DOCS_MANIFEST } from "../../client/lib/docs/manifest";
 
 // The NotFound page across all four locales. Matching the copy rather than a
 // test id keeps this honest: it fails if the user would see "not found", which
 // is the thing that actually went wrong.
 const NOT_FOUND = /page not found|halaman tidak ditemukan|página não encontrada|pájina la hetan/i;
 
+// Every docs ARTICLE too, not just the /docs hub. publicLocale deliberately
+// treats /docs/* as one wildcard (importing the manifest would blow the entry
+// bundle), so an article is reachable without anything asserting it renders —
+// and each one carries four hand-written locale bodies in its own content file.
+// A stray comma in one of those is a blank page in one language only, which is
+// exactly the failure nobody notices. Tests have no bundle budget.
+const ARTICLE_PATHS = DOCS_MANIFEST.map((entry) => `/docs/${entry.slug}`);
+
 const paths = ["en", ...PREFIXED_PUBLIC_LOCALES].flatMap((locale) =>
-  LOCALIZED_PUBLIC_PATHS.map((path) =>
+  [...LOCALIZED_PUBLIC_PATHS, ...ARTICLE_PATHS].map((path) =>
     withLocalePrefix(path, locale as "en" | "tet" | "pt" | "id"),
   ),
 );
