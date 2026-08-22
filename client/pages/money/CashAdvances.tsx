@@ -204,7 +204,7 @@ export default function CashAdvances() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title={t('cashAdvances.title') || 'Cash advances'} description={t('cashAdvances.subtitle') || 'Issue and clear accountable staff expense advances.'} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">

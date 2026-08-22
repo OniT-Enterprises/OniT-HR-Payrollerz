@@ -165,6 +165,13 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
     "true",
   );
 
+  // The full route directory remains a one-column, thumb-friendly list on a
+  // phone and is sourced from the same localized navigation as the drawer.
+  await page.goto("/sitemap");
+  await expect(page.getByRole("heading", { name: "Sitemap" })).toBeVisible();
+  await expect(page.locator('a[href="/people/employees"]')).toBeVisible();
+  await expectNoHorizontalScroll(page);
+
   // ── Employee recovery, leave warning, and slow save feedback ────────────
   await page.goto("/people/add");
   await expect(

@@ -357,7 +357,7 @@ export default function InvoiceSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
@@ -537,7 +537,7 @@ export default function InvoiceSettingsPage() {
 
   if (loadError && loadedSettings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
       </div>
@@ -545,7 +545,7 @@ export default function InvoiceSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Invoice Settings - Xefe" description="Configure invoice settings" />
       <MainNavigation />
 
@@ -564,7 +564,6 @@ export default function InvoiceSettingsPage() {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1000,7 +999,7 @@ export default function InvoiceSettingsPage() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-indigo-600 hover:bg-indigo-700"
+            className="w-full"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

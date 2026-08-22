@@ -1060,7 +1060,7 @@ export default function ATTLMonthlyWIT() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center gap-3 border-b border-border/70 pb-4">
@@ -1159,7 +1159,7 @@ export default function ATTLMonthlyWIT() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("reports.attlMonthlyWit.title")}
           description={t("reports.attlMonthlyWit.subtitle")}
@@ -1184,7 +1184,7 @@ export default function ATTLMonthlyWIT() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("reports.attlMonthlyWit.title")}
         description={t("reports.attlMonthlyWit.subtitle")}

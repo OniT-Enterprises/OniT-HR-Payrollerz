@@ -42,7 +42,7 @@ export default function TimeLeaveSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("settings.tabs.timeOff") || "Time Off Policies"}
@@ -89,7 +89,7 @@ export default function TimeLeaveSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("settings.tabs.timeOff")}
         description={t("settings.timeOff.description")}

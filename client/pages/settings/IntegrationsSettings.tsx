@@ -22,7 +22,7 @@ export default function IntegrationsSettings() {
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Accountant & Integrations | Xefe" description="QuickBooks export, advanced tax mode, and accountant access" noIndex />
       <MainNavigation />
 

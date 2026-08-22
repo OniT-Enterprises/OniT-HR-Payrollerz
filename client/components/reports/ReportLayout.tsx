@@ -86,14 +86,6 @@ const ROW_TONE: Record<Exclude<ReportRowTone, "plain">, string> = {
   critical: "bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-400",
 };
 
-type ReportWidth = "lg" | "xl" | "2xl";
-
-const WIDTH_CLASS: Record<ReportWidth, string> = {
-  lg: "max-w-screen-lg",
-  xl: "max-w-screen-xl",
-  "2xl": "max-w-screen-2xl",
-};
-
 interface ReportPageProps {
   title: string;
   subtitle?: ReactNode;
@@ -102,7 +94,6 @@ interface ReportPageProps {
   iconColor?: string;
   actions?: ReactNode;
   children: ReactNode;
-  maxWidth?: ReportWidth;
   navigation?: ModuleNavConfig | false;
 }
 
@@ -115,19 +106,13 @@ export function ReportPage({
   iconColor = "text-violet-500",
   actions,
   children,
-  maxWidth = "2xl",
   navigation = reportsNavConfig,
 }: ReportPageProps) {
   return (
     <div className="bg-background">
       <MainNavigation />
       {navigation && <ModuleSectionNav config={navigation} />}
-      <div
-        className={cn(
-          "mx-auto px-4 py-5 sm:px-6 sm:py-6",
-          WIDTH_CLASS[maxWidth],
-        )}
-      >
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={title}
           subtitle={subtitle}
@@ -135,7 +120,7 @@ export function ReportPage({
           cardIcon={cardIcon}
           iconColor={iconColor}
           actions={actions}
-          titleClassName="break-words whitespace-normal text-2xl"
+          titleClassName="break-words whitespace-normal"
         />
         <div className="space-y-6">{children}</div>
       </div>
@@ -145,7 +130,6 @@ export function ReportPage({
 
 interface ReportPageSkeletonProps {
   sections?: number;
-  maxWidth?: ReportWidth;
   toolbarFields?: number;
   rowsPerSection?: number;
   showToolbar?: boolean;
@@ -154,7 +138,6 @@ interface ReportPageSkeletonProps {
 
 export function ReportPageSkeleton({
   sections = 2,
-  maxWidth = "2xl",
   toolbarFields = 4,
   rowsPerSection = 5,
   showToolbar = true,
@@ -164,26 +147,23 @@ export function ReportPageSkeleton({
     <div className="bg-background">
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
-      <div
-        className={cn(
-          "mx-auto px-4 py-5 sm:px-6 sm:py-6",
-          WIDTH_CLASS[maxWidth],
-        )}
-      >
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <Skeleton className="h-[30px] w-[30px] shrink-0 rounded-lg" />
+            <div className="flex min-w-0 items-center gap-3">
+              <Skeleton className="h-11 w-11 shrink-0 rounded-xl" />
               <div className="min-w-0 space-y-1.5">
-                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-5 w-48" />
                 <Skeleton className="h-4 w-72 max-w-full" />
               </div>
             </div>
             {showHeaderAction && (
-              <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
+              <Skeleton className="h-11 w-28 shrink-0 rounded-md" />
             )}
           </div>
-          <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
+          <div className="relative mt-3 h-px overflow-hidden bg-border/70">
+            <Skeleton className="absolute inset-y-0 left-0 h-px w-16 rounded-none" />
+          </div>
         </div>
         <div className="space-y-6">
           {showToolbar && (

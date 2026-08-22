@@ -343,112 +343,6 @@
   animation: bounce-subtle 0.5s ease-in-out;
 }
 
-/* One quick, friendly entrance for level-1 dashboard header icons. */
-@keyframes dashboard-header-icon-in {
-  0% {
-    opacity: 0;
-    transform: translateY(5px) rotate(-4deg) scale(0.8);
-  }
-  56% {
-    opacity: 1;
-    transform: translateY(-2px) rotate(1.5deg) scale(1.06);
-  }
-  78% {
-    transform: translateY(0) rotate(-0.75deg) scale(0.985);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) rotate(0) scale(1);
-  }
-}
-
-@keyframes dashboard-header-glyph-in {
-  0%,
-  14% {
-    opacity: 0;
-    transform: rotate(-12deg) scale(0.58);
-  }
-  60% {
-    opacity: 1;
-    transform: rotate(5deg) scale(1.14);
-  }
-  80% {
-    transform: rotate(-2deg) scale(0.96);
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(0) scale(1);
-  }
-}
-
-@keyframes dashboard-header-halo-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  24% {
-    opacity: 0.38;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.52);
-  }
-}
-
-@keyframes dashboard-header-highlight-in {
-  0%,
-  32% {
-    opacity: 0;
-    transform: scale(0.65);
-  }
-  58% {
-    opacity: 0.18;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.08);
-  }
-}
-
-.animate-dashboard-header-icon {
-  isolation: isolate;
-  position: relative;
-  animation: dashboard-header-icon-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transform-origin: center;
-}
-
-.animate-dashboard-header-icon::before,
-.animate-dashboard-header-icon::after {
-  position: absolute;
-  border-radius: inherit;
-  content: "";
-  pointer-events: none;
-}
-
-.animate-dashboard-header-icon::before {
-  z-index: -1;
-  inset: 0;
-  border: 1px solid currentColor;
-  animation: dashboard-header-halo-in 680ms 40ms cubic-bezier(0.22, 1, 0.36, 1)
-    both;
-}
-
-.animate-dashboard-header-icon::after {
-  z-index: 0;
-  inset: 2px;
-  background: radial-gradient(circle at 30% 24%, currentColor, transparent 62%);
-  animation: dashboard-header-highlight-in 560ms 25ms ease-out both;
-}
-
-.animate-dashboard-header-glyph {
-  position: relative;
-  z-index: 1;
-  animation: dashboard-header-glyph-in 480ms 45ms cubic-bezier(0.22, 1, 0.36, 1)
-    both;
-  transform-origin: center;
-}
-
 /* Reduced motion: entrance animations complete instantly. Without this, the
    stagger-* classes would strand elements at opacity: 0 when the browser
    suppresses animations. */
@@ -458,16 +352,10 @@
   .animate-scale-in,
   .animate-slide-in-right,
   .animate-bounce-subtle,
-  .animate-pulse-subtle,
-  .animate-dashboard-header-icon,
-  .animate-dashboard-header-glyph {
+  .animate-pulse-subtle {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
-  }
-  .animate-dashboard-header-icon::before,
-  .animate-dashboard-header-icon::after {
-    animation: none !important;
   }
   .stagger-1, .stagger-2, .stagger-3,
   .stagger-4, .stagger-5, .stagger-6 {
@@ -544,30 +432,6 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-violet-500;
 }
 
-/* Dashboard storytelling surfaces */
-.dashboard-grid-mask {
-  background-image:
-    linear-gradient(to right, hsl(var(--border) / 0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--border) / 0.12) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 85%);
-}
-
-/* Ambient orbs removed — hide if any remain in markup. */
-.dashboard-orb {
-  display: none;
-}
-
-.dashboard-panel-glow {
-  position: relative;
-}
-/* Glow removed — kept the class so existing call-sites still work, but it's a no-op now. */
-
-.dashboard-report-band {
-  background:
-    linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 65%, hsl(var(--muted) / 0.4) 100%);
-}
-
 /* Marketing-page motion (public pages only — the authenticated app stays
    still per STYLE_GUIDE.md). One-time entrances in the Stripe/Linear vein:
    nothing loops, nothing parallaxes. */
@@ -618,19 +482,4 @@
 .public-grain {
   background-color: #0a0a0b;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-}
-
-@keyframes dashboard-float {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(12px, -10px, 0) scale(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dashboard-orb {
-    animation: none;
-  }
 }

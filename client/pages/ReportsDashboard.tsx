@@ -76,7 +76,7 @@ export default function ReportsDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("moduleDashboards.reports.title")}
         description={t("moduleDashboards.reports.seoDescription")}

@@ -274,7 +274,7 @@ export default function Bills() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
@@ -335,7 +335,7 @@ export default function Bills() {
 
   return (
     <div
-      className="min-h-screen bg-background"
+      className="bg-background"
       onDragEnter={canManageTenant ? handlePageDragEnter : undefined}
       onDragOver={canManageTenant ? handlePageDragOver : undefined}
       onDragLeave={canManageTenant ? handlePageDragLeave : undefined}
@@ -347,7 +347,7 @@ export default function Bills() {
       {/* Full-page drop overlay */}
       {canManageTenant && dragActive && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-          <div className="border-2 border-dashed border-indigo-500 rounded-xl px-12 py-10 text-center bg-background shadow-lg">
+          <div className="border-2 border-dashed border-indigo-500 rounded-xl px-12 py-10 text-center bg-background shadow-sm">
             <Upload className="h-10 w-10 mx-auto mb-3 text-indigo-500" />
             <p className="text-lg font-semibold">
               {t('money.bills.dropOverlayTitle') || 'Drop to add a bill'}
@@ -394,7 +394,6 @@ export default function Bills() {
                 {t('money.bills.uploadBill') || 'Upload Bill'}
               </Button>
               <Button
-                className="bg-indigo-600 hover:bg-indigo-700"
                 onClick={() => navigate('/money/bills/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />

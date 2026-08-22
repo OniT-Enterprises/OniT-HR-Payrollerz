@@ -144,7 +144,7 @@ export default function APAgingReport() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
@@ -229,7 +229,7 @@ export default function APAgingReport() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title="A/P Aging - Xefe" description="Accounts payable aging report" />
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -252,7 +252,7 @@ export default function APAgingReport() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="A/P Aging - Xefe" description="Accounts payable aging report" />
       <MainNavigation />
 

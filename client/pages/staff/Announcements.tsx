@@ -416,7 +416,7 @@ export default function Announcements() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("announcements.title")}
@@ -509,7 +509,7 @@ export default function Announcements() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("announcements.title")}
@@ -534,7 +534,7 @@ export default function Announcements() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title={`${t("announcements.title")} - Xefe`} description={t("announcements.subtitle")} />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -544,7 +544,7 @@ export default function Announcements() {
           icon={Megaphone}
           iconColor="text-blue-500"
           actions={
-            canAdminister ? <Button onClick={openCreateDialog} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+            canAdminister ? <Button onClick={openCreateDialog} size="lg">
               <Plus className="h-5 w-5 mr-2" />
               {t("announcements.new")}
             </Button> : undefined
@@ -800,7 +800,6 @@ export default function Announcements() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700"
             >
               {saving
                 ? t("common.saving")

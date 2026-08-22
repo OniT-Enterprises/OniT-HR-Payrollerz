@@ -283,7 +283,7 @@ export default function OrganizationChart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           {/* Header skeleton */}
           <div className="mb-4">
@@ -305,7 +305,7 @@ export default function OrganizationChart() {
           </div>
 
           {/* Org chart skeleton */}
-          <Card className="border-border/50 shadow-lg overflow-x-auto">
+          <Card className="overflow-x-auto border-border/70 shadow-sm">
             <CardContent className="p-12 min-w-max">
               <div className="flex flex-col items-center space-y-8">
                 {/* Executive chain skeleton */}
@@ -349,7 +349,7 @@ export default function OrganizationChart() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO {...seoConfig.orgChart} />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
@@ -377,7 +377,7 @@ export default function OrganizationChart() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.orgChart} />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -405,7 +405,6 @@ export default function OrganizationChart() {
                   setManagerMode("edit");
                   setShowDepartmentManager(true);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Edit className="mr-2 h-4 w-4" />
                 {t("orgChart.manage")}
@@ -425,10 +424,7 @@ export default function OrganizationChart() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {t("orgChart.emptyDesc")}
               </p>
-              <Button
-                onClick={() => navigate("/people/add")}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+              <Button onClick={() => navigate("/people/add")}>
                 <User className="mr-2 h-4 w-4" />
                 {t("orgChart.addFirstEmployee")}
               </Button>
@@ -446,7 +442,7 @@ export default function OrganizationChart() {
               </Button>
             )}
             {/* Apple-Style Organization Chart */}
-            <Card className="border-border/50 shadow-lg overflow-x-auto">
+            <Card className="overflow-x-auto border-border/70 shadow-sm">
               <CardContent className="p-12 min-w-max">
                 <div className="flex flex-col items-center space-y-8">
                   {/* 1. Executive Chain (Vertical) */}

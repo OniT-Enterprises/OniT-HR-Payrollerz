@@ -39,6 +39,19 @@ const TILE_BG: Record<string, string> = {
   primary: "bg-primary/10",
 };
 
+// A short accent stroke keeps the module identity without turning the whole
+// header divider into decoration. Literal classes keep Tailwind's scanner
+// aware of every variant.
+const UNDERLINE: Record<string, string> = {
+  blue: "bg-blue-500/70",
+  cyan: "bg-cyan-500/70",
+  green: "bg-primary/70",
+  indigo: "bg-indigo-500/70",
+  orange: "bg-orange-500/70",
+  violet: "bg-violet-500/70",
+  primary: "bg-primary/70",
+};
+
 interface PageHeaderProps {
   /** Page title */
   title: string;
@@ -71,8 +84,6 @@ export default function PageHeader({
   titleClassName,
   size = "sm",
 }: PageHeaderProps) {
-  // Derive accent border color from iconColor (e.g. "text-blue-500" -> "border-blue-500")
-  const accentBorder = iconColor.replace("text-", "border-");
   const colorKey = iconColor.match(
     /blue|cyan|green|indigo|orange|violet|primary/,
   )?.[0];
@@ -94,7 +105,6 @@ export default function PageHeader({
                 tile,
                 colorKey ? TILE_BG[colorKey] : "bg-muted",
                 iconColor,
-                isLg && "animate-dashboard-header-icon",
               )}
             >
               <CardIcon
@@ -103,7 +113,6 @@ export default function PageHeader({
                   cardIconSize,
                   "text-foreground",
                   colorKey && ACCENT[colorKey],
-                  isLg && "animate-dashboard-header-glyph",
                 )}
               />
             </div>
@@ -114,16 +123,9 @@ export default function PageHeader({
                 tile,
                 colorKey ? TILE_BG[colorKey] : "bg-muted",
                 iconColor,
-                isLg && "animate-dashboard-header-icon",
               )}
             >
-              <Icon
-                className={cn(
-                  lucideSize,
-                  iconColor,
-                  isLg && "animate-dashboard-header-glyph",
-                )}
-              />
+              <Icon className={cn(lucideSize, iconColor)} />
             </div>
           ) : null}
           <div className="min-w-0">
@@ -137,21 +139,27 @@ export default function PageHeader({
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground sm:line-clamp-none sm:truncate">
+              <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-foreground/70 sm:line-clamp-none sm:truncate">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
         {actions && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex w-full shrink-0 flex-wrap items-center gap-2 [&>*]:flex-1 sm:w-auto sm:[&>*]:flex-none">
             {actions}
           </div>
         )}
       </div>
-      <div
-        className={`mt-3 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`}
-      />
+      <div className="relative mt-3 h-px overflow-hidden bg-border/70">
+        <span
+          aria-hidden
+          className={cn(
+            "absolute inset-y-0 left-0 w-16",
+            colorKey ? UNDERLINE[colorKey] : "bg-muted-foreground/40",
+          )}
+        />
+      </div>
     </div>
   );
 }

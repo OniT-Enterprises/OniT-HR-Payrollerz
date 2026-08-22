@@ -564,7 +564,7 @@ export default function Expenses() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-8">
@@ -631,7 +631,7 @@ export default function Expenses() {
 
   if ((expensesError && expenses.length === 0) || (vendorsError && vendors.length === 0)) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={expensesFetching || vendorsFetching}
@@ -643,7 +643,7 @@ export default function Expenses() {
 
   return (
     <div
-      className={`min-h-screen bg-background ${dragActive ? 'ring-2 ring-inset ring-indigo-400/60' : ''}`}
+      className={`bg-background ${dragActive ? 'ring-2 ring-inset ring-indigo-400/60' : ''}`}
       onDragEnter={canManageTenant ? handlePageDragEnter : undefined}
       onDragOver={canManageTenant ? handlePageDragOver : undefined}
       onDragLeave={canManageTenant ? handlePageDragLeave : undefined}

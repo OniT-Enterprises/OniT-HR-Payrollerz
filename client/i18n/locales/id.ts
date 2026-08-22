@@ -262,6 +262,10 @@ const messages = {
       "12": "Desember",
     },
   },
+  sitemap: {
+    subtitle:
+      "Semua tujuan di Xefe, dikelompokkan berdasarkan pekerjaan yang ingin dilakukan.",
+  },
   nav: {
     people: "Orang",
     scheduling: "Waktu & Cuti",

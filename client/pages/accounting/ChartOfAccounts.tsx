@@ -480,7 +480,7 @@ export default function ChartOfAccounts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -561,7 +561,7 @@ export default function ChartOfAccounts() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">

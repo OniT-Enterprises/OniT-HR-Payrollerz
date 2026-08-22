@@ -588,7 +588,7 @@ export default function InvoiceForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
@@ -755,7 +755,7 @@ export default function InvoiceForm() {
 
   if (settingsLoadError && loadedSettings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsFetching}
@@ -772,7 +772,7 @@ export default function InvoiceForm() {
 
   if (customersUnavailable || duplicateUnavailable) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={customersFetching || duplicateFetching}
@@ -789,7 +789,7 @@ export default function InvoiceForm() {
 
   if (duplicateId && duplicateLoaded && !duplicateInvoice) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title={`${t('money.invoices.title') || 'Invoices'} - Xefe`} />
         <MainNavigation />
         <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
@@ -816,7 +816,7 @@ export default function InvoiceForm() {
   if (!isNew && !invoice) {
     const isQueryError = invoiceLoadError;
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title={`${t('money.invoices.title') || 'Invoices'} - Xefe`} />
         <MainNavigation />
         <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
@@ -861,7 +861,7 @@ export default function InvoiceForm() {
 
   // Edit/Create mode
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={isNew ? 'New Invoice - Xefe' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Xefe`}
       />

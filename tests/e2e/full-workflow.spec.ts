@@ -153,6 +153,19 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await expect(page).toHaveURL(/\/(dashboard)?$/);
   await expect(sidebar.getByText("Goals", { exact: true })).toBeHidden();
 
+  // The route directory is generated from that same permission-filtered
+  // navigation source. It stays compact and does not advertise stale page
+  // counts or duplicate English-only descriptions.
+  await page.goto("/sitemap");
+  await expect(page.getByRole("heading", { name: "Sitemap" })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Every place you can go in Xefe, grouped by the work you want to do.",
+    ),
+  ).toBeVisible();
+  await expect(page.locator('a[href="/people/employees"]')).toBeVisible();
+  await expect(page.getByText("Complete navigation guide for Xefe")).toHaveCount(0);
+
   // ── 2. First-run setup wizard (company → bank → payroll → complete) ─────
   await page.goto("/setup");
   await page.getByPlaceholder(/your company lda/i).fill(`${COMPANY} Lda`);

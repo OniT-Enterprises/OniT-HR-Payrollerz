@@ -302,7 +302,7 @@ export default function Vendors() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
@@ -352,7 +352,7 @@ export default function Vendors() {
 
   if (loadError && vendors.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
       </div>
@@ -360,7 +360,7 @@ export default function Vendors() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Vendors - Xefe" description="Manage your vendors and suppliers" />
       <MainNavigation />
 
@@ -371,7 +371,7 @@ export default function Vendors() {
           icon={Truck}
           iconColor="text-indigo-500"
           actions={canManageTenant ? (
-            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={openAddDialog}>
               <Plus className="h-4 w-4 mr-2" />
               {t('money.vendors.add') || 'Add Vendor'}
             </Button>
@@ -765,7 +765,7 @@ export default function Vendors() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleSubmit} disabled={saving}>
               {saving
                 ? (t('common.saving') || 'Saving...')
                 : editingVendor

@@ -283,7 +283,7 @@ export default function FiscalPeriods() {
   const loading = loadingYear || loadingPeriods;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader

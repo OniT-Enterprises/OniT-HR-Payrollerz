@@ -241,6 +241,10 @@ const messages = {
       "12": "Dezembro",
     },
   },
+  sitemap: {
+    subtitle:
+      "Todos os destinos no Xefe, agrupados pelo trabalho que pretende realizar.",
+  },
   nav: {
     people: "Pessoas",
     scheduling: "Tempo & Licença",

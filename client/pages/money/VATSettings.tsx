@@ -181,7 +181,7 @@ export default function VATSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="VAT Settings - Xefe" />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">

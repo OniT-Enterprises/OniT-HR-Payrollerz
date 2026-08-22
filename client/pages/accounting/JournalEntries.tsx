@@ -644,7 +644,7 @@ export default function JournalEntries() {
 
   if (loadingEntries || loadingSummary) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-3 mb-6">
@@ -714,7 +714,7 @@ export default function JournalEntries() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.journalEntries} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">

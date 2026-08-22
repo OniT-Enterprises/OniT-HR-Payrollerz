@@ -488,7 +488,7 @@ export default function BillForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-8 gap-4">
@@ -568,7 +568,7 @@ export default function BillForm() {
 
   if (needsVendors && vendorsLoadError && vendors.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={vendorsFetching}
@@ -581,7 +581,7 @@ export default function BillForm() {
   if (!isNew && !bill) {
     const isQueryError = billLoadError;
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title={`${t('money.bills.title') || 'Bills'} - Xefe`} />
         <MainNavigation />
         <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
@@ -622,7 +622,7 @@ export default function BillForm() {
   // View Mode
   if (isViewMode) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={`Bill - ${bill.vendorName} - Xefe`}
           description="View bill details"
@@ -649,7 +649,6 @@ export default function BillForm() {
                 {canManageTenant && ['pending', 'partial', 'overdue'].includes(bill.status) && (
                   <Button
                     onClick={() => setShowPaymentDialog(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700"
                   >
                     <DollarSign className="h-4 w-4 mr-2" />
                     {t('money.bills.recordPayment') || 'Record Payment'}
@@ -963,7 +962,6 @@ export default function BillForm() {
               <Button
                 onClick={handleRecordPayment}
                 disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700"
               >
                 {t('money.payments.record') || 'Record'}
               </Button>
@@ -976,7 +974,7 @@ export default function BillForm() {
 
   // Create/Edit Mode
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={isNew ? 'New Bill - Xefe' : 'Edit Bill - Xefe'}
         description={isNew ? 'Create a new bill' : 'Edit bill'}
@@ -1003,7 +1001,7 @@ export default function BillForm() {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="hidden bg-indigo-600 hover:bg-indigo-700 sm:inline-flex"
+                className="hidden sm:inline-flex"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {saving
@@ -1316,7 +1314,7 @@ export default function BillForm() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="min-h-11 flex-1 bg-indigo-600 hover:bg-indigo-700"
+              className="min-h-11 flex-1"
             >
               <Save className="mr-2 h-4 w-4" />
               {saving ? t('common.saving') || 'Saving...' : t('common.save') || 'Save'}

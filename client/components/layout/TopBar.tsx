@@ -372,7 +372,6 @@ function SetupBanner({ setupPercent, onNavigate, onHide, compact, t }: SetupBann
         <Button
           size="sm"
           onClick={() => onNavigate("/setup")}
-          className="bg-sky-700 text-white hover:bg-sky-800"
         >
           {setupPercent > 0 ? t("dashboard.resumeSetup") : t("dashboard.startSetup")}
         </Button>

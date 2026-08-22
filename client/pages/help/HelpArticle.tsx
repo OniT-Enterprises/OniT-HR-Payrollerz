@@ -222,7 +222,7 @@ export default function HelpArticlePage() {
 
   if (!article) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-10 sm:px-6 [&>*]:max-w-4xl">
         <p className="text-sm text-muted-foreground">{t("help.notFound")}</p>
         <Link
           to={backToHelp}
@@ -238,7 +238,7 @@ export default function HelpArticlePage() {
   const articleAction = ARTICLE_ACTIONS[article.slug];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
+    <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 [&>*]:max-w-4xl">
       <Link
         to={backToHelp}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

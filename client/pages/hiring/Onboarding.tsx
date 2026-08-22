@@ -281,7 +281,7 @@ export default function Onboarding() {
 
   if (employeesLoading || onboardingCasesQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -391,7 +391,7 @@ export default function Onboarding() {
 
   if (employeesQuery.isError || onboardingCasesQuery.isError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO {...seoConfig.onboarding} />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
@@ -423,7 +423,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.onboarding} />
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
@@ -471,7 +471,7 @@ export default function Onboarding() {
               <p className="mt-1 max-w-md text-sm text-muted-foreground">
                 Onboarding attaches tasks and issued equipment to a real employee record.
               </p>
-              <Button className="mt-5 gap-2 bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate("/people/add")}>
+              <Button className="mt-5 gap-2" onClick={() => navigate("/people/add")}>
                 <Plus className="h-4 w-4" />
                 Add employee
               </Button>
@@ -679,7 +679,7 @@ export default function Onboarding() {
                     <Save className="h-4 w-4" />
                     Save for later
                   </Button>
-                  <Button onClick={() => save("completed")} disabled={saving || existingCaseQuery.isFetching} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                  <Button onClick={() => save("completed")} disabled={saving || existingCaseQuery.isFetching} className="gap-2">
                     <CheckCircle2 className="h-4 w-4" />
                     {saving ? "Saving…" : "Complete onboarding"}
                   </Button>

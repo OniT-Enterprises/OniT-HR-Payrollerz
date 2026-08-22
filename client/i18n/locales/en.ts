@@ -240,6 +240,10 @@ const messages = {
       "12": "December",
     },
   },
+  sitemap: {
+    subtitle:
+      "Every place you can go in Xefe, grouped by the work you want to do.",
+  },
   nav: {
     people: "People",
     scheduling: "Time & Leave",

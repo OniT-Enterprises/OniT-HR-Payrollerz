@@ -212,7 +212,7 @@ export default function Customers() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-start justify-between gap-4 mb-6">
@@ -262,7 +262,7 @@ export default function Customers() {
 
   if (loadError && customers.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
       </div>
@@ -270,7 +270,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Customers - Xefe" description="Manage your customers for invoicing" />
       <MainNavigation />
 
@@ -281,7 +281,7 @@ export default function Customers() {
           icon={Users}
           iconColor="text-indigo-500"
           actions={canManageTenant ? (
-            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={openAddDialog}>
               <Plus className="h-4 w-4 mr-2" />
               {t('money.customers.add') || 'Add Customer'}
             </Button>
@@ -540,7 +540,7 @@ export default function Customers() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleSubmit} disabled={saving}>
               {saving
                 ? (t('common.saving') || 'Saving...')
                 : editingCustomer

@@ -35,9 +35,9 @@ import {
 
 function PeopleHomeSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <ModuleSectionNav config={peopleNavConfig} />
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header + search */}
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -104,7 +104,6 @@ function PeopleHomeSkeleton() {
     </div>
   );
 }
-
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -167,7 +166,7 @@ export default function PeopleDashboard() {
 
   if (dashboardError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("moduleDashboards.people.title")}
           description={t("moduleDashboards.people.seoDescription")}
@@ -293,14 +292,14 @@ export default function PeopleDashboard() {
   const recent = (recentEmployees ?? []).slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("moduleDashboards.people.title")}
         description={t("moduleDashboards.people.seoDescription")}
       />
       <ModuleSectionNav config={peopleNavConfig} />
 
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header + search */}
         <div className="space-y-5">
           <PageHeader
@@ -317,7 +316,6 @@ export default function PeopleDashboard() {
               hasStaff && canManageTenant ? (
                 <Button
                   onClick={() => navigate("/people/add")}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t("moduleDashboards.people.addEmployee")}
