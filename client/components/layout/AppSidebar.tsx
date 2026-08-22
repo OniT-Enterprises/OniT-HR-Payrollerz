@@ -13,16 +13,21 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
-  peopleNavConfig,
-  timeLeaveNavConfig,
-  payrollNavConfig,
-  moneyNavConfig,
-  accountingNavConfig,
-  reportsNavConfig,
   filterModuleNavConfigByPermissions,
 } from "@/lib/moduleNav";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
-import { type SectionId, navColors, navTreeDot } from "@/lib/sectionTheme";
+import { type SectionId, navColors } from "@/lib/sectionTheme";
+import {
+  APP_NAV_ITEMS,
+  isAppNavItemVisible,
+  type AppNavItem,
+} from "@/lib/appNavigation";
+import {
+  getRouteSidebarExpansion,
+  isSidebarModuleActive,
+  isSidebarPathActive,
+  toggleExclusive,
+} from "@/lib/sidebarNavigation";
 import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -31,13 +36,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  LayoutDashboard,
-  Users,
-  Clock,
-  Calculator,
-  Wallet,
-  Landmark,
-  BarChart3,
   Settings,
   ChevronRight,
   X,
@@ -45,63 +43,16 @@ import {
   MessageCircle,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import type { ModulePermission } from "@/types/tenant";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
-// --- Module definitions (matches MainNavigation's NAV_ITEMS) ---
+// --- Module definitions (shared with MainNavigation via appNavigation) ---
 
-interface ModuleDef {
-  id: SectionId;
-  labelKey: string;
-  icon: ComponentType<{ className?: string }>;
-  config: ModuleNavConfig;
-  visibilityCheck: (hasModule: (m: ModulePermission) => boolean) => boolean;
-}
+type ModuleDef = AppNavItem & { config: ModuleNavConfig };
 
-const MODULES: ModuleDef[] = [
-  {
-    id: "people",
-    labelKey: "nav.people",
-    icon: Users,
-    config: peopleNavConfig,
-    visibilityCheck: (hm) => hm("staff") || hm("hiring") || hm("performance"),
-  },
-  {
-    id: "scheduling",
-    labelKey: "nav.scheduling",
-    icon: Clock,
-    config: timeLeaveNavConfig,
-    visibilityCheck: (hm) => hm("timeleave"),
-  },
-  {
-    id: "payroll",
-    labelKey: "nav.payroll",
-    icon: Calculator,
-    config: payrollNavConfig,
-    visibilityCheck: (hm) => hm("payroll"),
-  },
-  {
-    id: "money",
-    labelKey: "nav.money",
-    icon: Wallet,
-    config: moneyNavConfig,
-    visibilityCheck: (hm) => hm("money"),
-  },
-  {
-    id: "accounting",
-    labelKey: "nav.accounting",
-    icon: Landmark,
-    config: accountingNavConfig,
-    visibilityCheck: (hm) => hm("accounting"),
-  },
-  {
-    id: "reports",
-    labelKey: "nav.reports",
-    icon: BarChart3,
-    config: reportsNavConfig,
-    visibilityCheck: (hm) => hm("reports"),
-  },
-];
+const DASHBOARD_ITEM = APP_NAV_ITEMS[0]!;
+const MODULES = APP_NAV_ITEMS.filter(
+  (item): item is ModuleDef => Boolean(item.config),
+);
 
 /** Light mode uses the current module color to make location obvious. */
 const moduleActiveStyles: Record<SectionId, string> = {
@@ -116,20 +67,6 @@ const moduleActiveStyles: Record<SectionId, string> = {
 
 // --- Helpers ---
 
-function isPathActive(pathname: string, path: string): boolean {
-  if (path === "/") return pathname === "/" || pathname === "/dashboard";
-  return pathname === path || pathname.startsWith(path + "/");
-}
-
-function isModuleActive(pathname: string, config: ModuleNavConfig): boolean {
-  if (config.overview?.path === pathname) {
-    return true;
-  }
-  return config.sections.some((s) =>
-    s.matchPaths.some((mp) => isPathActive(pathname, mp))
-  );
-}
-
 function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
   if (left.size !== right.size) return false;
   for (const value of left) {
@@ -138,79 +75,40 @@ function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
   return true;
 }
 
-function getIndentClass(indent: number): string {
-  if (indent === 0) return "pl-3";
-  if (indent === 1) return "pl-4";
-  return "pl-4";
-}
-
 // --- Custom hook: sidebar expansion state ---
 
 function useSidebarExpansion(visibleModules: ModuleDef[]) {
   const location = useLocation();
 
-  const activeExpansion = useMemo(() => {
-    const modules = new Set<string>();
-    for (const mod of visibleModules) {
-      if (isModuleActive(location.pathname, mod.config)) {
-        modules.add(mod.id);
-        break;
-      }
-    }
-    return { modules };
-  }, [location.pathname, visibleModules]);
+  const activeExpansion = useMemo(
+    () => getRouteSidebarExpansion(location.pathname, visibleModules),
+    [location.pathname, visibleModules],
+  );
 
   const [expandedModules, setExpandedModules] = useState<Set<string>>(activeExpansion.modules);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(activeExpansion.sections);
 
   useEffect(() => {
-    if (activeExpansion.modules.size > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing sidebar expansion with route changes
-      setExpandedModules((prev) =>
-        areSetsEqual(prev, activeExpansion.modules) ? prev : new Set(activeExpansion.modules)
-      );
-    }
-
-    const activeSectionKeys = new Set<string>();
-    for (const mod of visibleModules) {
-      for (const section of mod.config.sections) {
-        if (section.subPages.length > 0 && section.matchPaths.some((mp) => isPathActive(location.pathname, mp))) {
-          activeSectionKeys.add(`${mod.id}:${section.id}`);
-        }
-      }
-    }
-
-    if (activeSectionKeys.size > 0) {
-      setExpandedSections((prev) => {
-        const next = new Set(prev);
-        let changed = false;
-        for (const key of activeSectionKeys) {
-          if (!next.has(key)) {
-            next.add(key);
-            changed = true;
-          }
-        }
-        return changed ? next : prev;
-      });
-    }
-  }, [activeExpansion.modules, location.pathname, visibleModules]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- route changes own sidebar expansion
+    setExpandedModules((prev) =>
+      areSetsEqual(prev, activeExpansion.modules)
+        ? prev
+        : new Set(activeExpansion.modules),
+    );
+    setExpandedSections((prev) =>
+      areSetsEqual(prev, activeExpansion.sections)
+        ? prev
+        : new Set(activeExpansion.sections),
+    );
+  }, [activeExpansion]);
 
   const toggleModule = (moduleId: string) => {
-    setExpandedModules((prev) => {
-      const next = new Set(prev);
-      if (next.has(moduleId)) next.delete(moduleId);
-      else next.add(moduleId);
-      return next;
-    });
+    setExpandedModules((prev) => toggleExclusive(prev, moduleId));
+    setExpandedSections(new Set());
   };
 
   const toggleSection = (key: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setExpandedSections((prev) => toggleExclusive(prev, key));
   };
 
   return { expandedModules, expandedSections, toggleModule, toggleSection };
@@ -218,47 +116,11 @@ function useSidebarExpansion(visibleModules: ModuleDef[]) {
 
 // --- Sub-components ---
 
-// A small node sitting on the submenu's vertical connector line, one per
-// nested item. The active item is a touch larger for a whisper of emphasis.
-//
-// Two layers so the dot reads as the SAME colour as the line with no
-// transparency stacking where they overlap: an opaque sidebar-coloured disc
-// masks the line underneath, and the same tint the line uses (colorClass, a
-// translucent hue) sits on top — compositing over the sidebar background to the
-// identical colour, not doubling up.
-function NavDot({ active, colorClass }: { active: boolean; colorClass: string }) {
-  return (
-    <span
-      aria-hidden
-      className={`pointer-events-none absolute left-0 top-1/2 -ml-[0.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sidebar transition-all ${
-        active ? "h-2 w-2" : "h-1.5 w-1.5"
-      }`}
-    >
-      <span className={`block h-full w-full rounded-full ${colorClass}`} />
-    </span>
-  );
-}
-
-// The submenu's vertical connector line, drawn to run only from the first dot
-// to the last dot (both sit at their row's vertical centre = half a row from
-// the container edges; rows are h-11 / md:h-9). Sits where a border-l would,
-// so it lines up with the dots. Any few-px imprecision at the ends is hidden
-// under the opaque dots, so the line never overhangs or leaves a stub.
-function NavTreeLine({ colorClass }: { colorClass: string }) {
-  return (
-    <span
-      aria-hidden
-      className={`pointer-events-none absolute -left-px top-[1.375rem] bottom-[1.375rem] w-px md:top-[1.125rem] md:bottom-[1.125rem] ${colorClass}`}
-    />
-  );
-}
-
 interface NavLinkProps {
   label: string;
   path: string;
   Icon: ComponentType<{ className?: string }>;
   iconColorClass?: string;
-  dotColorClass?: string;
   indent?: number;
   labelKey?: string;
   collapsed: boolean;
@@ -267,9 +129,9 @@ interface NavLinkProps {
   t: (key: string) => string;
 }
 
-function NavLink({ label, path, Icon, iconColorClass, dotColorClass, indent = 0, labelKey, collapsed, pathname, onNavigate, t }: NavLinkProps) {
+function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, collapsed, pathname, onNavigate, t }: NavLinkProps) {
   const displayLabel = labelKey ? (t(`nav.${labelKey}`) || label) : label;
-  const active = isPathActive(pathname, path);
+  const active = isSidebarPathActive(pathname, path);
 
   if (collapsed) {
     return (
@@ -281,7 +143,7 @@ function NavLink({ label, path, Icon, iconColorClass, dotColorClass, indent = 0,
             aria-label={displayLabel}
             aria-current={active ? "page" : undefined}
             className={`
-              w-full flex items-center justify-center h-11 rounded-lg transition-all md:h-10
+              flex h-11 w-full items-center justify-center rounded-lg transition-colors
               ${active
                 ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -298,7 +160,7 @@ function NavLink({ label, path, Icon, iconColorClass, dotColorClass, indent = 0,
     );
   }
 
-  const pl = getIndentClass(indent);
+  const showIcon = indent < 2;
 
   return (
     <button
@@ -307,16 +169,16 @@ function NavLink({ label, path, Icon, iconColorClass, dotColorClass, indent = 0,
       onClick={() => onNavigate(path)}
       aria-current={active ? "page" : undefined}
       className={`
-        w-full flex items-center gap-3 h-11 ${pl} pr-3 text-sm transition-all relative md:h-9
-        ${indent > 0 ? "rounded-r-lg" : "rounded-lg"}
+        flex h-11 w-full items-center gap-3 rounded-lg pl-3 pr-3 text-sm transition-colors
         ${active
           ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         }
       `}
     >
-      {indent > 0 && <NavDot active={active} colorClass={dotColorClass ?? "bg-sidebar-foreground/30"} />}
-      <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
+      {showIcon && (
+        <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
+      )}
       <span className="truncate">{displayLabel}</span>
     </button>
   );
@@ -328,54 +190,49 @@ interface SubSectionProps {
   iconColor: string;
   sectionExpanded: boolean;
   onToggleSection: (key: string) => void;
-  collapsed: boolean;
   pathname: string;
   onNavigate: (path: string) => void;
   t: (key: string) => string;
 }
 
-function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection, collapsed, pathname, onNavigate, t }: SubSectionProps) {
+function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection, pathname, onNavigate, t }: SubSectionProps) {
   const sectionKey = `${mod.id}:${section.id}`;
   const contentId = `sidebar-section-${mod.id}-${section.id}`;
-  const sectionActive = section.matchPaths.some((mp) => isPathActive(pathname, mp));
+  const sectionActive = section.matchPaths.some((path) =>
+    isSidebarPathActive(pathname, path),
+  );
   const SectionIcon = section.icon;
+  const displayLabel = section.labelKey
+    ? (t(`nav.${section.labelKey}`) || section.label)
+    : section.label;
 
   return (
     <div key={sectionKey} className="space-y-0.5">
-      <div
+      <button
+        type="button"
+        onClick={() => onToggleSection(sectionKey)}
+        aria-expanded={sectionExpanded}
+        aria-controls={contentId}
         className={`
-          relative w-full flex items-center gap-3 h-11 pl-4 pr-1 rounded-r-lg text-sm transition-colors md:h-9 md:pr-3
+          flex h-11 w-full items-center gap-3 rounded-lg pl-3 pr-2 text-left text-sm transition-colors
           ${sectionActive
             ? "text-sidebar-foreground font-medium"
-            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           }
         `}
       >
-        <NavDot active={sectionActive} colorClass={navTreeDot[mod.id]} />
-        <button
-          onClick={() => onNavigate(section.path)}
-          aria-current={pathname === section.path ? "page" : undefined}
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 self-stretch text-left md:min-h-0"
-        >
-          <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
-          <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
-        </button>
-        <button
-          onClick={() => onToggleSection(sectionKey)}
-          aria-label={`${sectionExpanded ? t("common.collapse") : t("common.more")} ${section.labelKey ? t(`nav.${section.labelKey}`) || section.label : section.label}`}
-          aria-expanded={sectionExpanded}
-          aria-controls={contentId}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-sidebar-accent md:-mr-2 md:h-8 md:w-8"
-        >
-          <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
-        </button>
-      </div>
+        <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
+        <span className="min-w-0 flex-1 truncate">{displayLabel}</span>
+        <ChevronRight
+          aria-hidden
+          className={`h-3.5 w-3.5 shrink-0 text-sidebar-foreground/70 transition-transform ${sectionExpanded ? "rotate-90" : ""}`}
+        />
+        <span className="sr-only">
+          {sectionExpanded ? t("common.collapse") : t("common.expand")}
+        </span>
+      </button>
       {sectionExpanded && (
-        <div
-          id={contentId}
-          className={`relative ml-[2.19rem] border-l border-transparent space-y-0.5`}
-        >
-          <NavTreeLine colorClass={navTreeDot[mod.id]} />
+        <div id={contentId} className="ml-10 space-y-0.5">
           {section.subPages.map((page) => (
             <NavLink
               key={page.path}
@@ -383,10 +240,9 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
               path={page.path}
               Icon={page.icon}
               iconColorClass={iconColor}
-              dotColorClass={navTreeDot[mod.id]}
               indent={2}
               labelKey={page.labelKey}
-              collapsed={collapsed}
+              collapsed={false}
               pathname={pathname}
               onNavigate={onNavigate}
               t={t}
@@ -411,7 +267,7 @@ interface ModuleSectionProps {
 }
 
 function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections, onToggleModule, onToggleSection, onNavigate, t }: ModuleSectionProps) {
-  const moduleActive = isModuleActive(pathname, mod.config);
+  const moduleActive = isSidebarModuleActive(pathname, mod.config);
   const Icon = mod.icon;
   const iconColor = navColors[mod.id];
   const activeStyle = moduleActiveStyles[mod.id];
@@ -424,7 +280,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         <TooltipTrigger asChild>
           <button
             onClick={() => onNavigate(dashboardPath)}
-            aria-label={t(mod.labelKey)}
+            aria-label={t(mod.labelKey) || mod.label}
             aria-current={pathname === dashboardPath ? "page" : undefined}
             className={`
               w-full flex items-center justify-center h-11 rounded-lg transition-colors md:h-10
@@ -438,7 +294,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
           </button>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={8}>
-          {t(mod.labelKey)}
+          {t(mod.labelKey) || mod.label}
         </TooltipContent>
       </Tooltip>
     );
@@ -461,12 +317,12 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
           className="flex min-w-0 flex-1 self-stretch items-center gap-3 pl-3 pr-2 text-left"
         >
           <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
-          <span className="truncate">{t(mod.labelKey)}</span>
+          <span className="truncate">{t(mod.labelKey) || mod.label}</span>
         </button>
         <button
           onClick={() => onToggleModule(mod.id)}
-          className="mr-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground md:mr-1 md:h-8 md:w-8"
-          aria-label={`${isExpanded ? t("common.collapse") : t("common.more")} ${t(mod.labelKey)}`}
+          className="mr-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground md:mr-1"
+          aria-label={`${isExpanded ? t("common.collapse") : t("common.expand")} ${t(mod.labelKey) || mod.label}`}
           aria-expanded={isExpanded}
           aria-controls={contentId}
         >
@@ -474,11 +330,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         </button>
       </div>
       {isExpanded && (
-        <div
-          id={contentId}
-          className={`relative ml-[1.19rem] border-l border-transparent space-y-0.5`}
-        >
-          <NavTreeLine colorClass={navTreeDot[mod.id]} />
+        <div id={contentId} className="ml-3 space-y-0.5">
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (
@@ -488,7 +340,6 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
                   path={section.path}
                   Icon={section.icon}
                   iconColorClass={iconColor}
-                  dotColorClass={navTreeDot[mod.id]}
                   indent={1}
                   labelKey={section.labelKey}
                   collapsed={collapsed}
@@ -506,7 +357,6 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
                 iconColor={iconColor}
                 sectionExpanded={expandedSections.has(`${mod.id}:${section.id}`)}
                 onToggleSection={onToggleSection}
-                collapsed={collapsed}
                 pathname={pathname}
                 onNavigate={onNavigate}
                 t={t}
@@ -550,7 +400,7 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose, close
         <button
           onClick={onClose}
           data-sidebar-close
-          className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           aria-label={closeLabel}
         >
           <X className="h-5 w-5" />
@@ -596,7 +446,7 @@ function HelpLink({
   const active = pathname === "/help" || pathname.startsWith("/help/");
   const base = active
     ? "bg-sidebar-accent text-sidebar-foreground"
-    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all";
+    : "text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground";
 
   if (collapsed) {
     return (
@@ -662,7 +512,7 @@ function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pat
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleCollapsed}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/40 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground md:h-9 md:w-9"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 aria-label={collapsed ? t("common.expandSidebar") : t("common.collapseSidebar")}
               >
                 <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -723,9 +573,9 @@ function SidebarContent({
       <ScrollArea className="flex-1 py-3">
         <div className={`space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
           <NavLink
-            label={t("common.dashboard")}
-            path="/"
-            Icon={LayoutDashboard}
+            label={t(DASHBOARD_ITEM.labelKey) || DASHBOARD_ITEM.label}
+            path={DASHBOARD_ITEM.path}
+            Icon={DASHBOARD_ITEM.icon}
             iconColorClass="text-sidebar-primary"
             collapsed={collapsed}
             pathname={pathname}
@@ -755,8 +605,8 @@ function SidebarContent({
               {collapsed ? (
                 <div className="my-2 h-px bg-sidebar-border" />
               ) : (
-                <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-                  {t("nav.moreTools")}
+                <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/70">
+                  {t("nav.financeReports")}
                 </p>
               )}
               {moreToolModules.map((mod) => (
@@ -874,7 +724,7 @@ function MobileSidebar({
         aria-hidden={!open}
         inert={!open}
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out
+          fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-1.5rem))] transform transition-transform duration-300 ease-out
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
@@ -908,7 +758,7 @@ export default function AppSidebar() {
     );
 
     return MODULES.flatMap((module) => {
-      if (!module.visibilityCheck(hasModule)) return [];
+      if (!isAppNavItemVisible(module, hasModule)) return [];
       let filteredConfig = filterModuleNavConfigByPermissions(
         module.config,
         hasModule,
@@ -963,7 +813,7 @@ export default function AppSidebar() {
   };
 
   const collapsed = sidebarCollapsed && !isMobile;
-  const sidebarWidth = collapsed ? "w-16" : "w-64";
+  const sidebarWidth = collapsed ? "w-16" : "w-[17rem]";
 
   const contentProps: SidebarContentProps = {
     collapsed, isDark, isMobile, pathname: location.pathname,
@@ -987,7 +837,10 @@ export default function AppSidebar() {
   }
 
   return (
-    <aside className={`shrink-0 ${sidebarWidth} transition-[width] duration-200`}>
+    <aside
+      aria-label={t("common.mainNavigation")}
+      className={`shrink-0 ${sidebarWidth} transition-[width] duration-200`}
+    >
       <SidebarContent {...contentProps} />
     </aside>
   );

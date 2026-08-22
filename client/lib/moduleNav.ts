@@ -142,7 +142,7 @@ export const peopleNavConfig: ModuleNavConfig = {
       path: "/people/employees",
       matchPaths: ["/people/employees", "/people/add", "/people/staff", "/people/onboarding", "/people/offboarding"],
       subPages: [
-        { label: "Directory", path: "/people/employees", icon: Users },
+        { label: "Employee list", labelKey: "employeeList", path: "/people/employees", icon: Users },
         { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus, hrAdminOnly: true },
         { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus, hrAdminOnly: true },
       ],

@@ -30,14 +30,18 @@ interface LayoutContextValue {
 
 const LayoutContext = createContext<LayoutContextValue | null>(null);
 
-const COLLAPSED_KEY = "meza-sidebar-collapsed";
+const COLLAPSED_KEY = "xefe-sidebar-collapsed";
+const LEGACY_COLLAPSED_KEY = "meza-sidebar-collapsed";
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pageHeader, setPageHeader] = useState<LayoutPageHeader | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
-      return localStorage.getItem(COLLAPSED_KEY) === "true";
+      return (
+        localStorage.getItem(COLLAPSED_KEY) ??
+        localStorage.getItem(LEGACY_COLLAPSED_KEY)
+      ) === "true";
     } catch {
       return false;
     }
@@ -46,6 +50,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(COLLAPSED_KEY, String(sidebarCollapsed));
+      localStorage.removeItem(LEGACY_COLLAPSED_KEY);
     } catch {
       // ignore persistence failures
     }

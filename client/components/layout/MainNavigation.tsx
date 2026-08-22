@@ -25,26 +25,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  LayoutDashboard,
-  Users,
-  Calculator,
-  Landmark,
   Settings,
   LogOut,
   Sun,
   Moon,
   Shield,
-  BarChart3,
   Menu,
   X,
-  Wallet,
   Map,
   BookOpen,
   Check,
   CreditCard,
   FolderKanban,
   FileSpreadsheet,
-  Clock,
   WifiOff,
   RotateCcw,
   AlertTriangle,
@@ -52,48 +45,21 @@ import {
 } from "lucide-react";
 import { useIsSubscribed } from "@/hooks/useBilling";
 import { useState } from "react";
-import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
+import { navColors, navActiveIndicator } from "@/lib/sectionTheme";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
-import type { ModulePermission } from "@/types/tenant";
-
-// 7-tab navigation — no dropdowns, click navigates to module hub
-const NAV_ITEMS: Array<{
-  id: SectionId;
-  label: string;
-  labelKey: string;
-  path: string;
-  icon: typeof LayoutDashboard;
-}> = [
-  { id: "dashboard", label: "Dashboard", labelKey: "common.dashboard", path: "/", icon: LayoutDashboard },
-  { id: "people", label: "People", labelKey: "nav.people", path: "/people", icon: Users },
-  { id: "scheduling", label: "Time & Leave", labelKey: "nav.scheduling", path: "/time-leave", icon: Clock },
-  { id: "payroll", label: "Payroll", labelKey: "nav.payroll", path: "/payroll", icon: Calculator },
-  { id: "money", label: "Money", labelKey: "nav.money", path: "/money", icon: Wallet },
-  { id: "accounting", label: "Accounting", labelKey: "nav.accounting", path: "/accounting", icon: Landmark },
-  { id: "reports", label: "Reports", labelKey: "nav.reports", path: "/reports", icon: BarChart3 },
-];
+import {
+  getVisibleAppNavItems,
+  type AppNavItem,
+} from "@/lib/appNavigation";
 
 // --- Helpers ---
 
-type NavItem = typeof NAV_ITEMS[number];
+type NavItem = AppNavItem;
 
 function isItemActive(item: NavItem, pathname: string): boolean {
   if (item.path === "/") return pathname === "/" || pathname === "/dashboard";
   return pathname.startsWith(item.path);
-}
-
-function getVisibleNavItems(hasModule: (m: ModulePermission) => boolean): NavItem[] {
-  const moduleMap: Record<string, () => boolean> = {
-    dashboard: () => true,
-    people: () => hasModule("staff") || hasModule("hiring") || hasModule("performance"),
-    scheduling: () => hasModule("timeleave"),
-    payroll: () => hasModule("payroll"),
-    money: () => hasModule("money"),
-    accounting: () => hasModule("accounting"),
-    reports: () => hasModule("reports"),
-  };
-  return NAV_ITEMS.filter((item) => (moduleMap[item.id] ?? (() => true))());
 }
 
 function getUserInitials(user: { displayName?: string | null; email?: string | null }): string {
@@ -577,7 +543,7 @@ function MainNavigationInner() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const visibleNavItems = getVisibleNavItems(hasModule);
+  const visibleNavItems = getVisibleAppNavItems(hasModule);
 
   const handleNavigate = (path: string) => {
     navigate(path);

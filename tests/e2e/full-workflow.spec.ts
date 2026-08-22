@@ -138,6 +138,21 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     timeout: 30_000,
   });
 
+  // Shared navigation stays calm: one module and one nested group at a time,
+  // with group rows acting only as disclosures rather than duplicate links.
+  await page.goto("/people");
+  const sidebar = page.getByRole("complementary", {
+    name: "Main navigation",
+  });
+  await sidebar.getByRole("button", { name: /employees expand/i }).click();
+  await expect(sidebar.getByText("Employee list", { exact: true })).toBeVisible();
+  await sidebar.getByRole("button", { name: /performance expand/i }).click();
+  await expect(sidebar.getByText("Employee list", { exact: true })).toBeHidden();
+  await expect(sidebar.getByText("Goals", { exact: true })).toBeVisible();
+  await sidebar.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await expect(page).toHaveURL(/\/(dashboard)?$/);
+  await expect(sidebar.getByText("Goals", { exact: true })).toBeHidden();
+
   // ── 2. First-run setup wizard (company → bank → payroll → complete) ─────
   await page.goto("/setup");
   await page.getByPlaceholder(/your company lda/i).fill(`${COMPANY} Lda`);

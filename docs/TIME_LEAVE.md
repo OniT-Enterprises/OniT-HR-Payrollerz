@@ -290,7 +290,11 @@ Relevant coverage includes `tests/rules/time-leave-access.test.ts`,
 unit tests, dashboard guardrails, and Xefe API tenant-isolation tests.
 
 
-## The leave calendar (wired 2026-08-22)
+## The leave calendar (wired 2026-08-22, live)
+
+**Where it is:** `/time-leave/leave` (sidebar Time & Leave → Leave), on the
+**List | Calendar** toggle above the request list. List stays the default.
+
 
 `client/components/leave/LeaveCalendar.tsx` had existed for months, complete,
 and was imported by **nothing** — month/week views, department filter, holidays,

@@ -149,6 +149,22 @@ test("a first customer can recover, resume, and work overnight on a phone", asyn
     updatedAt: new Date(),
   });
 
+  // The phone drawer presents one decision at a time and remains fully
+  // keyboard-dismissable. Opening a sibling group closes the previous one.
+  await page.getByRole("button", { name: "Open menu", exact: true }).click();
+  const mobileNav = page.getByRole("dialog", { name: "Main navigation" });
+  await mobileNav.getByRole("button", { name: "Expand People" }).click();
+  await mobileNav.getByRole("button", { name: /employees expand/i }).click();
+  await expect(mobileNav.getByText("Employee list", { exact: true })).toBeVisible();
+  await mobileNav.getByRole("button", { name: /performance expand/i }).click();
+  await expect(mobileNav.getByText("Employee list", { exact: true })).toBeHidden();
+  await expect(mobileNav.getByText("Goals", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#app-mobile-sidebar")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+
   // ── Employee recovery, leave warning, and slow save feedback ────────────
   await page.goto("/people/add");
   await expect(
