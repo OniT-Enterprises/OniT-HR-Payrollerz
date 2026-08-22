@@ -1,4 +1,20 @@
+/**
+ * Who is away, on a calendar — month or week, filterable by department, with
+ * Timor-Leste public holidays marked.
+ *
+ * Only approved and pending requests are drawn: a rejected or cancelled request
+ * is not an absence, and drawing it would make the calendar lie. Pending is
+ * dashed and faded because "might be away" and "is away" are different facts to
+ * plan a roster around.
+ *
+ * Holidays: pass `resolvedHolidayDates` — the tenant's ACTUAL holiday set, from
+ * the same resolver the leave-duration maths uses (statutory dates plus this
+ * tenant's overrides). Without it the calendar falls back to the statutory list
+ * alone, and can then mark a day red that a request counted as working, or miss
+ * one it skipped. Names still come from the statutory table.
+ */
 import React, { useState, useMemo } from "react";
+import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +34,11 @@ type ViewMode = "week" | "month";
 interface LeaveCalendarProps {
   requests: LeaveRequest[];
   departments: Department[];
+  /**
+   * The tenant's resolved public-holiday dates. Omit only where the caller
+   * genuinely has no access to the override list.
+   */
+  resolvedHolidayDates?: string[];
 }
 
 const LEAVE_TYPE_COLORS: Record<LeaveType | string, { bg: string; text: string; border: string }> = {
@@ -41,7 +62,19 @@ const LEAVE_TYPE_COLORS: Record<LeaveType | string, { bg: string; text: string; 
 
 const PENDING_STYLES = "opacity-60 border-dashed";
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/**
+ * Sunday-first, to match getMonthDays/getWeekDays which both key off
+ * Date.getDay(). Derived from the viewer's locale rather than hardcoded
+ * English — a fixed reference Sunday keeps the order stable.
+ */
+function weekdayNames(locale: string): string[] {
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(2024, 0, 7 + i)).toLocaleDateString(locale, {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
+  );
+}
 
 function formatDateKey(d: Date): string {
   const y = d.getFullYear();
@@ -96,12 +129,13 @@ function getFirstName(name: string) {
 
 function DayCell({
   day, idx, todayKey, viewMode, currentMonth, maxLeavesPerCell,
-  holidayMap, leavesByDate,
+  holidayMap, leavesByDate, t,
 }: {
   day: Date; idx: number; todayKey: string; viewMode: ViewMode;
   currentMonth: number; maxLeavesPerCell: number;
   holidayMap: Map<string, TLHoliday>;
   leavesByDate: Map<string, LeaveRequest[]>;
+  t: Translate;
 }) {
   const key = formatDateKey(day);
   const isToday = key === todayKey;
@@ -134,16 +168,16 @@ function DayCell({
         </span>
         {holiday && (
           <span className="text-[9px] leading-tight text-red-600 dark:text-red-400 font-medium truncate max-w-[90%] text-right">
-            {holiday.nameTetun || holiday.name}
+            {holiday.nameTetun || holiday.name || t("timeLeave.leaveRequests.calendar.holiday")}
           </span>
         )}
       </div>
-      <LeaveEntries leaves={leaves} maxShown={maxLeavesPerCell} />
+      <LeaveEntries leaves={leaves} maxShown={maxLeavesPerCell} t={t} />
     </div>
   );
 }
 
-function LeaveEntries({ leaves, maxShown }: { leaves: LeaveRequest[]; maxShown: number }) {
+function LeaveEntries({ leaves, maxShown, t }: { leaves: LeaveRequest[]; maxShown: number; t: Translate }) {
   return (
     <div className="space-y-0.5">
       {leaves.slice(0, maxShown).map((leave) => {
@@ -157,50 +191,63 @@ function LeaveEntries({ leaves, maxShown }: { leaves: LeaveRequest[]; maxShown: 
               colors.bg, colors.text, colors.border,
               isPending && PENDING_STYLES,
             )}
-            title={`${leave.employeeName} — ${leave.leaveType}${isPending ? " (pending)" : ""}`}
+            title={`${leave.employeeName} — ${leave.leaveTypeLabel || leave.leaveType}${
+              isPending ? ` (${t("timeLeave.leaveRequests.status.pending")})` : ""
+            }`}
           >
             {getFirstName(leave.employeeName)}
           </div>
         );
       })}
       {leaves.length > maxShown && (
-        <span className="text-[9px] text-muted-foreground px-1">+{leaves.length - maxShown} more</span>
+        <span className="text-[9px] text-muted-foreground px-1">
+          {t("timeLeave.leaveRequests.calendar.more", { count: leaves.length - maxShown })}
+        </span>
       )}
     </div>
   );
 }
 
-const LEGEND_ITEMS = [
-  { type: "annual", label: "Annual" },
-  { type: "sick", label: "Sick" },
-  { type: "maternity", label: "Maternity" },
-  { type: "paternity", label: "Paternity" },
-  { type: "miscarriage", label: "Miscarriage" },
-  { type: "special", label: "Special" },
-  { type: "study", label: "Study" },
-  { type: "childcare", label: "Childcare" },
-  { type: "unpaid", label: "Unpaid" },
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+/** Labels reuse the existing leave-type keys rather than adding a second set. */
+const LEGEND_TYPES = [
+  "annual",
+  "sick",
+  "maternity",
+  "paternity",
+  "miscarriage",
+  "special",
+  "study",
+  "childcare",
+  "unpaid",
 ] as const;
 
-function CalendarLegend() {
+function CalendarLegend({ t }: { t: Translate }) {
   return (
     <div className="flex items-center gap-3 flex-wrap text-[10px]">
-      {LEGEND_ITEMS.map(({ type, label }) => {
+      {LEGEND_TYPES.map((type) => {
         const colors = LEAVE_TYPE_COLORS[type];
         return (
           <div key={type} className="flex items-center gap-1">
             <div className={cn("w-3 h-2 rounded-sm border", colors.bg, colors.border)} />
-            <span className="text-muted-foreground">{label}</span>
+            <span className="text-muted-foreground">
+              {t(`timeLeave.leaveRequests.leaveTypes.${type}`)}
+            </span>
           </div>
         );
       })}
       <div className="flex items-center gap-1 ml-2">
         <div className="w-3 h-2 rounded-sm border border-dashed border-gray-400 bg-gray-200/40" />
-        <span className="text-muted-foreground">Pending</span>
+        <span className="text-muted-foreground">
+          {t("timeLeave.leaveRequests.status.pending")}
+        </span>
       </div>
       <div className="flex items-center gap-1 ml-2">
         <div className="w-3 h-2 rounded-sm bg-red-500/10 border border-red-500/30" />
-        <span className="text-muted-foreground">Holiday</span>
+        <span className="text-muted-foreground">
+          {t("timeLeave.leaveRequests.calendar.holiday")}
+        </span>
       </div>
     </div>
   );
@@ -209,12 +256,13 @@ function CalendarLegend() {
 function CalendarToolbar({
   viewMode, setViewMode, headerLabel,
   goPrev, goToday, goNext,
-  departments, selectedDepartment, setSelectedDepartment,
+  departments, selectedDepartment, setSelectedDepartment, t,
 }: {
   viewMode: ViewMode; setViewMode: (m: ViewMode) => void; headerLabel: string;
   goPrev: () => void; goToday: () => void; goNext: () => void;
   departments: Department[]; selectedDepartment: string;
   setSelectedDepartment: (v: string) => void;
+  t: Translate;
 }) {
   return (
     <div className="flex items-center justify-between flex-wrap gap-3">
@@ -222,7 +270,9 @@ function CalendarToolbar({
         <Button variant="outline" size="sm" onClick={goPrev} className="h-8 w-8 p-0">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={goToday} className="h-8 text-xs px-3">Today</Button>
+        <Button variant="outline" size="sm" onClick={goToday} className="h-8 text-xs px-3">
+          {t("timeLeave.leaveRequests.calendar.today")}
+        </Button>
         <Button variant="outline" size="sm" onClick={goNext} className="h-8 w-8 p-0">
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -230,11 +280,16 @@ function CalendarToolbar({
       </div>
       <div className="flex items-center gap-2">
         <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-          <SelectTrigger className="h-8 w-[160px] text-xs">
-            <SelectValue placeholder="All departments" />
+          <SelectTrigger
+            className="h-8 w-[160px] text-xs"
+            aria-label={t("timeLeave.leaveRequests.calendar.department")}
+          >
+            <SelectValue placeholder={t("timeLeave.leaveRequests.calendar.allDepartments")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All departments</SelectItem>
+            <SelectItem value="all">
+              {t("timeLeave.leaveRequests.calendar.allDepartments")}
+            </SelectItem>
             {departments.map((dept) => (
               <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
             ))}
@@ -247,32 +302,37 @@ function CalendarToolbar({
               "px-3 py-1 text-xs font-medium transition-colors",
               viewMode === "month" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-muted-foreground hover:bg-muted",
             )}
-          >Month</button>
+          >{t("timeLeave.leaveRequests.calendar.month")}</button>
           <button
             onClick={() => setViewMode("week")}
             className={cn(
               "px-3 py-1 text-xs font-medium transition-colors border-l border-border/50",
               viewMode === "week" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-muted-foreground hover:bg-muted",
             )}
-          >Week</button>
+          >{t("timeLeave.leaveRequests.calendar.week")}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function getHeaderLabel(viewMode: ViewMode, currentDate: Date): string {
+function getHeaderLabel(viewMode: ViewMode, currentDate: Date, locale: string): string {
   if (viewMode === "month") {
-    return currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return currentDate.toLocaleDateString(locale, { month: "long", year: "numeric" });
   }
   const weekDays = getWeekDays(currentDate);
-  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString(locale, { month: "short", day: "numeric" });
   return `${fmt(weekDays[0])} – ${fmt(weekDays[6])}, ${weekDays[6].getFullYear()}`;
 }
 
 /* ─── Main component ─── */
 
-export default function LeaveCalendar({ requests, departments }: LeaveCalendarProps) {
+export default function LeaveCalendar({
+  requests,
+  departments,
+  resolvedHolidayDates,
+}: LeaveCalendarProps) {
+  const { t, locale } = useI18n();
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState("all");
@@ -285,12 +345,24 @@ export default function LeaveCalendar({ requests, departments }: LeaveCalendarPr
 
   const currentYear = currentDate.getFullYear();
   const holidayMap = useMemo(() => {
-    const map = new Map<string, TLHoliday>();
+    const statutory = new Map<string, TLHoliday>();
     for (const y of [currentYear - 1, currentYear, currentYear + 1]) {
-      for (const h of getTLPublicHolidays(y)) map.set(h.date, h);
+      for (const h of getTLPublicHolidays(y)) statutory.set(h.date, h);
     }
-    return map;
-  }, [currentYear]);
+    // The caller's resolved set decides WHICH days are holidays; the statutory
+    // table only supplies the name. A tenant override that adds a company day
+    // shows without a name rather than not showing at all.
+    if (!resolvedHolidayDates) return statutory;
+    const resolved = new Map<string, TLHoliday>();
+    for (const date of resolvedHolidayDates) {
+      const known = statutory.get(date);
+      resolved.set(
+        date,
+        known ?? { date, name: "", nameTetun: "" as string } as TLHoliday,
+      );
+    }
+    return resolved;
+  }, [currentYear, resolvedHolidayDates]);
 
   const leavesByDate = useMemo(() => {
     const map = new Map<string, LeaveRequest[]>();
@@ -314,7 +386,8 @@ export default function LeaveCalendar({ requests, departments }: LeaveCalendarPr
 
   const todayKey = formatDateKey(new Date());
   const maxLeavesPerCell = viewMode === "month" ? 3 : 6;
-  const headerLabel = getHeaderLabel(viewMode, currentDate);
+  const headerLabel = getHeaderLabel(viewMode, currentDate, locale);
+  const dayNames = useMemo(() => weekdayNames(locale), [locale]);
 
   const goToday = () => setCurrentDate(new Date());
   const goPrev = () => {
@@ -335,12 +408,13 @@ export default function LeaveCalendar({ requests, departments }: LeaveCalendarPr
         goPrev={goPrev} goToday={goToday} goNext={goNext}
         departments={departments} selectedDepartment={selectedDepartment}
         setSelectedDepartment={setSelectedDepartment}
+        t={t}
       />
-      <CalendarLegend />
+      <CalendarLegend t={t} />
       <div className="border border-border/50 rounded-lg overflow-hidden">
         <div className="grid grid-cols-7 bg-muted/50">
-          {DAY_NAMES.map((name) => (
-            <div key={name} className="text-center text-xs font-medium text-muted-foreground py-2 border-b border-border/30">
+          {dayNames.map((name) => (
+            <div key={name} className="text-center text-xs font-medium capitalize text-muted-foreground py-2 border-b border-border/30">
               {name}
             </div>
           ))}
@@ -351,7 +425,7 @@ export default function LeaveCalendar({ requests, departments }: LeaveCalendarPr
               key={`${formatDateKey(day)}-${idx}`}
               day={day} idx={idx} todayKey={todayKey} viewMode={viewMode}
               currentMonth={currentDate.getMonth()} maxLeavesPerCell={maxLeavesPerCell}
-              holidayMap={holidayMap} leavesByDate={leavesByDate}
+              holidayMap={holidayMap} leavesByDate={leavesByDate} t={t}
             />
           ))}
         </div>

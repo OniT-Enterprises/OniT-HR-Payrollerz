@@ -160,6 +160,22 @@ const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
     isSystem: false,
     parentCode: '1300',
   },
+  /**
+   * Lei 8/2008 Sec. 64 income-tax instalments (0.5% of turnover) sit here, not
+   * in expenses: Sec. 64.4 credits every instalment paid in the year against
+   * that year's income-tax liability, and Sec. 31(g) makes Timor-Leste income
+   * tax non-deductible outright. The annual return clears this balance.
+   */
+  {
+    code: '1330',
+    name: 'Prepaid Income Tax (Instalments)',
+    nameTL: 'Impostu Rendimentu Antecipadu (Prestasaun)',
+    type: 'asset',
+    subType: 'prepaid_expense',
+    description: 'Income-tax instalments paid under Lei 8/2008 Sec. 64, credited against the annual liability',
+    isSystem: true,
+    parentCode: '1300',
+  },
 
   // Fixed Assets
   {
@@ -783,6 +799,36 @@ const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
     type: 'expense',
     subType: 'other_expense',
     isSystem: false,
+    parentCode: '5900',
+  },
+  /**
+   * Taxes the business owes on its OWN receipts — the Lei 8/2008 Secs. 5-9
+   * services tax above all. Deductible, unlike income tax (Sec. 31(g)).
+   */
+  {
+    code: '5940',
+    name: 'Taxes and Duties',
+    nameTL: 'Impostu no Taxa',
+    type: 'expense',
+    subType: 'other_expense',
+    description: 'Services tax and other taxes borne by the business itself',
+    isSystem: true,
+    parentCode: '5900',
+  },
+  /**
+   * Sec. 31(j) and (l): late-payment interest, penalties and fines are NOT
+   * deductible. They are kept off every other expense account so the annual
+   * income-tax workpaper can exclude them without judgement calls — see
+   * nonDeductibleReason() in client/lib/tax/form-c.ts.
+   */
+  {
+    code: '5950',
+    name: 'Penalties and Interest (Non-deductible)',
+    nameTL: 'Multa no Juru (La Dedutivel)',
+    type: 'expense',
+    subType: 'other_expense',
+    description: 'Late-payment penalties, fines and interest — non-deductible under Lei 8/2008 Sec. 31(j),(l)',
+    isSystem: true,
     parentCode: '5900',
   },
 ];

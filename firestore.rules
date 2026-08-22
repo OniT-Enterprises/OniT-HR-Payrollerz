@@ -2554,7 +2554,21 @@ service cloud.firestore {
     // OFFBOARDING
     // ============================================
     match /offboarding/{docId} {
+      // `resource == null` MUST be allowed, and it is load-bearing:
+      // offboardingService.createCase runs a transaction that reads the
+      // document it is about to create, so the deterministic id makes a
+      // double-click idempotent. Without this clause that read is denied, the
+      // transaction never gets past it, and starting an offboarding is
+      // IMPOSSIBLE — the dialog sits on "Starting…" forever with nothing
+      // written and no error shown. Same shape as the invoice_links rule
+      // (docs/INVOICING.md); proven by
+      // tests/rules/money-accounting-permissions.test.ts.
+      //
+      // A missing document discloses nothing: the id is supplied by the caller
+      // and the answer is only "there is nothing here". Real documents stay
+      // behind the admin check below.
       allow read: if isSuperAdmin() ||
+        resource == null ||
         (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
 
       allow create: if isSuperAdmin() || (

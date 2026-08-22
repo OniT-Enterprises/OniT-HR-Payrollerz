@@ -84,12 +84,37 @@ flowchart LR
     WIT -- recordPayment --> P1[payment: paid + journal]
     DR -- portal upload\nofficial-template Excel --> F2[statement: filed]
     DR -- recordPayment --> P2[payment: paid + journal]
+    ST -- recordBusinessTaxAsFiled --> F3[return: filed]
+    ST -- recordPayment --> P3["payment: paid + journal\nDr 5940 taxes & duties"]
+    INST -- recordBusinessTaxAsFiled --> F4[return: filed]
+    INST -- recordPayment --> P4["payment: paid + journal\nDr 1330 prepaid income tax"]
 ```
 
-- Return submission and payment are **independent obligations**. Xefe tracks
-  both statuses for WIT and INSS, so a filed wage/INSS return with unpaid tax
-  stays visibly overdue. Services-tax and installment records currently capture
-  the operator-confirmed declaration and its frozen figures.
+- Return submission and payment are **independent obligations**, for all four:
+  a filed return with unpaid tax stays visibly overdue. Business taxes gained
+  their payment leg on 2026-08-22; before that only the declaration was
+  recordable, so instalments and services tax never reached the ledger at all.
+- **Where a business-tax payment posts** (`lib/tax/statutory-payment-charges.ts`,
+  pure and unit-tested; the service only wraps it in the transaction). Payroll
+  filings CLEAR a liability payroll accrued; business taxes have no prior
+  accrual, so the debit goes straight to its proper home:
+  - instalment → **Dr 1330 Prepaid Income Tax**, never an expense. Sec. 64.4
+    credits every instalment against the annual liability and Sec. 31(g) makes
+    Timor-Leste income tax non-deductible outright.
+  - services tax → **Dr 5940 Taxes and Duties**, which the business does bear.
+  - assessed penalty + interest → **Dr 5950**, always separate from the tax.
+    Sec. 31(j),(l) make them non-deductible, and the Form C workpaper excludes
+    that account by NAME — which is why `nonDeductibleReason()` tests the
+    penalties pattern before the interest one.
+- **Xefe never computes ATTL penalties or interest.** They are entered from the
+  "Aviso de Avaliação" the portal issues. The general late-payment regime is not
+  in Lei 8/2008 (its only penalty provisions are the petroleum instalment
+  shortfalls in Secs. 82.8/90.5) and we hold no authoritative text for it;
+  practitioner summaries of it in circulation cite sections that say no such
+  thing. INSS is the exception and stays computed — DL 20/2017 Art. 39 gives an
+  explicit rate.
+- The amount paid is the **as-filed** figure from the filing's own frozen
+  snapshot, never a figure recomputed from today's ledger.
 - Filing ownership (rules-enforced read split on `taxFilings`): wage filings
   (WIT/INSS) belong to **Payroll**; business tax (`annual_income_tax`,
   `services_tax`, `installment_tax`) belongs to **Accounting**.
@@ -119,6 +144,18 @@ flowchart LR
 | 12 | Schedule V WIT rates cannot be tenant-overridden; filed return figures cannot be rewritten or deleted | constants + `settingsService` normalization + `firestore.rules` + emulator tests |
 | 13 | Back-dated wage arrears are paid exactly once per pay change | `retroSettledPeriod` stamped on the `salaryHistory` entry inside the mark-as-paid transaction + `salary-history.test.ts` |
 | 14 | A period's entitlement and the salary it is priced at come from the same effective-dated source | `salaryOnDate` returns its `source`, so an unrecorded month is reported as unknown rather than priced off today's salary |
+| 15 | A statutory payment resolves exactly the GL codes it can post, before the transaction opens; an income-tax instalment is held as prepaid tax and assessed penalties are quarantined on a non-deductible account | `statutoryPaymentChargeCodes` ↔ `buildStatutoryPaymentChargeLines` + `statutory-payment-charges.test.ts` + `attl-tax-payments.test.ts` |
+
+**Audit actions are allow-listed server-side, and a miss is SILENT.**
+`recordTenantAuditEvent` rejects any action absent from `TENANT_AUDIT_ACTIONS`
+(`functions/src/audit.ts`), and tenant audit logging is deliberately non-fatal —
+a failed audit write must never fail the filing it describes — so the only trace
+is a console error. `tax.business_filed` was missing from the day business-tax
+declarations became recordable: not one services-tax or instalment filing was
+ever written to the audit log, and it surfaced in Aug 2026 only because a
+browser test finally exercised the path. Both sides are now pinned by
+`tests/client/tenant-audit-action-allowlist.test.ts` (and its admin sibling).
+**Adding an audit action means adding it in two places.**
 
 Payroll lifecycle audit calls use the deterministic event ID
 `payroll:<action>:<payrollRunId>`. The client retries one transient callable

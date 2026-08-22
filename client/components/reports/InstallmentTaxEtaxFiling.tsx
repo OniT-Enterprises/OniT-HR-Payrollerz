@@ -34,6 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { EtaxFilingCard, type EtaxAccount } from "./EtaxFilingCard";
+import { AttlTaxPaymentPanel } from "./AttlTaxPaymentPanel";
 
 /** Percentage displayed by the e-Tax form (the calculator uses its decimal equivalent). */
 export const INSTALLMENT_TAX_RATE = 0.5;
@@ -95,6 +96,13 @@ export function InstallmentTaxEtaxFiling({
     ],
   };
   const isFiled = filingQuery.data?.status === "filed";
+  // Once filed, the as-filed figure is the only amount to pay — not a figure
+  // recomputed from today's ledger, which may have moved since.
+  const filedSnapshot = filingQuery.data?.dataSnapshot as
+    | { taxDue?: number }
+    | undefined;
+  const filedTaxDue =
+    typeof filedSnapshot?.taxDue === "number" ? filedSnapshot.taxDue : null;
 
   const markAsFiled = async () => {
     if (!user) return;
@@ -154,6 +162,18 @@ export function InstallmentTaxEtaxFiling({
           </Button>
         )}
       </div>
+      {/* Paying is a separate act from filing, and ATTL assesses it on its own
+          notice — so the payment panel appears only once the declaration is
+          recorded, against that filing's own as-filed figure. */}
+      {isFiled && filingQuery.data && (filedTaxDue ?? taxToPay) > 0 && (
+        <AttlTaxPaymentPanel
+          filing={filingQuery.data}
+          accountKey="incomeTaxInstallment"
+          taxLabel="AITI"
+          purposePt={`da prestação do imposto sobre o rendimento (Art. 64) de ${periodLabel || period}`}
+          amount={filedTaxDue ?? taxToPay}
+        />
+      )}
       {/* Sec. 64.6 exclusions — prominent, because Xefe cannot derive them. */}
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40">
         <p className="font-medium text-amber-800 dark:text-amber-200">

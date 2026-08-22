@@ -528,6 +528,56 @@ const LAW_POSITIONS: HelpArticle = {
           open:
             "Whether an individual worker tax number is ever mandatory for ordinary non-petroleum employment. (The INSS enrolment deadline is now settled: DL 20/2017 Art. 3(2) requires enrolment \"até à data de entrega da primeira declaração de remunerações que inclua o beneficiário\" — by the date you file the first declaration covering that worker. Xefe's wording was right.)",
         },
+        {
+          id: "attl-late-payment",
+          heading: "What does paying tax late actually cost?",
+          status: "asks-you",
+          body: [
+            "Every assessment notice ATTL issues has a line for penalties and a line for interest, and cites Section 73 of Regulation 2000/18 for them. Law 8/2008 itself contains no general late-payment penalty at all — the only penalty provisions in it are for petroleum contractors' instalment shortfalls.",
+            "A figure does circulate among practitioners here: a $100 administrative fine, a 5% late penalty, and 1% monthly interest on the unpaid balance. It is attributed to \"Sections 81 and 82\" of the 2008 Act, and those sections are the petroleum contractor rules and say nothing of the sort. The numbers may well be right; the authority given for them is not.",
+            "So Xefe does not calculate what you owe for being late. When you record a tax payment it asks you for the penalty and the interest **as the notice assessed them**, and books them where they belong — separately from the tax, on an account the annual income-tax workpaper excludes, because penalties and late interest are not deductible.",
+          ],
+          synonyms: [
+            "penalty",
+            "late payment",
+            "interest",
+            "fine",
+            "multa",
+            "juros",
+            "overdue tax",
+            "assessment",
+          ],
+          today:
+            "Xefe never estimates an ATTL penalty. Social security is the exception — DL 20/2017 Art. 39 states the rate outright (1% per month or part month), so that one is computed for you.",
+          open:
+            "The current text of Regulation 2000/18 Sec. 73 — the rate, what it applies to, and whether the fixed fine is per return or per taxpayer. With it, Xefe could warn you what a late payment will cost before you are late.",
+        },
+        {
+          id: "installment-cadence",
+          heading: "Monthly or quarterly income-tax instalments?",
+          status: "confirming",
+          quote:
+            "An income taxpayer whose total turnover for the previous tax year is $1 million or less shall pay quarterly instalments of income tax for the year.",
+          quoteCite: "Law 8/2008, Sec. 64.2",
+          body: [
+            "The law is not ambiguous: under $1 million of turnover last year, the instalment is quarterly. Above it, monthly. What complicates it is that ATTL issues **monthly** Domestic Installment Tax assessments to businesses well under that line, and plenty of small businesses do pay monthly.",
+            "Paying monthly costs you nothing in the end. Sec. 64.4 credits every instalment paid during the year against the same annual liability, so a monthly payer is simply further ahead. What it would cost is visibility: if Xefe filed you quarterly while ATTL assessed you monthly, eight periods a year would show no obligation at all.",
+            "So Company Settings carries the cadence your e-Tax account is actually registered for. There is deliberately no way to set it the other way — a taxpayer above $1 million must pay monthly, and Xefe will not help anyone remit less often than the law requires.",
+          ],
+          synonyms: [
+            "instalment",
+            "installment",
+            "quarterly",
+            "monthly",
+            "AITI",
+            "income tax instalment",
+            "prestação",
+          ],
+          today:
+            "The statutory rule from your prior-year turnover, unless you tell Xefe in Company Settings that ATTL registered you monthly.",
+          open:
+            "One taxpayer receiving monthly instalment assessments also received a notice headed \"ALL COMMERCIAL ACTIVITIES – 3 MONTHS\". If that is a separate quarterly declaration rather than the same instalment, it is an obligation Xefe does not track.",
+        },
       ],
     },
     {

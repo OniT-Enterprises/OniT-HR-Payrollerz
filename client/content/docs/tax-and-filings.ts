@@ -54,7 +54,7 @@ export const article: LocalizedDocArticle = {
           "Each employee's annual WIT certificate — a record of the wages paid and tax withheld for the year.",
           "The annual employer wage-tax reconciliation, matching twelve months of filings against the year.",
           "Services-tax assistance for hotel, restaurant/bar and telecommunications receipts. Mixed businesses enter only their designated-service receipts; Xefe never taxes all turnover from the sector label alone.",
-          "Income-tax installment figures at 0.5% of the reviewed turnover base, with quarterly/monthly frequency based on prior-year turnover.",
+          "Income-tax installment figures at 0.5% of the reviewed turnover base — quarterly when last year's turnover was $1 million or less, monthly above that, or monthly whenever the tax office registered you that way.",
           "The working figures behind your annual income tax return (TADR-IT 1), including Schedule VII's 100% tax-depreciation schedule, organized for your accountant to check and file.",
         ],
       },
@@ -73,7 +73,18 @@ export const article: LocalizedDocArticle = {
         rows: [
           ["INSS remuneration statement", "10th", "20th"],
           ["Wage income tax (WIT)", "15th", "15th"],
+          ["Services tax", "15th", "15th"],
+          ["Income-tax installment", "15th", "15th"],
         ],
+      },
+      { type: "heading", id: "paying", text: "Paying it at the bank" },
+      {
+        type: "prose",
+        body: "Each tax is paid into its own government collection account, and putting a payment in the wrong one is a real risk when four of them differ by three digits. So Xefe names the exact account for the tax you are paying, builds the transfer description the tax office reconciles by — your taxpayer number comes first, because that is the part that identifies the payment — and generates the signed payment order your bank needs. Once the money has moved, recording it here posts it to your books: an income-tax installment is held as tax paid in advance, because it is credited against your annual bill rather than being an expense.",
+      },
+      {
+        type: "callout",
+        body: "If the tax office assessed a penalty or late interest, you enter those figures from the notice. Xefe does not estimate them — the published rate for late tax is not something we can verify, and inventing one would be worse than leaving the field to you. Social Security is the exception: its 1% per month is written into the law, so Xefe calculates that one for you.",
       },
       {
         type: "heading",
@@ -136,7 +147,7 @@ export const article: LocalizedDocArticle = {
           "Sertifikat WIT tahunan setiap karyawan — catatan upah yang dibayarkan dan pajak yang dipotong sepanjang tahun.",
           "Rekonsiliasi pajak upah pemberi kerja tahunan, mencocokkan dua belas bulan pelaporan terhadap tahun tersebut.",
           "Bantuan pajak jasa untuk penerimaan hotel, restoran/bar dan telekomunikasi. Usaha campuran hanya memasukkan penerimaan jasa yang ditetapkan; Xefe tidak pernah mengenakan pajak atas seluruh peredaran usaha hanya berdasarkan label sektornya.",
-          "Angka angsuran pajak penghasilan sebesar 0,5% dari dasar peredaran usaha yang telah ditinjau, dengan frekuensi triwulanan/bulanan berdasarkan peredaran usaha tahun sebelumnya.",
+          "Angka angsuran pajak penghasilan sebesar 0,5% dari dasar peredaran usaha yang telah ditinjau — triwulanan bila peredaran usaha tahun lalu $1 juta atau kurang, bulanan di atas itu, atau bulanan bila kantor pajak mendaftarkan Anda demikian.",
           "Angka kerja di balik pelaporan pajak penghasilan tahunan Anda (TADR-IT 1), termasuk daftar penyusutan fiskal 100% menurut Schedule VII, tertata untuk diperiksa dan dilaporkan oleh akuntan Anda.",
         ],
       },
@@ -155,7 +166,18 @@ export const article: LocalizedDocArticle = {
         rows: [
           ["Laporan remunerasi INSS", "tanggal 10", "tanggal 20"],
           ["Pajak penghasilan upah (WIT)", "tanggal 15", "tanggal 15"],
+          ["Pajak jasa", "tanggal 15", "tanggal 15"],
+          ["Angsuran pajak penghasilan", "tanggal 15", "tanggal 15"],
         ],
+      },
+      { type: "heading", id: "paying", text: "Membayar di bank" },
+      {
+        type: "prose",
+        body: "Setiap pajak dibayarkan ke rekening penerimaan negara miliknya sendiri, dan salah rekening adalah risiko nyata ketika empat rekening itu hanya berbeda tiga angka. Karena itu Xefe menyebutkan rekening yang tepat untuk pajak yang Anda bayar, menyusun keterangan transfer yang dipakai kantor pajak untuk merekonsiliasi — nomor wajib pajak Anda di depan, karena itulah yang mengidentifikasi pembayaran — dan menghasilkan perintah pembayaran bertanda tangan yang diminta bank. Setelah uang berpindah, mencatatnya di sini memasukkannya ke buku Anda: angsuran pajak penghasilan disimpan sebagai pajak dibayar di muka, karena dikreditkan terhadap tagihan tahunan Anda, bukan beban.",
+      },
+      {
+        type: "callout",
+        body: "Jika kantor pajak menetapkan denda atau bunga keterlambatan, Anda memasukkan angka itu dari suratnya. Xefe tidak memperkirakannya — tarif resmi untuk pajak terlambat tidak dapat kami verifikasi, dan mengarangnya akan lebih buruk daripada menyerahkan kolom itu kepada Anda. Jaminan Sosial adalah pengecualian: 1% per bulan tertulis dalam undang-undang, jadi yang itu Xefe hitung untuk Anda.",
       },
       {
         type: "heading",
@@ -218,7 +240,7 @@ export const article: LocalizedDocArticle = {
           "O certificado anual de WIT de cada trabalhador — um registo dos salários pagos e do imposto retido durante o ano.",
           "A reconciliação anual do imposto sobre salários do empregador, cruzando doze meses de declarações com o ano.",
           "Apoio ao imposto sobre serviços para receitas de hotel, restaurante/bar e telecomunicações. Negócios mistos introduzem apenas receitas de serviços designados.",
-          "Valores do imposto prestacional a 0,5% da base revista, com frequência trimestral ou mensal conforme o volume de negócios do ano anterior.",
+          "Valores do imposto prestacional a 0,5% da base revista — trimestral quando o volume de negócios do ano anterior foi de $1 milhão ou menos, mensal acima disso, ou mensal sempre que a autoridade tributária o tenha registado assim.",
           "Os valores de trabalho da declaração anual (TADR-IT 1), incluindo a tabela fiscal de depreciação de 100% do Anexo VII, para revisão do contabilista.",
         ],
       },
@@ -237,7 +259,18 @@ export const article: LocalizedDocArticle = {
         rows: [
           ["Declaração de remunerações INSS", "dia 10", "dia 20"],
           ["Imposto sobre salários (WIT)", "dia 15", "dia 15"],
+          ["Imposto sobre serviços", "dia 15", "dia 15"],
+          ["Imposto prestacional", "dia 15", "dia 15"],
         ],
+      },
+      { type: "heading", id: "paying", text: "Pagar no banco" },
+      {
+        type: "prose",
+        body: "Cada imposto é pago numa conta de cobrança própria do Estado, e enganar-se na conta é um risco real quando quatro delas diferem em três dígitos. Por isso o Xefe indica a conta exata do imposto que está a pagar, compõe a descrição da transferência pela qual a autoridade tributária faz a reconciliação — o seu número de contribuinte vem primeiro, porque é essa a parte que identifica o pagamento — e gera a ordem de pagamento assinada que o banco exige. Depois de o dinheiro sair, registá-lo aqui lança-o na contabilidade: uma prestação do imposto sobre o rendimento fica como imposto pago antecipadamente, porque é creditada na sua conta anual e não é uma despesa.",
+      },
+      {
+        type: "callout",
+        body: "Se a autoridade tributária tiver avaliado multa ou juros de mora, introduz esses valores a partir do aviso. O Xefe não os estima — a taxa aplicável ao pagamento em atraso não é algo que possamos verificar, e inventá-la seria pior do que deixar o campo consigo. A Segurança Social é a exceção: o seu 1% por mês está escrito na lei, por isso esse o Xefe calcula.",
       },
       {
         type: "heading",
@@ -300,7 +333,7 @@ export const article: LocalizedDocArticle = {
           "Sertifikadu WIT anuál trabalhadór ida-idak — rejistu saláriu ne'ebé selu no impostu ne'ebé retein durante tinan ida.",
           "Rekonsiliasaun anuál impostu saláriu empregadór nian, kompara deklarasaun 12 fulan ho tinan tomak.",
           "Asisténsia impostu servisu ba resibu hotel, restaurante/bar no telekomunikasaun. Negósiu mistu hatama deit resibu servisu dezignadu.",
-          "Valór impostu prestasaun 0,5% hosi baze ne'ebé revee, ho frekuénsia trimestrál ka mensál tuir volume negósiu tinan kotuk.",
+          "Valór impostu prestasaun 0,5% hosi baze ne'ebé revee — trimestrál karik volume negósiu tinan kotuk $1 millaun ka menus, mensál se liu tan, ka mensál karik autoridade tributária rejista ita nune'e.",
           "Valór servisu TADR-IT 1, inklui tabela depreciasaun fiskál 100% Anexu VII, ba kontabilista atu verifika.",
         ],
       },
@@ -319,7 +352,18 @@ export const article: LocalizedDocArticle = {
         rows: [
           ["Deklarasaun remunerasaun INSS", "loron 10", "loron 20"],
           ["Impostu saláriu (WIT)", "loron 15", "loron 15"],
+          ["Impostu servisu", "loron 15", "loron 15"],
+          ["Impostu prestasaun", "loron 15", "loron 15"],
         ],
+      },
+      { type: "heading", id: "paying", text: "Selu iha banku" },
+      {
+        type: "prose",
+        body: "Impostu ida-idak selu ba nia konta kobransa Estadu nian rasik, no sala konta mak risku loos bainhira konta haat ne'e la hanesan de'it iha tolu dígitu. Tan ne'e Xefe temi konta loos ba impostu ne'ebé ita selu, halo deskrisaun transferénsia ne'ebé autoridade tributária uza atu rekonsilia — númeru kontribuinte ita nian mai uluk, tan ne'e mak parte ne'ebé identifika pagamentu — no prepara orden pagamentu asinadu ne'ebé banku presiza. Wainhira osan sai tiha ona, rejista iha ne'e hatama ba livru kontas: prestasaun impostu rendimentu nian hela nu'udar impostu selu antes, tan sai kréditu ba konta anuál, la'ós despeza.",
+      },
+      {
+        type: "callout",
+        body: "Karik autoridade tributária taka multa ka juru tarde, ita hatama valór sira ne'e husi avizu. Xefe la estima sira — taxa ba impostu tarde la'ós buat ne'ebé ami bele verifika, no hatama númeru la iha baze sei aat liu duké husik kampu ne'e ba ita. Seguransa Sosiál mak esesaun: nia 1% kada fulan hakerek iha lei, tan ne'e ida ne'e Xefe kalkula ba ita.",
       },
       {
         type: "heading",

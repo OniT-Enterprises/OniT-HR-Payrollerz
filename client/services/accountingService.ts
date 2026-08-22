@@ -1421,8 +1421,14 @@ class JournalEntryService {
       paymentDate: string;
       paymentReference: string;
       paymentAccountCode: string;
+      /**
+       * Debit lines. Payroll remittances clear a liability (2220/2230/2240);
+       * business taxes debit their own home account (1330 prepaid income tax,
+       * 5940 taxes and duties, 5950 non-deductible penalties) because nothing
+       * accrued them first. See taxFilingService.buildPaymentChargeLines.
+       */
       liabilities: Array<{
-        accountCode: '2220' | '2230' | '2240';
+        accountCode: string;
         amount: number;
         description: string;
       }>;

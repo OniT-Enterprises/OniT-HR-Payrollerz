@@ -255,6 +255,11 @@ export default function AnnualIncomeTaxPrep() {
           account: warning.accountName,
           amount: formatCurrencyTL(warning.amount),
         });
+      case "penalties_excluded":
+        return t("taxReports.formC.workpaper.warnings.penaltiesExcluded", {
+          account: warning.accountName,
+          amount: formatCurrencyTL(warning.amount),
+        });
       case "sole_trader_own_salary":
         return t("taxReports.formC.workpaper.warnings.soleTraderOwnSalary");
       case "depreciation_schedule_mismatch":

@@ -53,6 +53,47 @@ Primary sources:
   year, including across a December/January reminder window.
 - Installments use their own `installment_tax` filing record and explicit e-Tax
   confirmation; WIT status is never borrowed.
+- **The statutory cadence can be overridden to monthly** (Company Settings →
+  instalment cadence, `companyDetails.incomeTaxInstallmentFrequency`). ATTL
+  issues monthly "Domestic Installment Tax" assessments to taxpayers well under
+  the $1m line, and remittance evidence shows both cadences among small
+  businesses. Filing monthly is never a shortfall — Sec. 64.4 credits every
+  instalment paid in the year against the same annual liability — so the
+  override only tightens. There is deliberately **no quarterly override**:
+  above $1m, Sec. 64.1 requires monthly.
+- **A late revenue invoice belongs to the NEXT period, not to an amendment.**
+  Practitioner correspondence shows invoices that arrive after a quarter's
+  declaration was submitted being declared in the following quarter. This is why
+  the payment posts from the filing's own frozen `dataSnapshot.taxDue` and never
+  from a recomputed turnover: the declaration is a record of what was known when
+  it was filed.
+- Paying an instalment debits **1330 Prepaid Income Tax**, not an expense:
+  Sec. 64.4 credits it against the annual liability and Sec. 31(g) makes
+  Timor-Leste income tax non-deductible. The annual return clears the balance.
+- Instalments and the annual income-tax settlement are paid into the **same**
+  ATTL collection account — see `docs/BANK_PAYMENTS.md`.
+
+## Late payment, penalties and interest
+
+- The regime is **UNTAET Reg. 2000/18 as amended July 2002** (published by ATTL),
+  not Lei 8/2008 — whose only penalty provisions are the petroleum instalment
+  shortfalls in Secs. 82.8/90.5.
+  - **Sec. 72.1** — late tax FORM: $100.
+  - **Sec. 73.1** — late PAYMENT: 5% of the tax unpaid at the due date, plus 1%
+    of the tax still unpaid **on the 15th of each month following the due
+    date**. Not daily, not compounding: paying on the 14th of the next month
+    carries the 5% and no 1%.
+  - Sec. 73.1(a)/(b) add 25% for gross carelessness and 100% for deliberate
+    avoidance. Both need a finding by the Commissioner about the taxpayer's
+    state of mind, so `client/lib/tax/attl-late-charges.ts` **never** includes
+    them. Sec. 71.4 also lets the Commissioner forgive additional tax.
+  - Sec. 69.2 gives 60 days to appeal an assessment; Sec. 70.1 keeps the tax due
+    meanwhile.
+- Xefe **estimates** these to warn with, and still **posts only what the operator
+  entered from the notice** — to **5950**, non-deductible under Lei 8/2008
+  Sec. 31(j),(l), which the Form C workpaper excludes by account name.
+- INSS is the exception: DL 20/2017 Art. 39 gives an explicit +1% per month or
+  fraction, and Xefe computes it.
 
 ## Annual income tax depreciation
 

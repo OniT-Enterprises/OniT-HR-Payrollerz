@@ -1,6 +1,6 @@
 # Public marketing site — pages, locales, SEO
 
-_Last updated: 2026-07-19. Audience: anyone touching the public pages, their
+_Last updated: 2026-08-22. Audience: anyone touching the public pages, their
 routing, or their SEO. Design language lives in `docs/DESIGN_MARKETING.md`;
 this doc is the plumbing._
 
@@ -158,3 +158,18 @@ each language is crawlable at its own URL:
 - The engine page's rate table lists statutory withholding rates; rows are
   badged either "matches official assessments" or "statutory rate" — never
   expose internal sign-off status publicly.
+
+
+## Docs articles are rendered by a test, in every locale (2026-08-22)
+
+`client/lib/publicLocale.ts` treats `/docs/*` as ONE wildcard on purpose —
+importing the docs manifest there would blow the entry-bundle gzip budget — so
+no individual article slug appears in `LOCALIZED_PUBLIC_PATHS`. That left every
+article reachable with nothing asserting it renders, while each one carries four
+hand-written locale bodies in its own `client/content/docs/*.ts` file. One stray
+comma in the Tetun block is a blank page in Tetun only.
+
+`tests/e2e/public-locale-routes.spec.ts` now walks `DOCS_MANIFEST` as well as
+`LOCALIZED_PUBLIC_PATHS`, in all four locales. Tests have no bundle budget, so
+importing the manifest there is free. Adding a docs article needs no change to
+the spec; adding a locale still needs all four lists (see the top of this doc).

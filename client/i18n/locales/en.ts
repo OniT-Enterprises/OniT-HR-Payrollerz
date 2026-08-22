@@ -1400,7 +1400,7 @@ const messages = {
         clearing: "Statutory clearing",
         clearingWhen: "on remittance",
         clearingFoot:
-          "Tax and social security are two separate payments, each with its own journal — the liability accounts return to zero for the period.",
+          "Tax and social security are separate payments, each with its own journal — the payroll liability accounts return to zero for the period. A business tax posts the same way: an income-tax instalment is held as tax paid in advance, not spent.",
       },
       acct: {
         salaries: "Salaries & wages (gross)",
@@ -1414,7 +1414,7 @@ const messages = {
       s3: {
         eyebrow: "3 · Statutory deadlines",
         title: "A return and its payment are never the same obligation",
-        body: "A filed return with unpaid tax stays visibly overdue in Xefe. Wage filings live in Payroll; the annual business return lives in Accounting.",
+        body: "A filed return with unpaid tax stays visibly overdue in Xefe. Both halves are recorded: the declaration, and the transfer that paid it — into the right collection account, with the description the tax office reconciles by. Wage filings live in Payroll; business tax lives in Accounting.",
         d10Small: "following month",
         d10Title: "INSS statement",
         d10Body:
@@ -1422,7 +1422,7 @@ const messages = {
         d15Small: "following month",
         d15Title: "Wage income tax",
         d15Body:
-          "The monthly ATTL return and its payment — both due on the 15th.",
+          "The monthly ATTL return and its payment — both due on the 15th, and the same date carries services tax and the income-tax instalment.",
         d20Small: "following month",
         d20Title: "INSS payment",
         d20Body:
@@ -1789,6 +1789,10 @@ const messages = {
       tinPlaceholder: "Unique Company Number / Tax ID",
       employerNiss: "Employer NISS",
       employerNissPlaceholder: "INSS employer registration number",
+      installmentFrequency: "Income-tax instalment cadence",
+      installmentFrequencyAuto: "Follow the law (from turnover)",
+      installmentFrequencyMonthly: "Monthly (registered with ATTL)",
+      installmentFrequencyHelp: "The law files quarterly when last year’s turnover was $1m or less. Choose monthly only if ATTL actually issues you a monthly Domestic Installment Tax assessment.",
       addressTitle: "Address",
       registeredAddress: "Registered Address *",
       registeredAddressPlaceholder: "Street address, building name, etc.",
@@ -3646,6 +3650,17 @@ const messages = {
         pending: "Pending",
         rejected: "Rejected",
         cancelled: "Cancelled",
+      },
+      calendar: {
+        listView: "List",
+        calendarView: "Calendar",
+        today: "Today",
+        month: "Month",
+        week: "Week",
+        department: "Department",
+        allDepartments: "All departments",
+        holiday: "Public holiday",
+        more: "+{{count}} more",
       },
       leaveTypes: {
         miscarriage: "Miscarriage Leave",
@@ -7706,6 +7721,33 @@ const messages = {
     deleteSuccess: "Deduction deleted.",
     deleteError: "Failed to delete deduction.",
   },
+  taxPayment: {
+    title: "Pay it at the bank",
+    description: "Filing and paying are separate. Transfer the amount to the ATTL collection account below, then record it here so it reaches the ledger.",
+    beneficiary: "Beneficiary",
+    bank: "Bank",
+    account: "Account",
+    iban: "IBAN",
+    creditDescription: "Transfer description",
+    amount: "Amount",
+    downloadOrder: "Download signed payment order",
+    dateLabel: "Payment date",
+    referenceLabel: "Bank reference *",
+    referenceRequired: "Enter the bank reference from the transfer",
+    assessmentNumberLabel: "Assessment no. (from the notice)",
+    penaltyLabel: "Penalty",
+    interestLabel: "Interest",
+    penaltyHelp: "Enter penalty and interest only as ATTL assessed them on the notice — Xefe never estimates them.",
+    record: "Record this payment",
+    recorded: "Payment recorded",
+    recordedDescription: "The remittance is posted to the ledger.",
+    alreadyRecorded: "Payment recorded",
+    amountInvalid: "Penalty and interest must be amounts of zero or more",
+    lateTitle: "This payment is past its due date",
+    lateBody: "Additional tax of about {{total}} may apply: 5% of the unpaid tax ({{initial}}), plus 1% for each of the {{stamps}} monthly charge dates since the deadline ({{monthly}}). {{basis}}.",
+    lateFormCharge: "Includes {{amount}} because the return itself was filed after its due date.",
+    lateDisclaimer: "An estimate to check your notice against, not a figure Xefe files. The tax office assesses the amount and may reduce it, and can charge more where it finds carelessness or avoidance. Enter what the notice says.",
+  },
   paymentOrders: {
     action: "Payment order (bank)",
     downloadedTitle: "Payment order downloaded",
@@ -8181,6 +8223,8 @@ const messages = {
             "{{account}} ({{amount}}) was excluded — interest is deductible only for financial institutions (Tax Act §31). Add it back with an adjustment if that applies.",
           incomeTaxExcluded:
             "{{account}} ({{amount}}) was excluded — income tax itself is not a deductible expense.",
+          penaltiesExcluded:
+            "{{account}} ({{amount}}) was excluded — penalties, fines and late-payment interest are not deductible.",
           soleTraderOwnSalary:
             "A sole trader cannot deduct payments to themself (form Q.1). Remove any owner salary from line 35 with a negative adjustment.",
           depreciationMismatch:

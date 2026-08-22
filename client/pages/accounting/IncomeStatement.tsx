@@ -10,7 +10,8 @@ import { useIncomeStatement } from '@/hooks/useAccounting';
 import { useAdvancedTax, useTenantId } from '@/contexts/TenantContext';
 import { trialBalanceService } from '@/services/accountingService';
 import { InstallmentTaxEtaxFiling } from '@/components/reports/InstallmentTaxEtaxFiling';
-import { getTLIncomeTaxInstallmentFrequency } from '@/lib/tax/income-tax-installment-tl';
+import { resolveTLIncomeTaxInstallmentFrequency } from '@/lib/tax/income-tax-installment-tl';
+import { useCompanyPaymentProfile } from '@/hooks/useCompanyPaymentProfile';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -91,6 +92,7 @@ export default function IncomeStatement() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const showAdvancedTax = useAdvancedTax();
+  const paymentProfile = useCompanyPaymentProfile();
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
@@ -137,9 +139,15 @@ export default function IncomeStatement() {
     gcTime: 30 * 60 * 1000,
     enabled: showAdvancedTax && !!report && isPotentialInstallmentPeriod,
   });
+  // A taxpayer whose e-Tax account is registered monthly must get the monthly
+  // card even under the Sec. 64.2 threshold, or nine periods a year have no
+  // way to be filed or paid here at all.
   const installmentFrequency = priorYearTurnoverQuery.data === undefined
     ? null
-    : getTLIncomeTaxInstallmentFrequency(priorYearTurnoverQuery.data);
+    : resolveTLIncomeTaxInstallmentFrequency(
+        priorYearTurnoverQuery.data,
+        paymentProfile.incomeTaxInstallmentFrequency,
+      );
   const isInstallmentPeriod = installmentFrequency === 'quarterly'
     ? isCompleteCalendarQuarter(requestedStart, requestedEnd)
     : installmentFrequency === 'monthly'

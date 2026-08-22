@@ -624,3 +624,101 @@ We have deliberately NOT widened the offboarding card to resignations or mutual
 agreements. An ordinary resignation is owed nothing (Art. 49(8)), and the ordinary
 agreed cessation is **Art. 48** — "a compensação a receber pelo trabalhador" is
 whatever the parties agree, "se couber" — not the Art. 55 scale.
+
+
+## Added 2026-08-22 — the ATTL payment leg
+
+Both of these came out of building the business-tax payment leg (see
+`docs/BANK_PAYMENTS.md` and `docs/MONEY_CHAIN.md` §3). Remittance evidence
+settled every question about *where* the money goes; these two are about what
+ATTL is entitled to charge and what it is asking for.
+
+### B18. ~~What is the actual late-payment regime for domestic taxes?~~ CLOSED 2026-08-22
+Every ATTL "Aviso de Avaliação" has `PENALIDADES` and `INTERET` lines and cites
+**Secção 73 do Regulamento 2000/18** for additional tax, Secção 69 for a 60-day
+objection and Secção 70 for collection pending it. Lei 8/2008 itself carries no
+general late-payment penalty — its only penalty provisions are the petroleum
+instalment shortfalls in Secs. 82.8 and 90.5.
+
+What is in circulation among practitioners is "**a $100 administrative fine, a
+5% late penalty, and 1% monthly interest on the unpaid balance**", attributed to
+"Taxes and Duties Act 2008, Sections 81 & 82". Those sections are the petroleum
+Contractor instalment rules and say nothing of the kind, so the numbers may
+still be right while the citation is certainly wrong.
+
+**Answered from the primary source.** ATTL publishes the consolidated text
+itself (attl.gov.tl → Domestic Tax Laws → "UNTAET Regulation 2000/18 as amended
+July 2002"), and it is unambiguous:
+
+- **Sec. 72.1** — failure to deliver a tax FORM by the due date: additional tax
+  of **$100**.
+- **Sec. 73.1** — failure to deliver the PAYMENT: **5%** of the tax not paid by
+  the due date, "plus an additional **1%** of the tax that remains unpaid **on
+  the 15th day of each month following the due date**"; plus **25%** if the
+  failure was due to gross carelessness, or **100%** if it was a deliberate
+  attempt to avoid payment.
+- **Sec. 74** — understatement of tax: 15%, with the same 25%/100% uplifts.
+- **Sec. 71.4** — the Commissioner may forgive some or all additional tax where
+  the taxpayer shows good reason.
+- **Sec. 69.2** — appeal within **60 days** of receiving the notice; **Sec. 70.1**
+  — the tax stays due and collectable meanwhile.
+
+So the figure circulating among practitioners ($100 + 5% + 1% per month) was
+numerically right and only its citation was wrong. Two details matter and both
+cut the amount down:
+
+1. The 1% is **not** interest that accrues with time and does not compound. It
+   is a discrete stamp on the 15th of each month after the due date, so a
+   payment made on the 14th of the following month carries the 5% and no 1%.
+2. The 25% and 100% uplifts turn on a finding about the taxpayer's state of
+   mind, which only the Commissioner can make.
+
+- **Xefe today:** `client/lib/tax/attl-late-charges.ts` estimates the $100 (only
+  when the RETURN was late), the 5%, and 1% per stamp actually fallen — and
+  never the carelessness or avoidance uplifts. The payment panel shows it as a
+  warning to check the notice against; the figures posted to the ledger are
+  still the ones ENTERED from the notice, on GL 5950 (non-deductible,
+  Sec. 31(j),(l)).
+- **Still worth a sentence from you:** whether ATTL applies Sec. 72.1 per
+  return or per taxpayer per period, and in practice how often Sec. 71.4
+  forgiveness is granted.
+- **Also worth confirming:** whether the day-15 deadline has a same-day cut-off
+  time. Client-facing instructions in evidence variously say 12:00, 17:00 and
+  17:30 Timor-Leste time, and one firm tells clients to pay between the 1st and
+  the 13th to be safe.
+
+### B19. Is "ALL COMMERCIAL ACTIVITIES – 3 MONTHS" a separate obligation? — NARROWED
+A taxpayer who receives **monthly** `Domestic Installment Tax` assessments also
+received a notice titled `ALL COMMERCIAL ACTIVITIES - 3 MONTHS` (Aug 2026).
+Nothing in the email record mentions it — it appears to exist only inside the
+portal — so we cannot tell whether it is:
+
+1. the Sec. 64.2 quarterly instalment, running alongside the monthly ones; or
+2. a separate quarterly commercial-activities declaration; or
+3. an information notice with no filing attached.
+
+**Most likely (1), on evidence.** A Timor-Leste practitioner describes preparing
+"a **declaração trimestral do imposto sobre o rendimento (Domestic Installment
+Tax)** referente ao período de abril a junho" — an explicitly QUARTERLY
+declaration of the Domestic Installment Tax over a three-month period, computed
+from the revenue invoices for that quarter. That is the same obligation Xefe
+tracks, at the cadence Sec. 64.2 prescribes, so the portal notice title reads
+like the portal's own label for it rather than a second tax.
+
+Beware the false positives here: most "declaração trimestral" material in
+circulation is **Portuguese** (modelo 10, trabalhadores independentes,
+Segurança Social) and has nothing to do with Timor-Leste. Only the sentence
+above is TL.
+
+- **What is still worth one sentence from you:** confirmation that the notice
+  headed "ALL COMMERCIAL ACTIVITIES – 3 MONTHS" is the quarterly instalment and
+  not an extra filing.
+- **Xefe today:** tracks the Sec. 64 instalment only, at whichever cadence the
+  tenant is registered for — which, if the reading above is right, is complete.
+
+**A practice detail worth knowing, from the same source:** revenue invoices that
+arrive after a quarter's declaration was submitted are declared in the FOLLOWING
+quarter, not by amending the filed one. That is exactly why the as-filed
+snapshot is frozen and the payment is posted from it rather than from a
+recomputed turnover — Xefe's behaviour already matches how the work is really
+done.

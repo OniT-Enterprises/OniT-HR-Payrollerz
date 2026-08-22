@@ -1402,7 +1402,7 @@ const messages = {
         clearing: "Regularizasaun legál",
         clearingWhen: "iha entrega",
         clearingFoot:
-          "Impostu no seguransa sosiál mak pagamentu rua ketak, ida-idak ho nia lansamentu rasik — konta pasivu sira fila ba zero iha períodu.",
+          "Impostu no seguransa sosiál mak pagamentu ketak-ketak, ida-idak ho nia lansamentu rasik — konta pasivu folha pagamentu nian fila ba zero iha períodu. Impostu negósiu tama hanesan: prestasaun impostu rendimentu hela nu'udar impostu selu antes, la'ós despeza.",
       },
       acct: {
         salaries: "Saláriu no vensimentu (brutu)",
@@ -1416,7 +1416,7 @@ const messages = {
       s3: {
         eyebrow: "3 · Prazu legál",
         title: "Deklarasaun ida no nia pagamentu nunka obrigasaun hanesan",
-        body: "Deklarasaun ne'ebé entrega ona maibé impostu seidauk selu kontinua atrazadu ho klaru iha Xefe. Obrigasaun saláriu sira moris iha Folha; deklarasaun anuál empreza nian moris iha Kontabilidade.",
+        body: "Deklarasaun ne'ebé entrega ona maibé impostu seidauk selu kontinua atrazadu ho klaru iha Xefe. Parte rua rejista hotu: deklarasaun, no transferénsia ne'ebé selu nia — ba konta kobransa loos, ho deskrisaun ne'ebé autoridade tributária uza atu rekonsilia. Obrigasaun saláriu sira moris iha Folha; impostu negósiu moris iha Kontabilidade.",
         d10Small: "fulan tuir mai",
         d10Title: "Deklarasaun INSS",
         d10Body:
@@ -1424,7 +1424,7 @@ const messages = {
         d15Small: "fulan tuir mai",
         d15Title: "Impostu saláriu",
         d15Body:
-          "Deklarasaun mensál ba ATTL no nia pagamentu — rua-rua to'o loron 15.",
+          "Deklarasaun mensál ba ATTL no nia pagamentu — rua-rua to'o loron 15, no loron hanesan lori impostu servisu no impostu prestasaun.",
         d20Small: "fulan tuir mai",
         d20Title: "Pagamentu INSS",
         d20Body:
@@ -1794,6 +1794,10 @@ const messages = {
       tinPlaceholder: "Númeru Úniku Empreza / NIF",
       employerNiss: "NISS Empregador",
       employerNissPlaceholder: "Númeru rejistu empregador INSS",
+      installmentFrequency: "Frekuénsia prestasaun impostu rendimentu",
+      installmentFrequencyAuto: "Tuir lei (tuir volume negósiu)",
+      installmentFrequencyMonthly: "Fulan-fulan (rejistadu iha ATTL)",
+      installmentFrequencyHelp: "Lei hatete trimestre karik volume negósiu tinan kotuk $1m ka menus. Hili fulan-fulan de'it karik ATTL fó ita avaliasaun Domestic Installment Tax fulan-fulan.",
       addressTitle: "Enderesu",
       registeredAddress: "Enderesu Rejistu *",
       registeredAddressPlaceholder: "Rua, edifisio, etc.",
@@ -2174,10 +2178,10 @@ const messages = {
       subsidioDeadlineNote:
         "Prazu legal: selu to'o 20 Dezembru kada tinan (Lei Trabálhu Art. 44).",
       approvalSection: "Aprovasaun folha pagamentu",
-      selfApprovalLabel: "Permite aprovasaun rasik (admin ida de’it)",
+      selfApprovalLabel: "Permite aprovasaun rasik (admin ida de'it)",
       selfApprovalDesc:
-        "Ema ne’ebé kria folha pagamentu mós bele aprova. Uza de’it se Ita-nia negósiu iha admin folha pagamentu ida de’it — se taka, admin seluk tenke aprova kada folha pagamentu (seguru liu).",
-      selfApprovalOwnerOnly: "Na’in konta de’it mak bele muda ida-ne’e.",
+        "Ema ne'ebé kria folha pagamentu mós bele aprova. Uza de'it se Ita-nia negósiu iha admin folha pagamentu ida de'it — se taka, admin seluk tenke aprova kada folha pagamentu (seguru liu).",
+      selfApprovalOwnerOnly: "Na'in konta de'it mak bele muda ida-ne'e.",
       invalidValues: "Verifika taxa no oras. Persentajen tenke 0–100.",
       prorataHint: "Pro-rata ba empregadu ho menus de 12 fulan",
       save: "Rai Konfigurasaun Folha",
@@ -3624,6 +3628,17 @@ const messages = {
         rejected: "Rejeita",
         cancelled: "Kansela",
       },
+      calendar: {
+        listView: "Lista",
+        calendarView: "Kalendáriu",
+        today: "Ohin",
+        month: "Fulan",
+        week: "Semana",
+        department: "Departamentu",
+        allDepartments: "Departamentu hotu",
+        holiday: "Feriadu nasionál",
+        more: "+{{count}} tan",
+      },
       leaveTypes: {
         miscarriage: "Lisensa interrupsaun gravidés",
         annual: "Lisensa anual",
@@ -3830,7 +3845,7 @@ const messages = {
         exportTitle: "Exporta remata",
         exportDesc: "Ficheiru CSV download ona.",
         importLegacyXls:
-          "Ne’e fixeiru .xls tuan. Loke iha Excel ka Google Sheets, grava nu'udar .xlsx ka CSV, no hatama ida ne'e.",
+          "Ne'e fixeiru .xls tuan. Loke iha Excel ka Google Sheets, grava nu'udar .xlsx ka CSV, no hatama ida ne'e.",
         importSelect: "Favor hili ficheiru atu importa.",
         importErrorTitle: "Erru importa",
         importEmpty: "Laiha rejistu validu.",
@@ -6935,27 +6950,27 @@ const messages = {
       failed:
         "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
       foreignCurrency:
-        "Dokumentu ne’e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne’ebé Ita selu duni iha USD.",
+        "Dokumentu ne'e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne'ebé Ita selu duni iha USD.",
       checkDate:
-        "Data ne’ebé lee husi dokumentu ne’e ({{date}}) iha futuru, tan ne’e bele sala — hatama data ne’e Ita-nia an.",
+        "Data ne'ebé lee husi dokumentu ne'e ({{date}}) iha futuru, tan ne'e bele sala — hatama data ne'e Ita-nia an.",
       looksLikePaymentProof:
-        "Ne’e hanesan komprovativu pagamentu banku, la’ós fatura fornesedor. Anexa ba fatura ne’ebé nia paga, no hatama dadus fatura iha kraik.",
+        "Ne'e hanesan komprovativu pagamentu banku, la'ós fatura fornesedor. Anexa ba fatura ne'ebé nia paga, no hatama dadus fatura iha kraik.",
       notABill:
-        "XefeBot lee ona fixeiru ne’e maibé la’ós fatura ka resibu — hatama dadus iha kraik.",
+        "XefeBot lee ona fixeiru ne'e maibé la'ós fatura ka resibu — hatama dadus iha kraik.",
       pdfProtected:
-        "PDF ne’e iha proteksaun senha, tan ne’e buat ida la bele lee. Grava kópia ida ne’ebé la iha proteksaun, ka hatama dadus iha kraik.",
+        "PDF ne'e iha proteksaun senha, tan ne'e buat ida la bele lee. Grava kópia ida ne'ebé la iha proteksaun, ka hatama dadus iha kraik.",
       slipSettlesBill:
-        "Komprovativu ne’e hanesan ho fatura {{count}} ne’ebé sei loke. Rejista pagamentu ba ida?",
+        "Komprovativu ne'e hanesan ho fatura {{count}} ne'ebé sei loke. Rejista pagamentu ba ida?",
       recordPayment: "Rejista pagamentu",
       paymentRecorded: "Pagamentu rejista ona ba fatura",
       paymentRecordedNoFile:
         "Pagamentu rejista ona, maibé la konsege anexa komprovativu — aumenta ba fatura ho ita-nia liman.",
-      paymentFromSlip: "Rejista husi komprovativu ne’ebé hatama",
+      paymentFromSlip: "Rejista husi komprovativu ne'ebé hatama",
       paymentFailed: "La konsege rejista pagamentu",
       looksLikeCreditMemo:
-        "Ne’e hanesan nota kréditu, ne’ebé hakotu osan ne’ebé Ita tenke selu, la’ós aumenta fatura foun. Rejista nia hasoru fatura orijinál.",
+        "Ne'e hanesan nota kréditu, ne'ebé hakotu osan ne'ebé Ita tenke selu, la'ós aumenta fatura foun. Rejista nia hasoru fatura orijinál.",
       multipleDocuments:
-        "Fixeiru ne’e iha fatura liu husi ida. Hatama montante no númeru husi ida ne’ebé Ita aumenta hela, no hatama seluk sira ketak-ketak.",
+        "Fixeiru ne'e iha fatura liu husi ida. Hatama montante no númeru husi ida ne'ebé Ita aumenta hela, no hatama seluk sira ketak-ketak.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',
@@ -7131,9 +7146,9 @@ const messages = {
       uploadBill: "Upload Fatura",
       quickAddTitle: "Tau Fatura husi Fixeiru",
       duplicateSameNumber:
-        'Fatura "{{number}}" husi fornesedor ne’e rejista ona ({{date}}, {{amount}}). Se grava, sei sai rua.',
+        'Fatura "{{number}}" husi fornesedor ne\'e rejista ona ({{date}}, {{amount}}). Se grava, sei sai rua.',
       duplicateSameAmount:
-        "Fatura husi fornesedor ne’e ho {{amount}} iha {{date}} rejista ona. Se grava, sei sai rua.",
+        "Fatura husi fornesedor ne'e ho {{amount}} iha {{date}} rejista ona. Se grava, sei sai rua.",
       quickAddDescription:
         "Anexa fatura no hatama informasaun bázika — ita bele edita detallu sira depois.",
       saveBill: "Rai Fatura",
@@ -7555,7 +7570,7 @@ const messages = {
     submitForReview: "Submete saláriu ba revizaun ema rua",
     differentAdminApprove: "Admin seluk tenke aprova molok prosesa",
     selfApprovalNext:
-      "Ita rasik bele aprova folha pagamentu ida-ne’e (aprovasaun rasik ativu)",
+      "Ita rasik bele aprova folha pagamentu ida-ne'e (aprovasaun rasik ativu)",
     journalEntriesCreated: "Entrada jornál kria bainhira aprova",
     back: "Fila",
     submitting: "Submete hela...",
@@ -7687,6 +7702,33 @@ const messages = {
     deleteSuccess: "Dedusaun hasai tiha.",
     deleteError: "La konsege hasai dedusaun.",
   },
+  taxPayment: {
+    title: "Selu iha banku",
+    description: "Hatama deklarasaun no selu mak buat rua. Transfere montante ba konta kobransa ATTL iha kraik, depois rejista iha ne'e atu tama ba livru kontas.",
+    beneficiary: "Benefisiáriu",
+    bank: "Banku",
+    account: "Konta",
+    iban: "IBAN",
+    creditDescription: "Deskrisaun transferénsia",
+    amount: "Montante",
+    downloadOrder: "Download orden pagamentu asinadu",
+    dateLabel: "Data pagamentu",
+    referenceLabel: "Referénsia banku *",
+    referenceRequired: "Hatama referénsia banku husi transferénsia",
+    assessmentNumberLabel: "Nu. avaliasaun (husi avizu)",
+    penaltyLabel: "Multa",
+    interestLabel: "Juru",
+    penaltyHelp: "Hatama multa no juru tuir de'it saida ATTL taka iha avizu — Xefe nunka kalkula sira.",
+    record: "Rejista pagamentu ne'e",
+    recorded: "Pagamentu rejista ona",
+    recordedDescription: "Pagamentu tama ona ba livru kontas.",
+    alreadyRecorded: "Pagamentu rejista ona",
+    amountInvalid: "Multa no juru tenke valór zero ka liu",
+    lateTitle: "Pagamentu ne'e liu ona prazu",
+    lateBody: "Impostu adisionál besik {{total}} bele aplika: 5% husi impostu la selu ({{initial}}), tan 1% ba kada loron kobransa fulan-fulan {{stamps}} husi prazu ({{monthly}}). {{basis}}.",
+    lateFormCharge: "Inklui {{amount}} tan deklarasaun rasik entrega tarde liu prazu.",
+    lateDisclaimer: "Estimativa atu kompara ho avizu, la'ós valór ne'ebé Xefe entrega. Autoridade tributária mak taka valór no bele hatun, no bele taka aumenta karik hetan neglizénsia ka evazaun. Hatama saida mak avizu hatete.",
+  },
   paymentOrders: {
     action: "Ordem de pagamentu (banku)",
     downloadedTitle: "Ordem de pagamentu download ona",
@@ -7750,14 +7792,14 @@ const messages = {
     reject: "Rejeita",
     twoPersonRule: "Regra ema rua: admin seluk tenke aprova",
     selfApproveWarning:
-      "Ita mak kria folha pagamentu ida-ne’e. Xeke didi’ak montante sira molok aprova — laiha ema seluk sei reviza.",
+      "Ita mak kria folha pagamentu ida-ne'e. Xeke didi'ak montante sira molok aprova — laiha ema seluk sei reviza.",
     nextStepsTitle: "Folha pagamentu aprova ona — saida mak tuir mai?",
     nextStepsDesc:
-      "Ita-nia funsionáriu sira seidauk simu osan. Pasu sira-ne’e mak bain-bain tuir mai.",
+      "Ita-nia funsionáriu sira seidauk simu osan. Pasu sira-ne'e mak bain-bain tuir mai.",
     nextStepsPayslips: "Haruka payslip ba funsionáriu sira",
     nextStepsBankTransfer: "Prepara transferénsia banku",
     nextStepsTax: "Xeke deklarasaun WIT no INSS",
-    nextStepsLater: "Ha’u sei halo ida-ne’e ikus mai",
+    nextStepsLater: "Ha'u sei halo ida-ne'e ikus mai",
     payrollRunsTitle: "Saláriu Hala'o tiha",
     showingRuns: "Hatudu {{count}} saláriu hala'o",
     noRunsFound: "Laiha saláriu hala'o",
@@ -8160,6 +8202,8 @@ const messages = {
             "{{account}} ({{amount}}) hasai ona — juru dedutível de'it ba instituisaun finanseira (Lei Tributária §31). Tau fila fali ho ajustamentu se aplika ba ita.",
           incomeTaxExcluded:
             "{{account}} ({{amount}}) hasai ona — impostu rendimentu rasik la'ós despeza dedutível.",
+          penaltiesExcluded:
+            "{{account}} ({{amount}}) hasai ona — multa, sansaun no juru tarde la'ós despeza dedutível.",
           soleTraderOwnSalary:
             "Empreza individuál la bele deduz pagamentu ba nia an rasik (Q.1 iha formuláriu). Hasai saláriu na'in husi liña 35 ho ajustamentu negativu.",
           depreciationMismatch:
@@ -8178,22 +8222,22 @@ const messages = {
     hideGuidance: "Subar orientasaun",
     dashboardTitle: "Bemvindu ba Xefe.",
     dashboardBody:
-      "Ida ne’e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne’e.",
+      "Ida ne'e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne'e.",
     peopleTitle: "Bemvindu ba ita-nia hub Ema.",
     peopleBody:
-      "Ida ne’e mak fatin atu jere ema hotu ne’ebé serbisu iha ita-nia empreza — empregadu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregadu primeiru ho botaun iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
+      "Ida ne'e mak fatin atu jere ema hotu ne'ebé serbisu iha ita-nia empreza — empregadu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregadu primeiru ho botaun iha leten. Husi ne'ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
     schedulingTitle: "Bemvindu ba Tempu & Lisensa.",
     schedulingBody:
-      "Akompanha prezensa, jere pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne’e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
+      "Akompanha prezensa, jere pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne'e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
     payrollTitle: "Bemvindu ba Folha Pagamentu.",
     payrollBody:
-      "Ida ne’e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregadu, prezensa, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
+      "Ida ne'e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregadu, prezensa, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
     moneyTitle: "Bemvindu ba Osan.",
     moneyBody:
-      "Akompanha ita-nia fluxu osan lor-loron iha ne’e — fatura ne’ebé ita haruka, pagamentu ne’ebé ita simu, no saida mak sei pendente. Kria fatura, rejista pagamentu, no mantein ita-nia livru atualizadu.",
+      "Akompanha ita-nia fluxu osan lor-loron iha ne'e — fatura ne'ebé ita haruka, pagamentu ne'ebé ita simu, no saida mak sei pendente. Kria fatura, rejista pagamentu, no mantein ita-nia livru atualizadu.",
     accountingTitle: "Bemvindu ba Kontabilidade.",
     accountingBody:
-      "Ida ne’e ita-nia livru razaun formál — lansamentu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamentu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
+      "Ida ne'e ita-nia livru razaun formál — lansamentu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamentu automatikamente iha ne'e. Uza seksaun ida ne'e atu rekonsilha, ajusta, no relata.",
     reportsTitle: "Bemvindu ba Relatóriu Ekipa.",
     reportsBody:
       "Kria no reviza relatóriu saláriu, empregadu, prezensa, departamentu, ONG no relatóriu personalizadu. Hili família relatóriu ida atu hahú.",

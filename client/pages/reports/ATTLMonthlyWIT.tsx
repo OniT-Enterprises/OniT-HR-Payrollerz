@@ -90,7 +90,9 @@ import {
   useSaveTaxFiling,
   useRecordTaxFilingPayment,
   useRecordBusinessTaxAsFiled,
+  useTaxFilingByPeriod,
 } from "@/hooks/useTaxFiling";
+import { AttlTaxPaymentPanel } from "@/components/reports/AttlTaxPaymentPanel";
 
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type {
@@ -102,7 +104,12 @@ import type {
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
-import { ATTL_TAX_ACCOUNTS } from "@/lib/tlBanking";
+import {
+  ATTL_TAX_ACCOUNTS,
+  ATTL_TAX_ACCOUNT_DETAILS,
+  attlBeneficiaryAccountLine,
+  formatAttlCreditDescription,
+} from "@/lib/tlBanking";
 import { AssistedEtaxFiling } from "@/components/reports/AssistedEtaxFiling";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -572,8 +579,16 @@ export default function ATTLMonthlyWIT() {
         bankDisplayName: ATTL_TAX_ACCOUNTS.bank,
         purpose: `do Imposto sobre os Rendimentos Salariais (WIT) de ${formatPeriodLabelPT(period)}`,
         beneficiaryName: ATTL_TAX_ACCOUNTS.beneficiary,
-        beneficiaryAccount: ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax,
-        reference: `TIN ${tin} — WIT ${formatPeriodRefPT(period)}`,
+        // One code path for how a beneficiary account is rendered, shared with
+        // AttlTaxPaymentPanel; and the credit description follows the attested
+        // `<TIN>_<SHORT NAME>` convention ATTL reconciles by, TIN first.
+        beneficiaryAccount: attlBeneficiaryAccountLine("wageIncomeTax"),
+        reference: formatAttlCreditDescription({
+          tin,
+          shortName: paymentProfile.shortName,
+          taxLabel: "WIT",
+          periodRef: formatPeriodRefPT(period),
+        }),
         amount: selectedReturn.totalWITWithheld,
         valueDate: getTodayTL(),
         fileBaseName: `WIT_Pagamento_${period}`,
@@ -845,6 +860,16 @@ export default function ATTLMonthlyWIT() {
 
   const overdueFiling = dueDates.find((d) => d.isOverdue);
   const selectedPeriod = `${selectedYear}-${selectedMonth}`;
+  // Services tax is declared from this page but paid into its OWN ATTL account,
+  // so its filing record is read separately — never inferred from the WIT one.
+  const servicesTaxFilingQuery = useTaxFilingByPeriod(
+    "services_tax",
+    selectedPeriod,
+    !!selectedPeriod,
+  );
+  const servicesTaxDue = (
+    servicesTaxFilingQuery.data?.dataSnapshot as { taxDue?: number } | undefined
+  )?.taxDue;
   const selectedPeriodFiling = filings.find(
     (filing) => filing.period === selectedPeriod,
   );
@@ -1614,8 +1639,14 @@ export default function ATTLMonthlyWIT() {
                         <dt className="text-muted-foreground">
                           {t("reports.attlMonthlyWit.payment.account")}
                         </dt>
+                        {/* Both forms: the local A/C is what BNU branches and
+                            BNUdireto use and what accountants quote to each
+                            other; the IBAN is what an interbank transfer needs. */}
                         <dd className="break-all font-mono font-medium">
-                          {ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax}
+                          {`A/C ${ATTL_TAX_ACCOUNT_DETAILS.wageIncomeTax.local}`}
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {ATTL_TAX_ACCOUNT_DETAILS.wageIncomeTax.iban}
+                          </span>
                         </dd>
                       </div>
                       <div className="flex justify-between gap-4 py-2.5">
@@ -1635,6 +1666,21 @@ export default function ATTLMonthlyWIT() {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+
+            {/* Services tax is declared from this page (the checkbox in the
+                mark-as-filed dialog), so its payment belongs here too —
+                otherwise it is the one obligation you can file in Xefe and
+                never record paying. It has its own ATTL account. */}
+            {servicesTaxFilingQuery.data?.status === "filed" &&
+              (servicesTaxDue ?? 0) > 0 && (
+              <AttlTaxPaymentPanel
+                filing={servicesTaxFilingQuery.data}
+                accountKey="servicesTax"
+                taxLabel="ST"
+                purposePt={`do imposto sobre serviços de ${selectedMonth}/${selectedYear}`}
+                amount={servicesTaxDue ?? 0}
+              />
+            )}
           </>
         )}
 

@@ -117,25 +117,25 @@ export const DOCS_MANIFEST: DocsManifestEntry[] = [
     seo: {
       title: "Taxes & Statutory Filings — Xefe Documentation",
       description:
-        "The Timor-Leste statutory calendar in Xefe: monthly WIT and INSS, official-template exports, and the annual returns your accountant files.",
+        "The Timor-Leste statutory calendar in Xefe: monthly WIT and INSS, official-template exports, paying each tax into the right collection account, and the annual returns your accountant files.",
       keywords:
-        "Timor-Leste tax deadlines, INSS declaration, WIT return, ATTL filing, annual income tax Timor-Leste",
+        "Timor-Leste tax deadlines, INSS declaration, WIT return, ATTL filing, tax payment account Timor-Leste, income tax installment, annual income tax Timor-Leste",
       url: "/docs/tax-and-filings",
       alternates: {
         tet: {
           title: "Impostu & Deklarasaun Legál — Dokumentasaun Xefe",
           description:
-            "Kalendáriu legál Timor-Leste iha Xefe: WIT no INSS mensál, esporta iha modelu ofisiál, no deklarasaun anuál ne'ebé ita-nia kontabilista entrega.",
+            "Kalendáriu legál Timor-Leste iha Xefe: WIT no INSS mensál, esporta iha modelu ofisiál, selu impostu ba konta loos, no deklarasaun anuál ne'ebé ita-nia kontabilista entrega.",
         },
         pt: {
           title: "Impostos & Declarações Legais — Documentação Xefe",
           description:
-            "O calendário legal de Timor-Leste no Xefe: WIT e INSS mensais, exportações em modelo oficial e as declarações anuais que o seu contabilista entrega.",
+            "O calendário legal de Timor-Leste no Xefe: WIT e INSS mensais, exportações em modelo oficial, o pagamento de cada imposto na conta certa e as declarações anuais que o seu contabilista entrega.",
         },
         id: {
           title: "Pajak & Pelaporan Wajib — Dokumentasi Xefe",
           description:
-            "Kalender bulanan, apa yang Xefe buat dalam templat resmi, dan bagaimana pelaporan tahunan bekerja.",
+            "Kalender bulanan, apa yang Xefe buat dalam templat resmi, cara membayar tiap pajak ke rekening yang tepat, dan bagaimana pelaporan tahunan bekerja.",
         },
       },
     },

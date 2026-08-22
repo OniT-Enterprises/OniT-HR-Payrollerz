@@ -12,6 +12,7 @@
 import { expect, Page, test } from "@playwright/test";
 import { pickNthDate } from "./helpers/datePicker";
 import {
+  adminDb,
   closeAdmin,
   findTenantIdByName,
   markSetupComplete,
@@ -43,6 +44,15 @@ const TODAY = (() => {
 const CURRENT_MONTH = new Intl.DateTimeFormat("en-US", {
   month: "long",
 }).format(new Date(`${TODAY}T12:00:00+09:00`));
+// The Art. 64 instalment card only appears for a COMPLETE calendar month or
+// quarter, so the whole current month is the range that reaches it.
+const MONTH_START = `${TODAY.slice(0, 7)}-01`;
+const MONTH_END = (() => {
+  const year = Number(TODAY.slice(0, 4));
+  const month = Number(TODAY.slice(5, 7));
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${TODAY.slice(0, 7)}-${String(lastDay).padStart(2, "0")}`;
+})();
 
 test.beforeAll(async () => {
   await waitForEmulators();
@@ -96,14 +106,17 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   const initialize = page
     .getByRole("button", { name: /initialize.*default/i })
     .first();
-  if (await initialize.isVisible({ timeout: 10_000 }).catch(() => false)) {
-    await initialize.click();
-  }
   // The chart renders its top-level groups collapsed. Seeing the 1000 group
   // proves initialization completed; its 1110 child still exists for posting.
-  await expect(page.getByText("1000", { exact: true }).first()).toBeVisible({
-    timeout: 30_000,
-  });
+  const seeded = page.getByText("1000", { exact: true }).first();
+  // Wait for the page to reach one of its two real states before acting. The
+  // previous form of this — a bare `isVisible({ timeout: 10_000 })` guard —
+  // SILENTLY skipped the initialize click whenever the page took longer than
+  // ten seconds to paint, and then failed thirty seconds later against an
+  // empty chart. That looks exactly like a broken product and is not one.
+  await expect(initialize.or(seeded)).toBeVisible({ timeout: 60_000 });
+  if (await initialize.isVisible()) await initialize.click();
+  await expect(seeded).toBeVisible({ timeout: 30_000 });
 
   // ── Invoice → issue journal → receipt journal ───────────────────────────
   await page.goto("/money/invoices/new");
@@ -452,6 +465,76 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
     otherOutflowsRow.getByText("$1,200", { exact: true }),
   ).toBeVisible();
 
+  // ── Income-tax instalment: declare it, then PAY it ─────────────────────
+  // Filing and paying are separate acts in Timor-Leste, and only the
+  // declaration used to be recordable — an instalment never reached the
+  // ledger. This proves the whole leg, including that the payment debits
+  // PREPAID INCOME TAX (1330) rather than an expense: Sec. 64.4 credits it
+  // against the annual liability and Sec. 31(g) forbids expensing income tax.
+  //
+  // The cadence is set to monthly first, because with no prior-year turnover
+  // the statutory rule (Sec. 64.2) files quarterly — and a taxpayer ATTL
+  // registered monthly would otherwise see no obligation for this month at all.
+  // The cadence is SEEDED, not set through Settings. Driving that Select from a
+  // browser test did not work reliably: once the settings query had settled,
+  // choosing "Monthly (registered with ATTL)" left the trigger showing "Follow
+  // the law", so the save wrote the old value. That is recorded as an open item
+  // (A27 in docs/FEEDBACK_TRIAGE.md) — it is NOT what this spec exists to
+  // prove, and the payment leg below must not be blocked on it. The resolver
+  // itself is unit-tested in attl-tax-payments.test.ts.
+  await adminDb()
+    .doc(`tenants/${tenantId}/settings/config`)
+    .set(
+      { companyDetails: { incomeTaxInstallmentFrequency: "monthly" } },
+      { merge: true },
+    );
+
+  await page.goto("/accounting/statements/income-statement");
+  await pickNthDate(page, page, 0, MONTH_START);
+  await pickNthDate(page, page, 1, MONTH_END);
+  await page.getByRole("button", { name: /^generate$/i }).click();
+
+  await expect(page.getByText(/domestic installment tax/i).first()).toBeVisible({
+    timeout: 30_000,
+  });
+  // 0.5% of the $100 of revenue posted above.
+  await expect(page.getByText("US$ 0.50").first()).toBeVisible();
+
+  await page.getByRole("button", { name: /i filed this in e-tax/i }).click();
+  await expect(page.getByText(/e-tax filing recorded/i)).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // The payment panel names the instalment's OWN collection account — a
+  // different account from wage tax and withholding, and the one wrong digit
+  // here would send a client's tax money to the wrong government account.
+  await expect(page.getByText("A/C 286539.10.001")).toBeVisible({
+    timeout: 30_000,
+  });
+  // ATTL reconciles by the TIN, so it leads the transfer description.
+  await expect(page.getByText(/^1234567890_/).first()).toBeVisible();
+
+  await page.getByLabel(/bank reference/i).fill("E2E-AITI-001");
+  await page.getByLabel(/^penalty$/i).fill("2.50");
+  await page.getByRole("button", { name: /record this payment/i }).click();
+  await expect(page.getByText(/payment recorded/i).first()).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Prepaid income tax, not an expense — and the assessed penalty quarantined
+  // on the non-deductible account so the annual workpaper excludes it.
+  const installmentJournal = await waitForJournalBySource(
+    tenantId,
+    "tax_payment",
+    "1330",
+  );
+  expect(installmentJournal.byCode["1330"]?.debit).toBeCloseTo(0.5, 2);
+  expect(installmentJournal.byCode["5950"]?.debit).toBeCloseTo(2.5, 2);
+  expect(installmentJournal.totalDebit).toBeCloseTo(3, 2);
+  expect(installmentJournal.totalDebit).toBeCloseTo(
+    installmentJournal.totalCredit,
+    2,
+  );
   // ── Close the period only after every posting above is complete ─────────
   await page.goto("/accounting/statements/fiscal-periods");
   const createYear = page.getByRole("button", { name: /create.*fiscal year/i });

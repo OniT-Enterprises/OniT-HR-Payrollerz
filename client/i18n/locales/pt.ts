@@ -1417,7 +1417,7 @@ const messages = {
         clearing: "Regularização legal",
         clearingWhen: "na entrega",
         clearingFoot:
-          "Imposto e segurança social são dois pagamentos separados, cada um com o seu lançamento — as contas de passivo voltam a zero no período.",
+          "Imposto e segurança social são pagamentos separados, cada um com o seu lançamento — as contas de passivo da folha voltam a zero no período. Um imposto do negócio é lançado da mesma forma: uma prestação do imposto sobre o rendimento fica como imposto pago antecipadamente, não como gasto.",
       },
       acct: {
         salaries: "Salários e vencimentos (bruto)",
@@ -1431,7 +1431,7 @@ const messages = {
       s3: {
         eyebrow: "3 · Prazos legais",
         title: "Uma declaração e o seu pagamento nunca são a mesma obrigação",
-        body: "Uma declaração entregue com imposto por pagar continua visivelmente em atraso no Xefe. As obrigações salariais vivem na Folha; a declaração anual da empresa vive na Contabilidade.",
+        body: "Uma declaração entregue com imposto por pagar continua visivelmente em atraso no Xefe. Ficam registadas as duas metades: a declaração e a transferência que a pagou — para a conta de cobrança certa e com a descrição pela qual a autoridade tributária faz a reconciliação. As obrigações salariais vivem na Folha; o imposto do negócio vive na Contabilidade.",
         d10Small: "mês seguinte",
         d10Title: "Declaração INSS",
         d10Body:
@@ -1439,7 +1439,7 @@ const messages = {
         d15Small: "mês seguinte",
         d15Title: "Imposto sobre salários",
         d15Body:
-          "A declaração mensal à ATTL e o respetivo pagamento — ambos até ao dia 15.",
+          "A declaração mensal à ATTL e o respetivo pagamento — ambos até ao dia 15, data que também abrange o imposto sobre serviços e o imposto prestacional.",
         d20Small: "mês seguinte",
         d20Title: "Pagamento INSS",
         d20Body:
@@ -1818,6 +1818,10 @@ const messages = {
       tinPlaceholder: "Número Único da Empresa / NIF",
       employerNiss: "NISS da entidade empregadora",
       employerNissPlaceholder: "Número de registo da entidade no INSS",
+      installmentFrequency: "Cadência das prestações do imposto sobre o rendimento",
+      installmentFrequencyAuto: "Seguir a lei (pelo volume de negócios)",
+      installmentFrequencyMonthly: "Mensal (registado na ATTL)",
+      installmentFrequencyHelp: "A lei prevê prestações trimestrais quando o volume de negócios do ano anterior foi de $1m ou menos. Escolha mensal apenas se a ATTL lhe emitir efetivamente um aviso mensal de Domestic Installment Tax.",
       addressTitle: "Morada",
       registeredAddress: "Morada Registada *",
       registeredAddressPlaceholder: "Rua, nome do edifício, etc.",
@@ -3699,6 +3703,17 @@ const messages = {
         pending: "Pendente",
         rejected: "Rejeitado",
         cancelled: "Cancelado",
+      },
+      calendar: {
+        listView: "Lista",
+        calendarView: "Calendário",
+        today: "Hoje",
+        month: "Mês",
+        week: "Semana",
+        department: "Departamento",
+        allDepartments: "Todos os departamentos",
+        holiday: "Feriado nacional",
+        more: "+{{count}} mais",
       },
       leaveTypes: {
         miscarriage: "Licença por Interrupção da Gravidez",
@@ -7825,6 +7840,33 @@ const messages = {
     deleteSuccess: "Dedução eliminada.",
     deleteError: "Falha ao eliminar dedução.",
   },
+  taxPayment: {
+    title: "Pagar no banco",
+    description: "Declarar e pagar são atos distintos. Transfira o montante para a conta de cobrança da ATTL abaixo e registe-o aqui para entrar na contabilidade.",
+    beneficiary: "Beneficiário",
+    bank: "Banco",
+    account: "Conta",
+    iban: "IBAN",
+    creditDescription: "Descrição da transferência",
+    amount: "Montante",
+    downloadOrder: "Descarregar ordem de pagamento assinada",
+    dateLabel: "Data do pagamento",
+    referenceLabel: "Referência bancária *",
+    referenceRequired: "Introduza a referência bancária da transferência",
+    assessmentNumberLabel: "N.º da avaliação (do aviso)",
+    penaltyLabel: "Multa",
+    interestLabel: "Juros",
+    penaltyHelp: "Introduza multa e juros apenas conforme avaliados pela ATTL no aviso — o Xefe nunca os estima.",
+    record: "Registar este pagamento",
+    recorded: "Pagamento registado",
+    recordedDescription: "A remessa foi lançada na contabilidade.",
+    alreadyRecorded: "Pagamento registado",
+    amountInvalid: "A multa e os juros têm de ser valores iguais ou superiores a zero",
+    lateTitle: "Este pagamento está fora do prazo",
+    lateBody: "Pode aplicar-se imposto adicional de cerca de {{total}}: 5% do imposto não pago ({{initial}}), mais 1% por cada uma das {{stamps}} datas de cobrança mensais desde o prazo ({{monthly}}). {{basis}}.",
+    lateFormCharge: "Inclui {{amount}} porque a própria declaração foi entregue depois do prazo.",
+    lateDisclaimer: "Uma estimativa para conferir com o seu aviso, não um valor que o Xefe entregue. A autoridade tributária avalia o montante e pode reduzi-lo, e pode cobrar mais se concluir que houve negligência ou evasão. Introduza o que diz o aviso.",
+  },
   paymentOrders: {
     action: "Ordem de pagamento (banco)",
     downloadedTitle: "Ordem de pagamento descarregada",
@@ -8311,6 +8353,8 @@ const messages = {
             "{{account}} ({{amount}}) foi excluída — os juros só são dedutíveis para instituições financeiras (Lei Tributária §31). Reponha com um ajustamento se for o caso.",
           incomeTaxExcluded:
             "{{account}} ({{amount}}) foi excluída — o próprio imposto sobre o rendimento não é despesa dedutível.",
+          penaltiesExcluded:
+            "{{account}} ({{amount}}) foi excluída — multas, penalidades e juros de mora não são dedutíveis.",
           soleTraderOwnSalary:
             "Um empresário em nome individual não pode deduzir pagamentos a si próprio (Q.1 do formulário). Remova o salário do proprietário da linha 35 com um ajustamento negativo.",
           depreciationMismatch:

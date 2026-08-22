@@ -68,6 +68,8 @@ export function CompanyDetailsTab({
       businessType: initialData.businessType || 'Lda',
       tinNumber: initialData.tinNumber || '',
       employerNiss: initialData.employerNiss || '',
+      incomeTaxInstallmentFrequency:
+        initialData.incomeTaxInstallmentFrequency || 'auto',
       registeredAddress: initialData.registeredAddress || '',
       city: initialData.city || 'Dili',
       country: initialData.country || 'Timor-Leste',
@@ -101,6 +103,8 @@ export function CompanyDetailsTab({
       businessType: initialData.businessType || 'Lda',
       tinNumber: initialData.tinNumber || '',
       employerNiss: initialData.employerNiss || '',
+      incomeTaxInstallmentFrequency:
+        initialData.incomeTaxInstallmentFrequency || 'auto',
       registeredAddress: initialData.registeredAddress || '',
       city: initialData.city || 'Dili',
       country: initialData.country || 'Timor-Leste',
@@ -184,6 +188,8 @@ export function CompanyDetailsTab({
           businessType: data.businessType,
           tinNumber: data.tinNumber || '',
           employerNiss: data.employerNiss || '',
+          incomeTaxInstallmentFrequency:
+            data.incomeTaxInstallmentFrequency || 'auto',
           registeredAddress: data.registeredAddress || '',
           city: data.city,
           country: data.country,
@@ -412,6 +418,38 @@ export function CompanyDetailsTab({
                 {...form.register('employerNiss')}
                 placeholder={t('settings.company.employerNissPlaceholder')}
               />
+            </div>
+
+            {/* Lei 8/2008 Sec. 64.2 makes the cadence follow turnover, but a
+                real e-Tax account can be registered monthly regardless — and
+                then quarterly filing would leave eight periods a year with no
+                obligation shown at all. */}
+            <div className="space-y-2">
+              <Label htmlFor="incomeTaxInstallmentFrequency">
+                {t('settings.company.installmentFrequency')}
+              </Label>
+              <Controller
+                name="incomeTaxInstallmentFrequency"
+                control={form.control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="incomeTaxInstallmentFrequency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">
+                        {t('settings.company.installmentFrequencyAuto')}
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        {t('settings.company.installmentFrequencyMonthly')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('settings.company.installmentFrequencyHelp')}
+              </p>
             </div>
             </div>
           </MoreDetailsSection>

@@ -531,6 +531,8 @@ export const companyDetailsFormSchema = z.object({
   businessType: z.enum(['SA', 'Lda', 'Unipessoal', 'ENIN', 'NGO', 'Government', 'Other']).default('Lda'),
   tinNumber: z.string().max(50).optional().or(z.literal('')),
   employerNiss: z.string().max(50).optional().or(z.literal('')),
+  /** 'auto' follows Lei 8/2008 Sec. 64.2 from turnover; 'monthly' overrides it. */
+  incomeTaxInstallmentFrequency: z.enum(['auto', 'monthly']).default('auto'),
   registeredAddress: z.string().max(500).optional().or(z.literal('')),
   city: z.string().max(100).default('Dili'),
   country: z.string().max(100).default('Timor-Leste'),

@@ -179,6 +179,7 @@ export interface FormCExcludedAccount {
   reason:
     | 'interest_non_deductible'
     | 'income_tax_expense'
+    | 'penalties_non_deductible'
     | 'books_depreciation_tax_method';
 }
 
@@ -200,6 +201,7 @@ export interface FormCDepreciationRow {
 export type FormCWarning =
   | { code: 'interest_excluded'; accountName: string; amount: number }
   | { code: 'income_tax_expense_excluded'; accountName: string; amount: number }
+  | { code: 'penalties_excluded'; accountName: string; amount: number }
   | { code: 'sole_trader_own_salary' }
   | {
       code: 'depreciation_schedule_mismatch';
@@ -313,6 +315,14 @@ function lineForExpenseAccount(row: FormCGlRow): FormCLineCode {
 function nonDeductibleReason(
   row: FormCGlRow,
 ): FormCExcludedAccount['reason'] | null {
+  // Sec. 31(j) and (l): late-payment interest, penalties and fines. Tested
+  // FIRST because a penalties account is usually named "...and Interest", and
+  // the interest rule below would otherwise claim it and report the wrong
+  // reason. Anchored so words that merely contain "fine" (refined, defined) do
+  // not match.
+  if (/\bpenalt|\bfines?\b|\bmulta/i.test(row.accountName)) {
+    return 'penalties_non_deductible';
+  }
   // "Interest Income" is revenue, so expense-only matching is safe here.
   if (/interest/i.test(row.accountName)) return 'interest_non_deductible';
   if (/income tax|profit tax|corporate tax/i.test(row.accountName)) {
@@ -474,19 +484,17 @@ export function buildFormCWorkpaper(
         amount: roundMoney(row.amount),
         reason,
       });
-      warnings.push(
+      const warningCode =
         reason === 'interest_non_deductible'
-          ? {
-              code: 'interest_excluded',
-              accountName: row.accountName,
-              amount: roundMoney(row.amount),
-            }
-          : {
-              code: 'income_tax_expense_excluded',
-              accountName: row.accountName,
-              amount: roundMoney(row.amount),
-            },
-      );
+          ? 'interest_excluded'
+          : reason === 'penalties_non_deductible'
+            ? 'penalties_excluded'
+            : 'income_tax_expense_excluded';
+      warnings.push({
+        code: warningCode,
+        accountName: row.accountName,
+        amount: roundMoney(row.amount),
+      });
       continue;
     }
     const line = lineForExpenseAccount(row);
