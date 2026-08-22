@@ -1,6 +1,6 @@
 # Bank Payments — how salary money actually moves in Timor-Leste
 
-_Last updated: 2026-07-20. Read before touching `client/lib/bank-transfers/*`
+_Last updated: 2026-08-22. Read before touching `client/lib/bank-transfers/*`
 or the Bank Transfers page._
 
 ## The core fact
@@ -61,8 +61,52 @@ one-off "Ordem de Pagamento" sheet, surfaced via `paymentOrders.*` i18n keys:
 - **ATTL monthly WIT** (Monthly WIT page) — pays the published
   `ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax` IBAN; the sheet reminds the user
   to mark the advice "electronic payment" per ATTL.
+- **ATTL income-tax instalment** (Income Statement → instalment card, once the
+  declaration is recorded) — pays `incomeTaxInstallment` via
+  `AttlTaxPaymentPanel`, then records the remittance. See the account table
+  below.
 - **Supplier bills** (Bills page action) — "Pagamento <vendor> Fatura n.º…";
   vendor bank fields fill in when stored, blanks otherwise.
+
+## The four ATTL collection accounts (established 2026-08-22)
+
+There is **one BNU account per tax account**, and the e-Tax portal names the
+right one on every "Aviso de Avaliação" it issues. All four are attested by
+real remittance evidence (2024–2026; internal evidence notes, kept out of the
+repo) — thousands of client-facing instructions quoting the local `A/C` form,
+and BNU's own BNUdireto transfer confirmations naming the 14-digit destination.
+They live in `ATTL_TAX_ACCOUNT_DETAILS` in `client/lib/tlBanking.ts`:
+
+| Tax | e-Tax account | A/C | BNU 14-digit | IBAN |
+|---|---|---|---|---|
+| Wage income tax | Domestic Monthly Wages Income Tax | 286442.10.001 | 00028644210001 | sighted |
+| Withholding tax | Domestic Withholding Tax | 286830.10.001 | 00028683010001 | sighted |
+| Income tax — instalments **and** the annual settlement | Domestic Installment Tax | 286539.10.001 | 00028653910001 | sighted |
+| Services tax | Domestic Services Tax | 286636.10.001 | 00028663610001 | **never sighted** |
+
+Three things to hold on to:
+
+- **The instalment account also takes the annual income tax** due 31 March.
+  That is evidence, not inference: the large March settlements in the record
+  are addressed to 286539.10.001, alongside the monthly/quarterly instalments.
+- **Never synthesise the missing services-tax IBAN.** Its check digits would
+  validate against the same TL38/002/…/62 pattern the other three follow,
+  which makes a fabricated one look correct while being unverified.
+  `attlBeneficiaryAccountLine()` prints the local `A/C` instead — which is what
+  the accountants themselves quote, and what BNUdireto accepts.
+- **Penalties are paid to the same account as the tax**, with the word in the
+  description.
+
+### The credit description
+
+ATTL reconciles a payment to a taxpayer by the **TIN in the transfer
+description**, and BNU truncates that field (~34 chars in evidence). The
+convention in the record is overwhelmingly `<TIN>_<SHORT NAME>` — sometimes the
+bare TIN, sometimes free text naming the tax and month. So
+`formatAttlCreditDescription()` puts the TIN FIRST and drops whole trailing
+parts rather than cutting one in half: losing the tail costs a period label,
+losing the head costs the taxpayer, and a half-written "AITI 0" costs the clerk
+reading it.
 
 ## Verified non-findings (don't build these without new evidence)
 

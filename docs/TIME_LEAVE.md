@@ -288,3 +288,29 @@ PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH pnpm test:api
 Relevant coverage includes `tests/rules/time-leave-access.test.ts`,
 `tests/rules/ekipa-mobile-permissions.test.ts`, attendance/shift calculation
 unit tests, dashboard guardrails, and Xefe API tenant-isolation tests.
+
+
+## The leave calendar (wired 2026-08-22)
+
+`client/components/leave/LeaveCalendar.tsx` had existed for months, complete,
+and was imported by **nothing** — month/week views, department filter, holidays,
+per-leave-type colours, all unreachable. It is now the Calendar half of a
+List/Calendar toggle on the Leave page, lazily loaded.
+
+Two things it needed first, and they are the rules to keep:
+
+- **Localise it.** It carried hardcoded English (`"All departments"`, `"Month"`,
+  `DAY_NAMES`, `toLocaleDateString("en-US")`) in a four-locale product. Weekday
+  and month names now come from the viewer's locale; the leave-type legend
+  reuses the existing `timeLeave.leaveRequests.leaveTypes.*` keys rather than
+  adding a second set of labels.
+- **Pass it the tenant's RESOLVED holidays** (`resolvedHolidayDates`), not just
+  the statutory list it used to derive itself. The duration on a request is
+  counted against statutory dates **plus this tenant's overrides**, so a
+  calendar that only knows the statutory ones can mark a day red that a request
+  counted as working. The page therefore widens its holiday query to the three
+  years the calendar can page across.
+
+Only `approved` and `pending` requests are drawn — a rejected or cancelled
+request is not an absence — and pending is drawn differently, because "might be
+away" and "is away" are different facts to plan a roster around.
