@@ -1792,10 +1792,42 @@ export default function SeedDatabase() {
     }
   };
 
+  /**
+   * Refuse to seed on top of existing data.
+   *
+   * Every seeded document gets a fresh random id, so a second run does not
+   * overwrite the first — it DOUBLES it. That is not a theoretical tidiness
+   * problem: a stakeholder reviewing the demo tenant saw every leave request
+   * listed twice and reported it as a Leave-module bug. Sixteen collections
+   * would each need a deterministic id scheme to make re-seeding safe; one
+   * guard pointed at "Clear all data" is the honest fix.
+   */
+  const findExistingSeedData = async (): Promise<string | null> => {
+    for (const collName of ["employees", "leave_requests", "attendance"]) {
+      const path = collName === "employees" ? getCollectionPath(collName) : collName;
+      const existing = await getDocs(
+        collName === "employees"
+          ? query(collection(db!, path))
+          : query(collection(db!, path), where("tenantId", "==", tenantId)),
+      );
+      if (!existing.empty) return `${collName} (${existing.size})`;
+    }
+    return null;
+  };
+
   // Main seed function
   const handleSeedAll = async () => {
     if (!tenantId) {
       setError("No tenant selected. Please complete admin setup first.");
+      return;
+    }
+
+    const alreadySeeded = await findExistingSeedData();
+    if (alreadySeeded) {
+      setError(
+        `This tenant already has data — ${alreadySeeded}. Seeding again would ` +
+          "duplicate every record rather than replace it. Use \"Clear all data\" first.",
+      );
       return;
     }
 
