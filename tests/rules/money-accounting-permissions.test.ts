@@ -140,6 +140,34 @@ describe('Money + Accounting Rules', () => {
         status: 'draft',
         dueDate: '2026-07-15',
       });
+      // A filed instalment declaration — business taxes gained a payment leg,
+      // so appending payment evidence to one must be allowed while its
+      // as-filed snapshot stays frozen.
+      await setDoc(doc(adminDb, 'taxFilings/tenant-a__installment_tax__2026-06'), {
+        tenantId: 'tenant-a',
+        type: 'installment_tax',
+        period: '2026-06',
+        status: 'filed',
+        statementStatus: 'filed',
+        dueDate: '2026-07-15',
+        dataSnapshot: {
+          taxType: 'installment_tax',
+          period: '2026-06',
+          taxBase: 2220,
+          rate: 0.005,
+          taxDue: 11.1,
+          source: 'operator_confirmed',
+        },
+        createdAt: new Date(),
+        createdBy: 'owner-a',
+      });
+      // A real offboarding case, for the read-scope test below.
+      await setDoc(doc(adminDb, 'offboarding/tenant-a__emp-9__2026-08-31'), {
+        tenantId: 'tenant-a',
+        employeeId: 'emp-9',
+        status: 'pending',
+        lastWorkingDay: '2026-08-31',
+      });
       await setDoc(doc(adminDb, 'taxFilings/tenant-a__monthly_wit__2026-05'), {
         tenantId: 'tenant-a',
         type: 'monthly_wit',
@@ -354,6 +382,66 @@ describe('Money + Accounting Rules', () => {
     await assertFails(updateDoc(filingRef, { statementStatus: 'draft' }));
     await assertFails(updateDoc(filingRef, { period: '2026-04' }));
     await assertFails(deleteDoc(filingRef));
+  });
+
+  it('lets a filed business-tax declaration take payment evidence but not a new figure', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const reporterDb = testEnv.authenticatedContext('reporter-a').firestore();
+    const filingRef = doc(ownerDb, 'taxFilings/tenant-a__installment_tax__2026-06');
+
+    // The whole payment leg: status, reference, journal link, and the
+    // penalty/interest ATTL assessed on its notice.
+    await assertSucceeds(updateDoc(filingRef, {
+      paymentStatus: 'filed',
+      paymentFiledDate: '2026-07-14',
+      paymentReference: '1397982_RUSWIN AITI 06/2026',
+      paymentJournalEntryId: 'je-1',
+      paymentAssessedPenalty: 5,
+      paymentAssessedInterest: 1,
+      paymentAssessmentNumber: '960303',
+      updatedAt: new Date(),
+    }));
+    // The as-filed figure remains evidence.
+    await assertFails(updateDoc(filingRef, {
+      dataSnapshot: {
+        taxType: 'installment_tax',
+        period: '2026-06',
+        taxBase: 1,
+        rate: 0.005,
+        taxDue: 0.01,
+        source: 'operator_confirmed',
+      },
+    }));
+    await assertFails(updateDoc(filingRef, { status: 'draft' }));
+    await assertFails(deleteDoc(filingRef));
+    // A reports-only user cannot record a payment against it.
+    await assertFails(updateDoc(
+      doc(reporterDb, 'taxFilings/tenant-a__installment_tax__2026-06'),
+      { paymentReference: 'nope' },
+    ));
+  });
+
+  /**
+   * offboardingService.createCase runs a transaction that FIRST reads the
+   * document it is about to create, to make the deterministic id idempotent.
+   * A read rule that dereferences `resource.data` therefore has to tolerate
+   * `resource == null`, or creating an offboarding case is impossible — the
+   * transaction can never get past its own read.
+   */
+  it('lets a tenant admin read a not-yet-existing offboarding case', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const missing = doc(ownerDb, 'offboarding/tenant-a__emp-1__2026-08-31');
+    await assertSucceeds(getDoc(missing));
+  });
+
+  it('still hides a real offboarding case from a non-admin of that tenant', async () => {
+    // reporter-a is a member of tenant-a without admin rights: the case that
+    // matters, because a missing-document allowance must not become a
+    // members-can-read-departures allowance.
+    const reporterDb = testEnv.authenticatedContext('reporter-a').firestore();
+    await assertFails(
+      getDoc(doc(reporterDb, 'offboarding/tenant-a__emp-9__2026-08-31')),
+    );
   });
 
   it('allows only clearing totals to change on cash advances and keeps clearings immutable', async () => {
