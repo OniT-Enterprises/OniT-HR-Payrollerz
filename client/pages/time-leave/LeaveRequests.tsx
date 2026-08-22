@@ -66,6 +66,10 @@ import { formatDateTL, parseDateISO } from "@/lib/dateUtils";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import { cn } from "@/lib/utils";
 import { holidayService } from "@/services/holidayService";
+import { lazy, Suspense } from "react";
+
+// A second view most visits never open — kept out of the Leave page's chunk.
+const LeaveCalendar = lazy(() => import("@/components/leave/LeaveCalendar"));
 import {
   calculateWorkingDays,
   leaveService,
@@ -152,6 +156,7 @@ export default function LeaveRequests() {
   const canReadAll = isAdmin || isAccountant;
 
   const [filter, setFilter] = useState<RequestFilter>("all");
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [approveTarget, setApproveTarget] = useState<LeaveRequest | null>(null);
   // Set when the server blocks a create/approve for exceeding entitlement and
@@ -218,8 +223,16 @@ export default function LeaveRequests() {
     if (form.startDate) years.add(Number(form.startDate.slice(0, 4)));
     if (form.endDate) years.add(Number(form.endDate.slice(0, 4)));
     if (years.size === 0) years.add(new Date().getFullYear());
+    if (view === "calendar") {
+      // The calendar can be paged either side of today, and it resolves
+      // statutory holidays for the neighbouring years too — so the override
+      // set has to span the same three years or the two would disagree at a
+      // December/January boundary.
+      const thisYear = new Date().getFullYear();
+      for (const year of [thisYear - 1, thisYear, thisYear + 1]) years.add(year);
+    }
     return [...years].filter(Number.isFinite).sort();
-  }, [form.startDate, form.endDate]);
+  }, [form.startDate, form.endDate, view]);
   const holidaysQuery = useQuery({
     queryKey: ["tenants", tenantId, "leave-holidays", requestYears],
     queryFn: async () => {
@@ -239,7 +252,9 @@ export default function LeaveRequests() {
       }
       return [...dates];
     },
-    enabled: Boolean(tenantId && showRequestDialog),
+    // Needed by the request dialog's duration maths AND by the calendar, which
+    // must mark exactly the days the duration maths skipped.
+    enabled: Boolean(tenantId && (showRequestDialog || view === "calendar")),
     staleTime: 10 * 60 * 1_000,
   });
 
@@ -796,6 +811,46 @@ export default function LeaveRequests() {
           </button>
         )}
 
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <Button
+            type="button"
+            variant={view === "list" ? "secondary" : "ghost"}
+            size="sm"
+            aria-pressed={view === "list"}
+            onClick={() => setView("list")}
+            className="shrink-0"
+          >
+            {t("timeLeave.leaveRequests.calendar.listView")}
+          </Button>
+          <Button
+            type="button"
+            variant={view === "calendar" ? "secondary" : "ghost"}
+            size="sm"
+            aria-pressed={view === "calendar"}
+            onClick={() => setView("calendar")}
+            className="shrink-0"
+          >
+            <CalendarDays className="mr-2 h-4 w-4" />
+            {t("timeLeave.leaveRequests.calendar.calendarView")}
+          </Button>
+        </div>
+
+        {view === "calendar" ? (
+          <Suspense
+            fallback={
+              <div className="rounded-xl border border-border/70 bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+                {t("common.loading")}
+              </div>
+            }
+          >
+            <LeaveCalendar
+              requests={requests}
+              departments={departments}
+              resolvedHolidayDates={holidaysQuery.data ?? undefined}
+            />
+          </Suspense>
+        ) : (
+        <>
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist">
           {(
             [
@@ -970,6 +1025,8 @@ export default function LeaveRequests() {
               );
             })}
           </div>
+        )}
+        </>
         )}
       </main>
 
