@@ -73,6 +73,25 @@ test("every locale-prefixed marketing page mounts a real page", async ({ page })
     // normal shell, so chrome pushes "Page not found" past any short slice.
     const rendered = await page.locator("#root").innerText();
     if (NOT_FOUND.test(rendered)) broken.push(path);
+
+    // A docs ARTICLE loads its content module lazily, so the header, the
+    // sidebar CTA and the footer paint first — about 400 characters of chrome
+    // that satisfy the check above on their own. Verifying a docs URL therefore
+    // has to wait for the BODY, or an article that renders nothing at all
+    // passes. That is not hypothetical: this spec reported four locales of
+    // /docs/tax-and-filings as fine while every one of them was still showing
+    // only the shell.
+    if (/\/docs\//.test(path)) {
+      await page
+        .waitForFunction(
+          () =>
+            (document.getElementById("root")?.innerText ?? "").trim().length >
+            1_500,
+          undefined,
+          { timeout: 20_000 },
+        )
+        .catch(() => broken.push(`${path} (article body never rendered)`));
+    }
   }
 
   expect(

@@ -129,6 +129,15 @@ CI (`deploy.yml`) runs typecheck, lint, unit tests, `i18n:check` AND the rules
 suite before deploying — rules auto-deploy on push, so never skip `emul:rules`
 after editing `firestore.rules`.
 
+**`pnpm build` runs checks no pre-deploy CI job runs.** It is
+`generate-bot-docs.ts --check && vite build && check-entry-budget.mjs &&
+generate-static-heads.ts`. The `e2e` and `api-tests` jobs never call it, so a
+green PR can still fail the deploy — that is how the /docs edits on 2026-08-22
+passed CI and then died on "XefeBot documentation index is stale". Edit anything
+under `client/content/docs/` and you must run **`pnpm docs:build-bot`** and
+commit `server/xefe-api/docs-index.json`. Run **`pnpm build`** locally before
+pushing docs content, public routes, or anything that moves bundle size.
+
 **`test:api` is NOT in the local gate.** It needs Java and the Firestore
 emulator, so it lives in its own CI job (`api-tests`) and a green
 typecheck/lint/test/e2e run says nothing about it. Run it yourself after
