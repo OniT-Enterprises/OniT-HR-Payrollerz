@@ -4,6 +4,13 @@ _Last updated: 2026-08-22. This file is the INBOX: anything raised that has not
 been resolved lives here until it is either done, or recorded as a deliberate
 no with a reason. Nothing here should exist only in a chat log or a slide deck._
 
+**Everything marked done or fixed below is LIVE.** Shipped 2026-08-22 in
+PRs #76 (payment leg + the offboarding rules bug), #77 (the bot doc index the
+deploy needed) and #78 (docs-article body assertion); the Hetzner + Firebase
+rules deploy for `14a5812` succeeded and the public pages were verified by
+rendering them, not by status code. Anything under *Still open* or *Deliberate
+no* is NOT in production.
+
 **This repository is PUBLIC.** Keep entries factual and professional: no
 reviewer attributed by name to a criticism, no client or tenant names, no
 verbatim quotes that were meant for internal consumption, no evidence sourcing
@@ -58,8 +65,8 @@ shipped. Verified against the code on 2026-08-22.
 | # | Raised | What it actually was |
 |---|---|---|
 | A18 | "Leave requests seem to duplicate — each request is repeated" | **Not a Leave bug.** The demo seeder mints a fresh random document id for every record, so a second run doubles everything rather than replacing it. `SeedDatabase` now refuses to seed a tenant that already has data and points at "Clear all data". |
-| A25 | "Offboarding does not work" — **it really did not**, and the code looked fine | A `firestore.rules` bug, found by asserting on the written record instead of on the dialog closing. `offboardingService.createCase` runs a transaction that READS the document it is about to create (a deterministic id, so a double-click cannot create two departures). The read rule dereferenced `resource.data.tenantId`, which denies a document that does not exist — so the transaction could never get past its own read. Starting an offboarding was **impossible**: the dialog sat on "Starting…" forever, nothing was written, and no error was shown. Exactly the shape of the documented `invoice_links` invariant ("public `get` must allow `resource == null`", `docs/INVOICING.md`). Fixed, with a rules test that fails without the fix and a browser test that proves a case is written. |
-| A19 | Calendar view of all leave, filterable by department, weekly and monthly | **It already existed and was wired to nothing.** `client/components/leave/LeaveCalendar.tsx` — month/week, department filter, holidays, per-leave-type colours — was a complete orphan, reachable from no page. Two things it needed before it could ship, and probably why it never did: it carried hardcoded English (in a four-locale product), and it resolved holidays from the statutory table alone, ignoring the tenant's own overrides — so it could mark a day a holiday that a leave request had counted as working. Both fixed, and it is now a List/Calendar toggle on the Leave page with browser coverage. |
+| A25 | "Offboarding does not work" — **it really did not**, and the code looked fine (fix is LIVE) | A `firestore.rules` bug, found by asserting on the written record instead of on the dialog closing. `offboardingService.createCase` runs a transaction that READS the document it is about to create (a deterministic id, so a double-click cannot create two departures). The read rule dereferenced `resource.data.tenantId`, which denies a document that does not exist — so the transaction could never get past its own read. Starting an offboarding was **impossible**: the dialog sat on "Starting…" forever, nothing was written, and no error was shown. Exactly the shape of the documented `invoice_links` invariant ("public `get` must allow `resource == null`", `docs/INVOICING.md`). Fixed, with a rules test that fails without the fix and a browser test that proves a case is written. |
+| A19 | Calendar view of all leave, filterable by department, weekly and monthly | **Live** at `/time-leave/leave` (sidebar Time & Leave → Leave), on the **List \| Calendar** toggle above the request list; List stays the default. Month/week, department filter, holidays, and pending drawn differently from approved. **It already existed and was wired to nothing.** `client/components/leave/LeaveCalendar.tsx` — month/week, department filter, holidays, per-leave-type colours — was a complete orphan, reachable from no page. Two things it needed before it could ship, and probably why it never did: it carried hardcoded English (in a four-locale product), and it resolved holidays from the statutory table alone, ignoring the tenant's own overrides — so it could mark a day a holiday that a leave request had counted as working. Both fixed, and it is now a List/Calendar toggle on the Leave page with browser coverage. |
 
 ### Still open
 

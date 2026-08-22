@@ -132,7 +132,7 @@ OniT HR/Payroll
 │
 ├── Time & Leave (/time-leave)             [HUB - Skippable]
 │   ├── Attendance (/time-leave/attendance)       [WORK PAGE — clock times + hours]
-│   ├── Leave (/time-leave/leave)                 [WORK PAGE]
+│   ├── Leave (/time-leave/leave)                 [WORK PAGE — List | Calendar]
 │   └── Shifts (/time-leave/shifts)               [WORK PAGE]
 │
 ├── Payroll (/payroll)                     [HUB - Skippable]

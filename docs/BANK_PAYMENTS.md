@@ -77,23 +77,32 @@ repo) — thousands of client-facing instructions quoting the local `A/C` form,
 and BNU's own BNUdireto transfer confirmations naming the 14-digit destination.
 They live in `ATTL_TAX_ACCOUNT_DETAILS` in `client/lib/tlBanking.ts`:
 
-| Tax | e-Tax account | A/C | BNU 14-digit | IBAN |
+| Tax | e-Tax account | A/C | BNU 14-digit | IBAN source |
 |---|---|---|---|---|
-| Wage income tax | Domestic Monthly Wages Income Tax | 286442.10.001 | 00028644210001 | sighted |
-| Withholding tax | Domestic Withholding Tax | 286830.10.001 | 00028683010001 | sighted |
-| Income tax — instalments **and** the annual settlement | Domestic Installment Tax | 286539.10.001 | 00028653910001 | sighted |
-| Services tax | Domestic Services Tax | 286636.10.001 | 00028663610001 | **never sighted** |
+| Wage income tax | Domestic Monthly Wages Income Tax | 286442.10.001 | 00028644210001 | published |
+| Withholding tax | Domestic Withholding Tax | 286830.10.001 | 00028683010001 | published |
+| Income tax — instalments **and** the annual settlement | Domestic Installment Tax | 286539.10.001 | 00028653910001 | published |
+| Services tax | Domestic Services Tax | 286636.10.001 | 00028663610001 | published |
 
-Three things to hold on to:
+Things to hold on to:
 
 - **The instalment account also takes the annual income tax** due 31 March.
   That is evidence, not inference: the large March settlements in the record
   are addressed to 286539.10.001, alongside the monthly/quarterly instalments.
-- **Never synthesise the missing services-tax IBAN.** Its check digits would
-  validate against the same TL38/002/…/62 pattern the other three follow,
-  which makes a fabricated one look correct while being unverified.
-  `attlBeneficiaryAccountLine()` prints the local `A/C` instead — which is what
-  the accountants themselves quote, and what BNUdireto accepts.
+- **Never synthesise a missing IBAN — wait for the authority to publish it.**
+  The services-tax IBAN sat as `null` in the code until ATTL's own payment page
+  was read (attl.gov.tl/how-to-pay-taxes/, 2026-08-22), which gives all four:
+  services tax is `TL38 0020002866361000162`. That is *exactly* the value the
+  shared TL38/002/…/62 shape predicted — which is the point. A derived one would
+  have looked right and validated mod-97 while being unverified, so there would
+  have been no way to tell a correct guess from a wrong one.
+  `ATTLTaxAccountDetail.iban` therefore stays nullable and
+  `attlBeneficiaryAccountLine()` keeps its local-`A/C` fallback, so the next
+  account added without a published IBAN cannot quietly acquire a fabricated
+  one.
+- That same ATTL page labels 286539 **"Corporate Tax / Income Tax"** —
+  independent confirmation that the instalment account takes the annual
+  settlement too.
 - **Penalties are paid to the same account as the tax**, with the word in the
   description.
 
