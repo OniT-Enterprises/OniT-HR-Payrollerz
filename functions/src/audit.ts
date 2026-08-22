@@ -37,6 +37,11 @@ const TENANT_AUDIT_ACTIONS = new Set([
   "tax.inss_filed",
   "tax.inss_exported",
   "tax.annual_filed",
+  // Services tax and the Sec. 64 income-tax instalment. This was MISSING until
+  // 2026-08-22, so every business-tax declaration recorded as filed had its
+  // audit entry rejected — silently, because tax audit logging is non-fatal by
+  // design and only a console error marked it.
+  "tax.business_filed",
   "tax.payment_recorded",
   "tax.form_c_preparation_updated",
   "document.upload",
@@ -96,6 +101,7 @@ const WARNING_TENANT_ACTIONS = new Set([
   "user.password_change",
   "user.permission_change",
   "tax.wit_filed",
+  "tax.business_filed",
 ]);
 
 function requireString(value: unknown, field: string, maxLength = 500): string {
