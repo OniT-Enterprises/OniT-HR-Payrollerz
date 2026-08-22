@@ -14,6 +14,14 @@ export function useCompanyPaymentProfile() {
     settings?.companyDetails?.tradingName ||
     "";
   const tin = settings?.companyDetails?.tinNumber || "";
+  // Short trading name for a bank credit description, which BNU truncates —
+  // see formatAttlCreditDescription in client/lib/tlBanking.ts.
+  const shortName =
+    settings?.companyDetails?.tradingName ||
+    settings?.companyDetails?.legalName ||
+    "";
+  const incomeTaxInstallmentFrequency =
+    settings?.companyDetails?.incomeTaxInstallmentFrequency;
   const employerNiss = settings?.companyDetails?.employerNiss || "";
   const activeAccounts = (settings?.paymentStructure?.bankAccounts ?? []).filter(
     (account) => account.isActive && Boolean(account.accountNumber?.trim()),
@@ -22,5 +30,13 @@ export function useCompanyPaymentProfile() {
     (activeAccounts.find((account) => account.purpose === "payroll") || activeAccounts[0])
       ?.accountNumber || "";
 
-  return { ...query, companyName, tin, employerNiss, debitAccount };
+  return {
+    ...query,
+    companyName,
+    shortName,
+    tin,
+    employerNiss,
+    debitAccount,
+    incomeTaxInstallmentFrequency,
+  };
 }

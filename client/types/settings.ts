@@ -22,6 +22,16 @@ export interface CompanyDetails {
   tinNumber: string;
   /** Employer social-security registration number used on INSS submissions. */
   employerNiss?: string;
+  /**
+   * The instalment cadence this taxpayer's e-Tax account is registered for.
+   * Leave unset (or 'auto') to follow Lei 8/2008 Sec. 64.1/64.2 from turnover.
+   * Set 'monthly' when ATTL issues monthly "Domestic Installment Tax"
+   * assessments despite prior-year turnover being at or under $1m — a real and
+   * common setup that the statutory rule alone would file quarterly, leaving
+   * the intervening months with no obligation to record.
+   * See client/lib/tax/income-tax-installment-tl.ts.
+   */
+  incomeTaxInstallmentFrequency?: 'auto' | 'monthly';
   logoUrl?: string;
   businessType: BusinessType;
   businessTypeOther?: string;

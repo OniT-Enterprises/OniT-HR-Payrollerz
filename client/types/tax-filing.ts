@@ -122,6 +122,18 @@ export interface StatutoryPaymentDetails {
   bankAccountId?: string;
   bankAccountName?: string;
   paidBy: string;
+  /**
+   * Penalty and interest ATTL ASSESSED on this period, as shown on the
+   * Aviso de Avaliação — never computed by Xefe. The general late-payment
+   * regime lives in the tax administration regulation, not in Lei 8/2008, and
+   * we hold no authoritative text for it; practitioner summaries of it in
+   * circulation cite sections that do not say what they claim. Both are
+   * non-deductible (Sec. 31(j),(l)) and post to GL 5950.
+   */
+  assessedPenalty?: number;
+  assessedInterest?: number;
+  /** Assessment number on the ATTL notice being paid ("AVALIAÇÃO NO."). */
+  assessmentNumber?: string;
   /** Portal/channel used to remit the payment, independent of return filing. */
   submissionMethod?: SubmissionMethod;
   notes?: string;
@@ -326,6 +338,10 @@ export interface TaxFiling {
   paymentBankAccountId?: string;
   paymentBankAccountName?: string;
   paymentRecordedBy?: string;
+  /** ATTL-assessed penalty/interest on the notice paid, and its number. */
+  paymentAssessedPenalty?: number;
+  paymentAssessedInterest?: number;
+  paymentAssessmentNumber?: string;
 
   // Totals (for quick display)
   totalWages: number;

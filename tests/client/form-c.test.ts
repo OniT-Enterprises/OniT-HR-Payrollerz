@@ -91,8 +91,8 @@ describe("Form C GL mapping (TADR-IT 1 lines)", () => {
     const workpaper = build({
       glRows: [
         gl("4100", "Service Revenue", "revenue", 10000),
-        gl("5940", "Interest Expense", "expense", 1200),
-        gl("5950", "Income Tax Expense", "expense", 600),
+        gl("5911", "Interest Expense", "expense", 1200),
+        gl("5912", "Income Tax Expense", "expense", 600),
       ],
     });
     expect(workpaper.excluded).toHaveLength(2);
@@ -103,6 +103,30 @@ describe("Form C GL mapping (TADR-IT 1 lines)", () => {
     expect(
       workpaper.warnings.some((w) => w.code === "income_tax_expense_excluded"),
     ).toBe(true);
+  });
+
+  // TDA §31(j),(l). ATTL penalties reach the books through a recorded tax
+  // payment, so without this they would silently reduce taxable income.
+  it("excludes penalties, fines and late interest (TDA §31(j),(l))", () => {
+    const workpaper = build({
+      glRows: [
+        gl("4100", "Service Revenue", "revenue", 10000),
+        gl("5950", "Penalties and Interest (Non-deductible)", "expense", 216.9),
+        gl("5921", "Fines", "expense", 100),
+        gl("5922", "Multas e juros", "expense", 50),
+        // Must NOT match: ordinary words that merely contain "fine".
+        gl("5923", "Refined Fuel", "expense", 300),
+      ],
+    });
+    expect(workpaper.excluded.map((entry) => entry.accountCode).sort()).toEqual([
+      "5921",
+      "5922",
+      "5950",
+    ]);
+    expect(workpaper.totals.totalExpenses).toBe(300);
+    expect(
+      workpaper.warnings.filter((w) => w.code === "penalties_excluded"),
+    ).toHaveLength(3);
   });
 
   it("keeps cents on every line, matching e-filed practice", () => {

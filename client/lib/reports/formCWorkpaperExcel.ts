@@ -218,7 +218,9 @@ export function buildFormCWorkpaperWorkbook(
           ? 'Interest — deductible only for financial institutions (TDA §31)'
           : entry.reason === 'books_depreciation_tax_method'
             ? 'Books depreciation — replaced by the Schedule VII tax schedule'
-            : 'Income tax expense — not deductible',
+            : entry.reason === 'penalties_non_deductible'
+              ? 'Penalties, fines and late interest — not deductible (TDA §31(j),(l))'
+              : 'Income tax expense — not deductible',
       ]);
       moneyCell(row, 3, MONEY_CENTS_FMT);
     }

@@ -439,6 +439,8 @@ describe('the help page covers every open question we have written down', () => 
     A11: 'subsidio-base-after-raise',
     A12: 'retro-pay-tax-month',
     A13: 'attendance-premium-inss',
+    B18: 'attl-late-payment',
+    B19: 'installment-cadence',
     // Section D is a practitioner's feature request we deliberately did NOT
     // build, so there is no Xefe behaviour for a customer to check.
     D1: {

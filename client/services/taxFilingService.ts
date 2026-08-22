@@ -47,6 +47,7 @@ import type {
   EmployeeWITCertificate,
   FilingDueDate,
   StatutoryPaymentDetails,
+  BusinessTaxFilingSnapshot,
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 export type {
@@ -80,7 +81,13 @@ import {
   isTLServicesTaxLiableSector,
   mapSectorReceiptsToDesignatedServices,
 } from "@/lib/tax/services-tax-tl";
-import { getTLIncomeTaxInstallmentFrequency } from "@/lib/tax/income-tax-installment-tl";
+import { resolveTLIncomeTaxInstallmentFrequency } from "@/lib/tax/income-tax-installment-tl";
+import {
+  buildStatutoryPaymentChargeLines,
+  isStatutoryPaymentType,
+  statutoryPaymentChargeCodes,
+  type StatutoryPaymentFilingType,
+} from "@/lib/tax/statutory-payment-charges";
 import {
   MissingStatutoryPayrollDataError,
   requireStatutoryEmployerIdentity,
@@ -99,6 +106,14 @@ import {
 // ============================================
 // CONSTANTS
 // ============================================
+
+/** Journal description prefix per filing type that can post a payment. */
+const STATUTORY_PAYMENT_LABELS: Partial<Record<TaxFilingType, string>> = {
+  monthly_wit: "WIT",
+  inss_monthly: "INSS",
+  installment_tax: "Income tax instalment",
+  services_tax: "Services tax",
+};
 
 const MONTHLY_INSS_STATEMENT_DUE_DAY = 10; // remuneration statement (following month)
 const MONTHLY_INSS_PAYMENT_DUE_DAY = 20; // payment window ends (following month)
@@ -1057,9 +1072,20 @@ class TaxFilingService {
   }
 
   /**
-   * Record the money remitted for a monthly payroll filing and clear the GL
-   * liability in the same transaction. A retry returns the existing journal;
-   * it can never post a second payment for the same filing.
+   * Record the money remitted for a statutory filing and post its GL side in
+   * the same transaction. A retry returns the existing journal; it can never
+   * post a second payment for the same filing.
+   *
+   * Two shapes of entry, both cash-complete on their own:
+   *
+   *  - PAYROLL filings (WIT, INSS) clear a liability payroll already accrued.
+   *  - BUSINESS taxes (Sec. 64 instalment, Secs. 5-9 services tax) have no
+   *    prior accrual anywhere in Xefe, so the debit goes straight to its
+   *    proper home: 1330 Prepaid Income Tax for an instalment (Sec. 64.4
+   *    credits it against the annual liability; Sec. 31(g) forbids expensing
+   *    it) and 5940 Taxes and Duties for services tax, which the business
+   *    genuinely bears. Assessed penalties and interest go to 5950 so the
+   *    annual workpaper can exclude them under Sec. 31(j),(l).
    */
   async recordPayment(
     filingId: string,
@@ -1067,26 +1093,34 @@ class TaxFilingService {
   ): Promise<string | null> {
     const filing = await this.getFilingById(filingId);
     if (!filing) throw new Error("Tax filing not found");
-    if (filing.type !== "monthly_wit" && filing.type !== "inss_monthly") {
+    if (!isStatutoryPaymentType(filing.type)) {
       throw new Error(
-        "Only monthly WIT and INSS filings support payment posting",
+        "Only WIT, INSS, instalment and services-tax filings support payment posting",
       );
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(payment.paymentDate)) {
       throw new Error("A valid statutory payment date is required");
     }
     if (!payment.paidBy) throw new Error("The payment user is required");
+    for (const [label, value] of [
+      ["Assessed penalty", payment.assessedPenalty],
+      ["Assessed interest", payment.assessedInterest],
+    ] as const) {
+      if (value === undefined) continue;
+      if (!Number.isFinite(value) || value < 0) {
+        throw new RangeError(`${label} must be a non-negative finite amount`);
+      }
+    }
 
     const paymentReference =
       payment.paymentReference.trim() || `NIL-${filing.period}`;
     const paymentAccountCode =
       payment.paymentAccountCode?.trim() ||
       (payment.paymentMethod === "cash" ? "1110" : "1120");
-    const liabilityCodes =
-      filing.type === "monthly_wit" ? ["2220"] : ["2230", "2240"];
+    const chargeCodes = statutoryPaymentChargeCodes(filing.type);
     const resolvedAccounts = await this.resolvePaymentAccounts(
       filing.tenantId,
-      [...liabilityCodes, paymentAccountCode],
+      [...chargeCodes, paymentAccountCode],
     );
 
     const filingRef = doc(db, "taxFilings", filingId);
@@ -1098,27 +1132,17 @@ class TaxFilingService {
       if (current.paymentRecordedDate && !current.paymentJournalEntryId)
         return null;
 
-      const liabilities =
-        current.type === "monthly_wit"
-          ? [
-              {
-                accountCode: "2220" as const,
-                amount: current.totalWITWithheld || 0,
-                description: `Clear WIT payable - ${current.period}`,
-              },
-            ]
-          : [
-              {
-                accountCode: "2230" as const,
-                amount: current.totalINSSEmployee || 0,
-                description: `Clear employee INSS payable - ${current.period}`,
-              },
-              {
-                accountCode: "2240" as const,
-                amount: current.totalINSSEmployer || 0,
-                description: `Clear employer INSS payable - ${current.period}`,
-              },
-            ];
+      const liabilities = buildStatutoryPaymentChargeLines({
+        type: current.type as StatutoryPaymentFilingType,
+        period: current.period,
+        totalWITWithheld: current.totalWITWithheld,
+        totalINSSEmployee: current.totalINSSEmployee,
+        totalINSSEmployer: current.totalINSSEmployer,
+        taxDue: (current.dataSnapshot as BusinessTaxFilingSnapshot | undefined)
+          ?.taxDue,
+        assessedPenalty: payment.assessedPenalty,
+        assessedInterest: payment.assessedInterest,
+      });
       const total = sumMoney(liabilities.map((line) => line.amount));
       let paymentJournalEntryId: string | null = null;
       if (total > 0) {
@@ -1132,7 +1156,7 @@ class TaxFilingService {
             current.tenantId,
             {
               filingId,
-              label: current.type === "monthly_wit" ? "WIT" : "INSS",
+              label: STATUTORY_PAYMENT_LABELS[current.type] || "Tax",
               period: current.period,
               paymentDate: payment.paymentDate,
               paymentReference,
@@ -1157,6 +1181,11 @@ class TaxFilingService {
           (current.type === "inss_monthly" ? "inss_portal" : "etax"),
         paymentReceiptNumber: paymentReference,
         paymentNotes: payment.notes || "",
+        ...(payment.assessedPenalty ? { paymentAssessedPenalty: roundMoney(payment.assessedPenalty) } : {}),
+        ...(payment.assessedInterest ? { paymentAssessedInterest: roundMoney(payment.assessedInterest) } : {}),
+        ...(payment.assessmentNumber?.trim()
+          ? { paymentAssessmentNumber: payment.assessmentNumber.trim() }
+          : {}),
         ...(paymentJournalEntryId ? { paymentJournalEntryId } : {}),
         ...(payment.bankAccountId
           ? { paymentBankAccountId: payment.bankAccountId }
@@ -1714,6 +1743,10 @@ class TaxFilingService {
     const sector = settings?.companyStructure?.businessSector;
     const servicesTaxReceiptMode =
       settings?.companyStructure?.servicesTaxReceiptMode;
+    // A monthly-registered taxpayer must see a monthly obligation even below
+    // the Sec. 64.2 threshold, or the intervening months silently disappear.
+    const installmentFrequencySetting =
+      settings?.companyDetails?.incomeTaxInstallmentFrequency;
 
     if (isTLServicesTaxLiableSector(sector)) {
       for (const { year, month, period } of periods) {
@@ -1824,7 +1857,10 @@ class TaxFilingService {
 
     for (const { year, period } of periods) {
       const priorTurnover = priorTurnoverByYear.get(year) || 0;
-      const frequency = getTLIncomeTaxInstallmentFrequency(priorTurnover);
+      const frequency = resolveTLIncomeTaxInstallmentFrequency(
+        priorTurnover,
+        installmentFrequencySetting,
+      );
       if (frequency === "quarterly" && !isQuarterEndMonth(period)) continue;
 
       const [dueDate, filing] = await Promise.all([
