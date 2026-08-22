@@ -1146,7 +1146,7 @@ export default function AllEmployees() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.employees} />
 
       {/* Main Content */}
@@ -1164,7 +1164,6 @@ export default function AllEmployees() {
               </Button>
               <Button
                 onClick={() => navigate("/people/add")}
-                className="bg-blue-600 text-white hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t("dashboard.addEmployee")}

@@ -663,7 +663,7 @@ export default function CreateJobLocal() {
                   </div>
 
                   {formData.contractType === "Fixed-Term" ? (
-                    <div className="space-y-2 animate-fade-in">
+                    <div className="space-y-2">
                       <Label htmlFor="contractDurationMonths" className="text-sm font-medium">
                         Contract duration (months)
                         <span className="text-destructive"> *</span>
@@ -688,7 +688,7 @@ export default function CreateJobLocal() {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-2 animate-fade-in">
+                    <div className="space-y-2">
                       <Label htmlFor="permanentProbation" className="text-sm font-medium">
                         Probation length
                       </Label>

@@ -555,7 +555,7 @@ export default function ShiftScheduling() {
     (canLoadSchedule && (shiftsQuery.isLoading || leaveQuery.isLoading || employeesQuery.isLoading));
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <main className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("timeLeave.shiftScheduling.title")}
@@ -610,7 +610,7 @@ export default function ShiftScheduling() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.schedules} />
       <main className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader

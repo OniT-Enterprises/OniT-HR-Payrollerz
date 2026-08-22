@@ -34,7 +34,7 @@ export default function PaymentsSettings() {
 
   if (settingsQuery.isError && settings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsQuery.isFetching}
@@ -49,7 +49,7 @@ export default function PaymentsSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Payments & Banking | Xefe" description="Payment methods, bank accounts, and payroll schedule" noIndex />
       <MainNavigation />
 

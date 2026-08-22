@@ -222,6 +222,9 @@ export const translations = {
         "12": "December"
       }
     },
+    "sitemap": {
+      "subtitle": "Every place you can go in Xefe, grouped by the work you want to do."
+    },
     "nav": {
       "people": "People",
       "scheduling": "Time & Leave",
@@ -8334,6 +8337,9 @@ export const translations = {
         "11": "Novembru",
         "12": "Dezembru"
       }
+    },
+    "sitemap": {
+      "subtitle": "Fatin hotu ne'ebé ita bele bá iha Xefe, fahe tuir servisu ne'ebé ita hakarak halo."
     },
     "nav": {
       "people": "Ema",
@@ -16448,6 +16454,9 @@ export const translations = {
         "12": "Dezembro"
       }
     },
+    "sitemap": {
+      "subtitle": "Todos os destinos no Xefe, agrupados pelo trabalho que pretende realizar."
+    },
     "nav": {
       "people": "Pessoas",
       "scheduling": "Tempo & Licença",
@@ -24560,6 +24569,9 @@ export const translations = {
         "11": "November",
         "12": "Desember"
       }
+    },
+    "sitemap": {
+      "subtitle": "Semua tujuan di Xefe, dikelompokkan berdasarkan pekerjaan yang ingin dilakukan."
     },
     "nav": {
       "people": "Orang",

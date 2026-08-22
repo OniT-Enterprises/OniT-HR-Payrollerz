@@ -35,9 +35,9 @@ import {
 
 function SchedulingDashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <ModuleSectionNav config={timeLeaveNavConfig} />
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div>
           <Skeleton className="h-7 w-48 sm:h-8 sm:w-64" />
@@ -85,7 +85,6 @@ function SchedulingDashboardSkeleton() {
     </div>
   );
 }
-
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -158,7 +157,7 @@ export default function SchedulingDashboard() {
 
   if (dashboardQueries.some((query) => query.data === undefined)) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("moduleDashboards.scheduling.title")}
           description={t("moduleDashboards.scheduling.seoDescription")}
@@ -308,14 +307,14 @@ export default function SchedulingDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("moduleDashboards.scheduling.title")}
         description={t("moduleDashboards.scheduling.seoDescription")}
       />
       <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           size="lg"
           title={t("moduleDashboards.scheduling.title")}

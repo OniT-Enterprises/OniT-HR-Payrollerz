@@ -31,9 +31,9 @@ import {
 
 function AccountingDashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <ModuleSectionNav config={accountingNavConfig} />
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -83,7 +83,6 @@ function AccountingDashboardSkeleton() {
     </div>
   );
 }
-
 const RED = "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300";
 const AMBER = "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
 
@@ -110,7 +109,7 @@ export default function AccountingDashboard() {
 
   if (dashboardQueries.some((query) => query.data === undefined)) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("moduleDashboards.accounting.title")}
           description={t("moduleDashboards.accounting.seoDescription")}
@@ -213,14 +212,14 @@ export default function AccountingDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("moduleDashboards.accounting.title")}
         description={t("moduleDashboards.accounting.seoDescription")}
       />
       <ModuleSectionNav config={accountingNavConfig} />
 
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           size="lg"
           title={t("moduleDashboards.accounting.title")}

@@ -84,7 +84,6 @@ export default function BankReconciliation() {
   const accent = isAccountingRoute
     ? {
         iconColor: 'text-orange-500',
-        solidBtn: 'bg-orange-600 hover:bg-orange-700',
         badgeSolid: 'bg-orange-500 text-white text-xs tabular-nums',
         bar: 'bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50',
         barText: 'text-sm font-medium text-orange-800 dark:text-orange-200',
@@ -96,7 +95,6 @@ export default function BankReconciliation() {
       }
     : {
         iconColor: 'text-indigo-500',
-        solidBtn: 'bg-indigo-600 hover:bg-indigo-700',
         badgeSolid: 'bg-indigo-500 text-white text-xs tabular-nums',
         bar: 'bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50',
         barText: 'text-sm font-medium text-indigo-800 dark:text-indigo-200',
@@ -495,7 +493,7 @@ export default function BankReconciliation() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-6">
@@ -595,7 +593,7 @@ export default function BankReconciliation() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Bank Reconciliation - Xefe" description="Reconcile bank transactions" />
       <MainNavigation />
 
@@ -616,7 +614,6 @@ export default function BankReconciliation() {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
-              className={accent.solidBtn}
             >
               {importing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -630,7 +627,7 @@ export default function BankReconciliation() {
           }
         />
         {/* Summary Cards */}
-        <MoreDetailsSection className="animate-fade-up stagger-1 mb-6">
+        <MoreDetailsSection className="mb-6">
         <div>
           <BankReconciliationSummary summary={summary} formatCurrency={formatCurrency} />
         </div>
@@ -638,7 +635,7 @@ export default function BankReconciliation() {
 
         {/* Actions Bar */}
         {selectedIds.size > 0 && (
-          <div className={`flex items-center gap-3 mb-4 p-3 animate-fade-up ${accent.bar}`}>
+          <div className={`flex items-center gap-3 mb-4 p-3 ${accent.bar}`}>
             <Badge className={accent.badgeSolid}>
               {selectedIds.size}
             </Badge>
@@ -652,7 +649,7 @@ export default function BankReconciliation() {
             <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className={accent.outlineBtn}>
               {t('common.cancel') || 'Clear'}
             </Button>
-            <Button size="sm" onClick={handleReconcile} className={`${accent.solidBtn} text-white`}>
+            <Button size="sm" onClick={handleReconcile}>
               <CheckCircle2 className="h-4 w-4 mr-2" />
               {t('money.bankRecon.markReconciled') || 'Mark Reconciled'}
             </Button>
@@ -660,7 +657,7 @@ export default function BankReconciliation() {
         )}
 
         {/* Transactions Table */}
-        <Card className="border-border/50 animate-fade-up stagger-2">
+        <Card className="border-border/50">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -703,7 +700,7 @@ export default function BankReconciliation() {
                 <p className="text-sm text-muted-foreground mb-5">
                   {t('money.bankRecon.uploadCsvHint') || 'Upload a CSV export from your bank to get started'}
                 </p>
-                <Button onClick={() => fileInputRef.current?.click()} className={`${accent.solidBtn} text-white`}>
+                <Button onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-4 w-4 mr-2" />
                   {t('money.bankRecon.importFirst') || 'Import your first CSV'}
                 </Button>

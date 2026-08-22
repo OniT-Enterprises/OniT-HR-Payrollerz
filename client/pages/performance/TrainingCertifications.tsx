@@ -428,7 +428,7 @@ export default function TrainingCertifications() {
 
   if (loading || employeesLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -438,7 +438,7 @@ export default function TrainingCertifications() {
 
   if (recordsQuery.isError || employeesQuery.isError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Training & Certifications"
@@ -464,7 +464,7 @@ export default function TrainingCertifications() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.training} />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -481,7 +481,7 @@ export default function TrainingCertifications() {
           }
         />
         {/* Filters */}
-        <Card className="mb-6 border-border/50 shadow-lg">
+        <Card className="mb-6 border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />

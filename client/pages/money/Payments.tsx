@@ -106,7 +106,7 @@ export default function Payments() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
@@ -170,7 +170,7 @@ export default function Payments() {
 
   if (isError && payments.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title="Payments - Xefe" description="View payment history" />
         <MainNavigation />
         <DashboardLoadError
@@ -182,7 +182,7 @@ export default function Payments() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="Payments - Xefe" description="View payment history" />
       <MainNavigation />
 

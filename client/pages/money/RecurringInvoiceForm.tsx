@@ -316,7 +316,7 @@ export default function RecurringInvoiceForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -444,7 +444,7 @@ export default function RecurringInvoiceForm() {
 
   if (settingsLoadError && invoiceSettings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsFetching}
@@ -460,7 +460,7 @@ export default function RecurringInvoiceForm() {
 
   if (customersUnavailable || recurringUnavailable) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={customersFetching || recurringFetching}
@@ -474,7 +474,7 @@ export default function RecurringInvoiceForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={isEditMode ? `${t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice'} - Xefe` : `${t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice'} - Xefe`}
         description={t('money.recurringInvoiceForm.autoGenerate') || 'Set up a recurring invoice template'}

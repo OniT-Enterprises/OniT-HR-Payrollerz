@@ -643,7 +643,7 @@ export default function Dashboard() {
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl animate-fade-in px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         {/* ── Compact assistant strip: greeting, proactive summary, ask box.
             Xefe's warm corner of the page — a whisper of brand green and the
             ghosted crescent-X mark, echoing the Ekipa greeting card. ── */}

@@ -737,7 +737,7 @@ export default function Offboarding() {
 
   if (loading || employeesLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -751,7 +751,7 @@ export default function Offboarding() {
     employeesQuery.isError
   ) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO {...seoConfig.offboarding} />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
@@ -784,7 +784,7 @@ export default function Offboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.offboarding} />
 
       {/* Main Content */}
@@ -1044,12 +1044,21 @@ export default function Offboarding() {
                       {activeCases.map((case_) => (
                         <Card
                           key={case_.id}
-                          className={`cursor-pointer transition-all duration-200 border-border/50 ${
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={selectedCase?.id === case_.id}
+                          className={`cursor-pointer border-border/70 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             selectedCase?.id === case_.id
-                              ? "ring-2 ring-blue-500 shadow-lg"
-                              : "hover:bg-muted/30 hover:shadow-md"
+                              ? "border-blue-500/50 bg-blue-500/5 ring-1 ring-blue-500/30"
+                              : "hover:border-blue-500/30 hover:bg-muted/30"
                           }`}
                           onClick={() => {
+                            setSelectedCase(case_);
+                            setExitInterviewDraft({ ...case_.exitInterview });
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
                             setSelectedCase(case_);
                             setExitInterviewDraft({ ...case_.exitInterview });
                           }}

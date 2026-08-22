@@ -241,6 +241,10 @@ const messages = {
       "12": "Dezembru",
     },
   },
+  sitemap: {
+    subtitle:
+      "Fatin hotu ne'ebé ita bele bá iha Xefe, fahe tuir servisu ne'ebé ita hakarak halo.",
+  },
   nav: {
     people: "Ema",
     scheduling: "Tempu & Lisensa",

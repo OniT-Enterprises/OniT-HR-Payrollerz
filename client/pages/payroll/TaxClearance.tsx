@@ -169,7 +169,7 @@ export default function TaxClearance() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title={t('taxClearance.title') || 'Tax clearance'} description={t('taxClearance.subtitle') || 'Track ATTL tax-clearance certificate requests.'} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">

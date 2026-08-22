@@ -284,7 +284,7 @@ export default function INSSAnnual() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-6 flex items-center gap-3">
@@ -324,7 +324,7 @@ export default function INSSAnnual() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("reports.inssAnnual.title")}
           description={t("reports.inssAnnual.subtitle")}
@@ -347,7 +347,7 @@ export default function INSSAnnual() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("reports.inssAnnual.title")}
         description={t("reports.inssAnnual.subtitle")}

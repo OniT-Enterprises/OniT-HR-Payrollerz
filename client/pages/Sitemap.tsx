@@ -1,859 +1,248 @@
 /**
- * Sitemap Page
- * A comprehensive overview of all pages in the Xefe system
- * with descriptions and easy navigation
+ * Sitemap — a compact, permission-aware directory of the current app.
+ *
+ * The route list comes from the same configuration as the sidebar. That keeps
+ * labels, permissions, and destinations in sync instead of maintaining a
+ * second English-only catalogue that can silently go stale.
  */
 
 import { Link } from "react-router-dom";
-import MainNavigation from "@/components/layout/MainNavigation";
-import { SEO } from "@/components/SEO";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
-import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
-import {
-  Users,
-  DollarSign,
-  Calculator,
-  BarChart3,
-  Briefcase,
-  Clock,
-  Target,
-  BookOpen,
-  Shield,
-  Home,
-  Map,
   ChevronRight,
+  CreditCard,
+  HelpCircle,
+  Map,
+  Settings,
 } from "lucide-react";
+import MainNavigation from "@/components/layout/MainNavigation";
+import PageHeader from "@/components/layout/PageHeader";
+import { SEO } from "@/components/SEO";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useI18n } from "@/i18n/I18nProvider";
+import {
+  APP_NAV_ITEMS,
+  isAppNavItemVisible,
+  type AppNavItem,
+} from "@/lib/appNavigation";
+import {
+  filterModuleNavConfigByPermissions,
+  type ModuleNavConfig,
+  type ModuleSection,
+} from "@/lib/moduleNav";
+import { sectionThemes } from "@/lib/sectionTheme";
+import { useTenant } from "@/contexts/TenantContext";
 
-interface SitemapSection {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-  bgColor: string;
-  pages: {
-    name: string;
-    path: string;
-    description: string;
-    badge?: string;
-  }[];
-}
+type SitemapLink = {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
-const sitemapData: SitemapSection[] = [
-  {
-    title: "Dashboard",
-    description: "Your central command center for Xefe",
-    icon: Home,
-    color: "text-blue-600",
-    bgColor: "bg-blue-100 dark:bg-blue-900",
-    pages: [
-      {
-        name: "Main Dashboard",
-        path: "/dashboard",
-        description:
-          "Overview of your organization with key metrics, recent activity, and quick actions",
-      },
-      {
-        name: "Settings",
-        path: "/settings",
-        description:
-          "Configure your account preferences, notifications, and system settings",
-      },
-      {
-        name: "Departments",
-        path: "/settings/departments",
-        description:
-          "Manage organizational departments, teams, and reporting structures",
-      },
-      {
-        name: "Organization Chart",
-        path: "/settings/org-chart",
-        description:
-          "Visual hierarchy showing reporting relationships across your organization",
-      },
-      {
-        name: "Foreign Workers",
-        path: "/settings/foreign-workers",
-        description:
-          "Manage work permits and visa compliance for foreign employees",
-        badge: "TL Compliance",
-      },
-    ],
-  },
-  {
-    title: "People",
-    description: "Manage your workforce from hiring to retirement",
-    icon: Users,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-100 dark:bg-emerald-900",
-    pages: [
-      {
-        name: "People Dashboard",
-        path: "/people",
-        description: "Central dashboard for all people management activities",
-      },
-      {
-        name: "Staff Overview",
-        path: "/people/staff",
-        description:
-          "Staff hub — employee directory, announcements, and grievances",
-      },
-      {
-        name: "All Employees",
-        path: "/people/employees",
-        description:
-          "Complete employee directory with search, filters, and detailed profiles",
-      },
-      {
-        name: "Add Employee",
-        path: "/people/add",
-        description:
-          "Register new employees with personal details, employment info, and documents",
-      },
-      {
-        name: "Document Alerts",
-        path: "/admin/document-alerts",
-        description:
-          "Track expiring documents (passports, work permits, licenses)",
-        badge: "Compliance",
-      },
-      {
-        name: "Announcements",
-        path: "/people/announcements",
-        description:
-          "Broadcast company news, policy updates, and notices to all employees via Ekipa",
-        badge: "Ekipa",
-      },
-      {
-        name: "Grievance Inbox",
-        path: "/people/grievances",
-        description:
-          "Review anonymous employee concerns and complaints submitted via Ekipa",
-        badge: "Ekipa",
-      },
-      {
-        name: "Offboarding",
-        path: "/people/offboarding",
-        description:
-          "Manage employee departures, final pay tasks, and company equipment returns",
-      },
-    ],
-  },
-  {
-    title: "Hiring & Recruitment",
-    description:
-      "Streamline your recruitment process from job posting to onboarding",
-    icon: Briefcase,
-    color: "text-violet-600",
-    bgColor: "bg-violet-100 dark:bg-violet-900",
-    pages: [
-      {
-        name: "Jobs & Applicants",
-        path: "/people/jobs",
-        description:
-          "Post jobs, review applicants, and schedule interviews in one place",
-      },
-    ],
-  },
-  {
-    title: "Time & Leave",
-    description: "Record attendance, manage leave, and plan weekly shifts",
-    icon: Clock,
-    color: "text-cyan-600",
-    bgColor: "bg-cyan-100 dark:bg-cyan-900",
-    pages: [
-      {
-        name: "Time & Leave Dashboard",
-        path: "/time-leave",
-        description:
-          "Overview of attendance, leave, and scheduling at a glance",
-      },
-      {
-        name: "Attendance",
-        path: "/time-leave/attendance",
-        description:
-          "Clock times, hours, adjustments, imports, and daily attendance",
-      },
-      {
-        name: "Leave Requests",
-        path: "/time-leave/leave",
-        description:
-          "Submit, approve, and track vacation, sick leave, and other absences",
-      },
-      {
-        name: "Shift Scheduling",
-        path: "/time-leave/shifts",
-        description: "Create and manage work schedules, shifts, and rotations",
-      },
-    ],
-  },
-  {
-    title: "Performance",
-    description: "Develop your team with goals, reviews, and training",
-    icon: Target,
-    color: "text-pink-600",
-    bgColor: "bg-pink-100 dark:bg-pink-900",
-    pages: [
-      {
-        name: "Goals",
-        path: "/people/goals",
-        description:
-          "Set and track individual and team objectives with progress monitoring",
-      },
-      {
-        name: "Reviews",
-        path: "/people/reviews",
-        description:
-          "Conduct performance evaluations with customizable review cycles",
-      },
-      {
-        name: "Training & Certifications",
-        path: "/people/training",
-        description:
-          "Track employee skills, training programs, and certification renewals",
-      },
-      {
-        name: "Disciplinary",
-        path: "/people/disciplinary",
-        description: "Document warnings, incidents, and corrective actions",
-      },
-    ],
-  },
-  {
-    title: "Payroll",
-    description: "Process payroll with Timor-Leste WIT and INSS calculations",
-    icon: Calculator,
-    color: "text-cyan-600",
-    bgColor: "bg-cyan-100 dark:bg-cyan-900",
-    pages: [
-      {
-        name: "Payroll Dashboard",
-        path: "/payroll",
-        description:
-          "Overview of payroll status, upcoming runs, and key metrics",
-      },
-      {
-        name: "Run Payroll",
-        path: "/payroll/run",
-        description:
-          "Process payroll with automatic WIT and INSS calculations for review",
-        badge: "TL Rules",
-      },
-      {
-        name: "Payroll History",
-        path: "/payroll/history",
-        description:
-          "View past payroll runs with detailed breakdowns and pay slips",
-      },
-      {
-        name: "Bank Transfers",
-        path: "/payroll/payments",
-        description:
-          "Generate bank transfer files for BNU, BNCTL, and other TL banks",
-        badge: "TL Banks",
-      },
-      {
-        name: "Monthly WIT",
-        path: "/payroll/tax/monthly-wit",
-        description: "Monthly wage withholding return for ATTL",
-        badge: "Advanced",
-      },
-      {
-        name: "Monthly INSS",
-        path: "/payroll/tax/inss-monthly",
-        description: "Monthly employee and employer INSS statement",
-      },
-      {
-        name: "Annual INSS",
-        path: "/payroll/tax/inss-annual",
-        description: "Annual INSS declaration and employee totals",
-      },
-      {
-        name: "Benefits",
-        path: "/payroll/benefits",
-        description: "Manage employee benefits enrollment and deductions",
-      },
-      {
-        name: "Deductions & Advances",
-        path: "/payroll/deductions",
-        description:
-          "Configure loan repayments, salary advances, and custom deductions",
-      },
-    ],
-  },
-  {
-    title: "Money",
-    description: "Invoicing, expenses, and financial operations",
-    icon: DollarSign,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-100 dark:bg-indigo-900",
-    pages: [
-      {
-        name: "Money Dashboard",
-        path: "/money",
-        description:
-          "Operational overview of receivables, payables, and expenses",
-      },
-      {
-        name: "Customers",
-        path: "/money/customers",
-        description:
-          "Manage customer contacts, billing info, and payment history",
-      },
-      {
-        name: "Invoices",
-        path: "/money/invoices",
-        description:
-          "Create, send, and track customer invoices with payment status",
-      },
-      {
-        name: "Recurring Invoices",
-        path: "/money/invoices/recurring",
-        description:
-          "Set up automatic recurring invoices for regular customers",
-      },
-      {
-        name: "Invoice Settings",
-        path: "/money/invoices/settings",
-        description:
-          "Configure company info, bank details, and invoice defaults",
-      },
-      {
-        name: "Payments Received",
-        path: "/money/payments",
-        description: "Record and track customer payments against invoices",
-      },
-      {
-        name: "Vendors",
-        path: "/money/vendors",
-        description: "Manage supplier contacts and payment terms",
-      },
-      {
-        name: "Bills",
-        path: "/money/bills",
-        description: "Track vendor bills and accounts payable",
-      },
-      {
-        name: "Expenses",
-        path: "/money/expenses",
-        description: "Record and categorize business expenses with receipts",
-      },
-      {
-        name: "Cash Advances",
-        path: "/money/cash-advances",
-        description: "Issue and clear accountable business cash advances",
-      },
-      {
-        name: "AR Aging Report",
-        path: "/money/financials/ar-aging",
-        description: "Accounts receivable by age (Current, 30, 60, 90+ days)",
-      },
-      {
-        name: "AP Aging Report",
-        path: "/money/financials/ap-aging",
-        description: "Accounts payable by age to manage vendor payments",
-      },
-    ],
-  },
-  {
-    title: "Accounting",
-    description: "Double-entry bookkeeping and financial statements",
-    icon: BookOpen,
-    color: "text-amber-600",
-    bgColor: "bg-amber-100 dark:bg-amber-900",
-    pages: [
-      {
-        name: "Accounting Dashboard",
-        path: "/accounting",
-        description:
-          "Overview of accounting status and quick access to key functions",
-      },
-      {
-        name: "Chart of Accounts",
-        path: "/accounting/chart",
-        description:
-          "Standard TL chart of accounts (Assets, Liabilities, Equity, Revenue, Expenses)",
-        badge: "TL Standard",
-      },
-      {
-        name: "Journal Entries",
-        path: "/accounting/journal",
-        description:
-          "View and create double-entry journal entries with auto-posting",
-      },
-      {
-        name: "General Ledger",
-        path: "/accounting/ledger",
-        description:
-          "Complete transaction history by account with running balances",
-      },
-      {
-        name: "Bank Reconciliation",
-        path: "/accounting/reconciliation",
-        description: "Match bank statements with recorded transactions",
-      },
-      {
-        name: "Trial Balance",
-        path: "/accounting/statements/trial-balance",
-        description: "Verify debits equal credits across all accounts",
-      },
-      {
-        name: "Income Statement",
-        path: "/accounting/statements/income-statement",
-        description: "Revenue, expenses, and net result for a period",
-      },
-      {
-        name: "Balance Sheet",
-        path: "/accounting/statements/balance-sheet",
-        description: "Assets, liabilities, and equity at a point in time",
-      },
-      {
-        name: "Cash Flow Statement",
-        path: "/accounting/statements/cash-flow",
-        description: "Operating, investing, and financing cash movement",
-      },
-      {
-        name: "Fixed Assets",
-        path: "/accounting/fixed-assets",
-        description:
-          "Asset register with straight-line depreciation and disposals",
-      },
-      {
-        name: "Fiscal Periods",
-        path: "/accounting/statements/fiscal-periods",
-        description: "Open, close, and control accounting periods",
-      },
-      {
-        name: "Audit Trail",
-        path: "/accounting/statements/audit-trail",
-        description: "Review changes and accounting activity",
-      },
-      {
-        name: "Annual Business Income Tax",
-        path: "/accounting/tax/annual-income-tax",
-        description: "Prepare the annual business income-tax filing pack",
-        badge: "Tax Filing",
-      },
-      {
-        name: "Tax Clearance",
-        path: "/accounting/tax/clearance",
-        description: "Track official ATTL tax-clearance requests",
-        badge: "Advanced",
-      },
-      {
-        name: "VAT Returns",
-        path: "/accounting/tax/vat-returns",
-        description: "Prepare VAT returns when VAT mode is enabled",
-        badge: "Advanced",
-      },
-      {
-        name: "VAT Settings",
-        path: "/accounting/tax/vat-settings",
-        description: "Configure VAT registration and reporting periods",
-        badge: "Advanced",
-      },
-    ],
-  },
-  {
-    title: "Workforce Reports",
-    description: "Payroll, people, attendance, NGO, and custom exports",
-    icon: BarChart3,
-    color: "text-rose-600",
-    bgColor: "bg-rose-100 dark:bg-rose-900",
-    pages: [
-      {
-        name: "Workforce Reports Dashboard",
-        path: "/reports",
-        description: "Central hub for payroll and workforce reporting",
-      },
-      {
-        name: "Payroll Reports",
-        path: "/reports/payroll",
-        description: "Payroll summaries, cost analysis, and tax breakdowns",
-      },
-      {
-        name: "Payroll Allocation Report",
-        path: "/reports/payroll-allocation",
-        description:
-          "NGO project/funding payroll allocation summary for donor reporting",
-        badge: "NGO",
-      },
-      {
-        name: "Donor Export Pack",
-        path: "/reports/donor-export",
-        description:
-          "Exports donor-ready payroll summary and journal lines (CSV)",
-        badge: "NGO",
-      },
-      {
-        name: "Employee Reports",
-        path: "/reports/employees",
-        description: "Headcount, demographics, turnover, and roster exports",
-      },
-      {
-        name: "Attendance Reports",
-        path: "/reports/attendance",
-        description: "Attendance patterns, overtime analysis, and leave usage",
-      },
-      {
-        name: "Department Reports",
-        path: "/reports/departments",
-        description: "Department-level metrics and cost center analysis",
-      },
-      {
-        name: "Setup Reports",
-        path: "/reports/setup",
-        description: "Configure report templates and scheduling",
-      },
-      {
-        name: "Custom Reports",
-        path: "/reports/custom",
-        description: "Build custom reports with flexible filters and fields",
-      },
-    ],
-  },
-  {
-    title: "Administration",
-    description: "System configuration and superadmin tools",
-    icon: Shield,
-    color: "text-slate-600",
-    bgColor: "bg-slate-100 dark:bg-slate-900",
-    pages: [
-      {
-        name: "Initial Setup",
-        path: "/admin/setup",
-        description: "First-time setup wizard for new organizations",
-      },
-      {
-        name: "Tenants",
-        path: "/admin/tenants",
-        description: "Manage organizations in the system (Superadmin only)",
-        badge: "Superadmin",
-      },
-      {
-        name: "Users",
-        path: "/admin/users",
-        description: "Manage user accounts and permissions (Superadmin only)",
-        badge: "Superadmin",
-      },
-      {
-        name: "Audit Log",
-        path: "/admin/audit",
-        description: "Complete audit trail of system actions (Superadmin only)",
-        badge: "Superadmin",
-      },
-      {
-        name: "Seed Database",
-        path: "/admin/seed",
-        description: "Generate test data for development (Superadmin only)",
-        badge: "Superadmin",
-      },
-    ],
-  },
-];
-
-export default function Sitemap() {
-  const { session, hasModule, canManage, showAdvancedTax } = useTenant();
-  const { isSuperAdmin } = useAuth();
-  const canManageTenant = canManage();
-  const canManageTeam = canManageTenant || session?.role === "manager";
-  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
-  const donorExportEnabled = canUseDonorExport(
-    session,
-    hasModule("reports"),
-    canManageTenant,
-  );
-  const canAccessPath = (path: string) => {
-    if (path === "/dashboard") {
-      return true;
-    }
-
-    if (path === "/settings") {
-      return canManageTenant;
-    }
-
-    if (
-      path === "/settings/departments" ||
-      path === "/settings/org-chart" ||
-      path === "/settings/foreign-workers"
-    ) {
-      return hasModule("staff") && canManageTenant;
-    }
-
-    if (path === "/people") {
-      return (["staff", "hiring", "performance"] as const).some((module) =>
-        hasModule(module),
-      );
-    }
-
-    if (path === "/people/add") {
-      return hasModule("staff") && canManageTenant;
-    }
-
-    if (
-      path === "/people/staff" ||
-      path === "/people/employees" ||
-      path === "/people/announcements" ||
-      path === "/admin/document-alerts"
-    ) {
-      return hasModule("staff");
-    }
-
-    if (
-      path === "/people/grievances" ||
-      path === "/people/onboarding" ||
-      path === "/people/offboarding"
-    ) {
-      return hasModule("staff") && ["owner", "hr-admin"].includes(session?.role || "");
-    }
-
-    if (path === "/people/hiring" || path === "/people/jobs") {
-      return hasModule("hiring");
-    }
-
-    if (
-      path === "/people/performance" ||
-      path === "/people/goals" ||
-      path === "/people/reviews" ||
-      path === "/people/training" ||
-      path === "/people/disciplinary"
-    ) {
-      return hasModule("performance") && ["owner", "hr-admin"].includes(session?.role || "");
-    }
-
-    if (path === "/time-leave/settings") {
-      return hasModule("timeleave") && canManageTenant;
-    }
-
-    if (path === "/time-leave/shifts") {
-      return hasModule("timeleave") && canManageTeam;
-    }
-
-    if (path.startsWith("/time-leave")) {
-      return hasModule("timeleave");
-    }
-
-    if (path.startsWith("/payroll/settings")) {
-      return hasModule("payroll") && canManageTenant;
-    }
-
-    if (path === "/payroll/tax/monthly-wit") {
-      return hasModule("payroll") && canManageTenant && showAdvancedTax;
-    }
-
-    if (path.startsWith("/payroll/tax")) {
-      return hasModule("payroll") && canManageTenant;
-    }
-
-    if (path === "/payroll/run") {
-      return hasModule("payroll") && canManageTenant;
-    }
-
-    if (path.startsWith("/payroll")) {
-      return hasModule("payroll");
-    }
-
-    if (path === "/reports/payroll-allocation") {
-      return ngoReportingEnabled && hasModule("payroll") && hasModule("staff");
-    }
-
-    if (path === "/reports/donor-export") {
-      return donorExportEnabled && hasModule("payroll") && hasModule("staff");
-    }
-
-    if (path.startsWith("/reports")) {
-      if (path === "/reports/payroll")
-        return hasModule("reports") && hasModule("payroll");
-      if (path === "/reports/employees" || path === "/reports/departments") {
-        return hasModule("reports") && hasModule("staff");
-      }
-      if (path === "/reports/attendance") {
-        return hasModule("reports") && hasModule("timeleave");
-      }
-      return hasModule("reports");
-    }
-
-    if (path.startsWith("/money")) {
-      if (path === "/money/expenses") {
-        return hasModule("money") && canManageTeam;
-      }
-      if (path === "/money/cash-advances") {
-        return hasModule("money") && canManageTenant;
-      }
-      if (
-        path === "/money/invoices/settings" ||
-        path === "/money/invoices/recurring"
-      ) {
-        return hasModule("money") && canManageTenant;
-      }
-      return hasModule("money");
-    }
-
-    if (
-      path === "/accounting/reconciliation" ||
-      path === "/accounting/statements/fiscal-periods"
-    ) {
-      return hasModule("accounting") && canManageTenant;
-    }
-
-    if (path === "/accounting/tax/annual-income-tax") {
-      return hasModule("accounting") && canManageTenant;
-    }
-
-    if (
-      path === "/accounting/tax/clearance" ||
-      path === "/accounting/tax/vat-returns" ||
-      path === "/accounting/tax/vat-settings"
-    ) {
-      return hasModule("accounting") && canManageTenant && showAdvancedTax;
-    }
-
-    if (path.startsWith("/accounting")) {
-      return hasModule("accounting");
-    }
-
-    if (path === "/admin/seed") {
-      return import.meta.env.DEV && isSuperAdmin;
-    }
-
-    if (path.startsWith("/admin")) {
-      return isSuperAdmin;
-    }
-
-    return true;
-  };
-
-  const visibleSitemapData = sitemapData
-    .map((section) => ({
-      ...section,
-      pages: section.pages.filter((page) => canAccessPath(page.path)),
-    }))
-    .filter((section) => section.pages.length > 0);
-  const visiblePageCount = visibleSitemapData.reduce(
-    (acc, section) => acc + section.pages.length,
-    0,
-  );
+function SitemapLinkRow({ link }: { link: SitemapLink }) {
+  const Icon = link.icon;
 
   return (
-    <div className="min-h-screen bg-background">
+    <Link
+      to={link.path}
+      className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate">{link.label}</span>
+      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+    </Link>
+  );
+}
+
+function SitemapSectionGroup({
+  section,
+  links,
+  showHeading,
+}: {
+  section: ModuleSection;
+  links: SitemapLink[];
+  showHeading: boolean;
+}) {
+  return (
+    <div className="p-2">
+      {showHeading && (
+        <p className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {section.label}
+        </p>
+      )}
+      <div className="grid gap-0.5 sm:grid-cols-2 lg:grid-cols-3">
+        {links.map((link) => (
+          <SitemapLinkRow key={link.path} link={link} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ModuleCard({
+  item,
+  config,
+}: {
+  item: AppNavItem;
+  config?: ModuleNavConfig;
+}) {
+  const Icon = item.icon;
+  const theme = sectionThemes[item.id];
+
+  return (
+    <Card className="overflow-hidden border-border/70 shadow-none">
+      <CardHeader className="p-0">
+        <Link
+          to={item.path}
+          className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+        >
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.bg} ${theme.text}`}
+          >
+            <Icon className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1 text-base font-semibold">
+            {item.label}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      </CardHeader>
+
+      {config && config.sections.length > 0 && (
+        <CardContent className="divide-y divide-border/60 border-t border-border/60 p-0">
+          {config.sections.map((section) => {
+            const sectionLinks = [
+              {
+                label: section.label,
+                path: section.path,
+                icon: section.icon,
+              },
+              ...section.subPages.map((page) => ({
+                label: page.label,
+                path: page.path,
+                icon: page.icon,
+              })),
+            ].filter(
+              (link, index, all) =>
+                all.findIndex((candidate) => candidate.path === link.path) ===
+                index,
+            );
+
+            return (
+              <SitemapSectionGroup
+                key={section.id}
+                section={section}
+                links={sectionLinks}
+                showHeading={sectionLinks.length > 1}
+              />
+            );
+          })}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+export default function Sitemap() {
+  const { t } = useI18n();
+  const { hasModule, canManage, session, showAdvancedTax } = useTenant();
+  const canManageTenant = canManage();
+  const canManageTeam = canManageTenant || session?.role === "manager";
+
+  const modules = APP_NAV_ITEMS.filter((item) =>
+    isAppNavItemVisible(item, hasModule),
+  ).map((item) => {
+    const config = item.config
+      ? filterModuleNavConfigByPermissions(
+          item.config,
+          hasModule,
+          canManageTenant,
+          canManageTeam,
+          showAdvancedTax,
+          session?.role,
+        )
+      : undefined;
+
+    return {
+      item: {
+        ...item,
+        label: t(item.labelKey) || item.label,
+      },
+      config: config
+        ? {
+            ...config,
+            sections: config.sections.map((section) => ({
+              ...section,
+              label: section.labelKey
+                ? t(`nav.${section.labelKey}`) || section.label
+                : section.label,
+              subPages: section.subPages.map((page) => ({
+                ...page,
+                label: page.labelKey
+                  ? t(`nav.${page.labelKey}`) || page.label
+                  : page.label,
+              })),
+            })),
+          }
+        : undefined,
+    };
+  });
+
+  const utilityLinks: SitemapLink[] = [
+    {
+      label: t("common.getHelp"),
+      path: "/help",
+      icon: HelpCircle,
+    },
+    ...(canManageTenant
+      ? [
+          {
+            label: t("common.settings"),
+            path: "/settings",
+            icon: Settings,
+          },
+          {
+            label: t("nav.billingPlan"),
+            path: "/billing",
+            icon: CreditCard,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div className="bg-background">
       <SEO
-        title="Sitemap - Xefe"
-        description="Complete navigation guide for Xefe"
+        title={`${t("common.sitemap")} - Xefe`}
+        description={t("sitemap.subtitle")}
       />
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-              <Map className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Sitemap</h1>
-              <p className="text-muted-foreground">
-                Complete navigation guide for Xefe
-              </p>
-            </div>
-          </div>
+        <PageHeader
+          title={t("common.sitemap")}
+          subtitle={t("sitemap.subtitle")}
+          icon={Map}
+          iconColor="text-primary"
+        />
 
-          {/* Quick Stats */}
-          <div className="flex flex-wrap gap-4 mt-6">
-            <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">
-                {visibleSitemapData.length}
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Modules
-              </span>
-            </div>
-            <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">
-                {visiblePageCount}
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">Pages</span>
-            </div>
-            <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-emerald-600">TL</span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Timor-Leste rules built in
-              </span>
-            </div>
-          </div>
-        </div>
+        <div className="space-y-4">
+          {modules.map(({ item, config }) => (
+            <ModuleCard key={item.id} item={item} config={config} />
+          ))}
 
-        {/* Sections */}
-        <div className="space-y-8">
-          {visibleSitemapData.map((section) => {
-            const Icon = section.icon;
-            return (
-              <Card key={section.title} className="overflow-hidden">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`h-10 w-10 rounded-lg ${section.bgColor} flex items-center justify-center`}
-                    >
-                      <Icon className={`h-5 w-5 ${section.color}`} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">{section.title}</CardTitle>
-                      <CardDescription>{section.description}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {section.pages.map((page) => (
-                      <Link
-                        key={page.path}
-                        to={page.path}
-                        className="group flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/30 transition-all"
-                      >
-                        <ChevronRight
-                          className={`h-4 w-4 mt-0.5 ${section.color} opacity-0 group-hover:opacity-100 transition-opacity`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium group-hover:text-primary transition-colors">
-                              {page.name}
-                            </span>
-                            {page.badge && (
-                              <Badge variant="secondary" className="text-xs">
-                                {page.badge}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {page.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground/60 mt-1 font-mono">
-                            {page.path}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>Xefe - Built for Timor-Leste businesses</p>
-          <p className="mt-1">
-            Supports reviewed ATTL, INSS, and core Timor-Leste payroll rules;
-            exceptional cases require professional review
-          </p>
+          <Card className="overflow-hidden border-border/70 shadow-none">
+            <CardHeader className="flex min-h-14 flex-row items-center gap-3 border-b border-border/60 px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Settings className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold">{t("common.more")}</span>
+            </CardHeader>
+            <CardContent className="grid gap-0.5 p-2 sm:grid-cols-2 lg:grid-cols-3">
+              {utilityLinks.map((link) => (
+                <SitemapLinkRow key={link.path} link={link} />
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

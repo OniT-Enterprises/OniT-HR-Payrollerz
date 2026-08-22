@@ -200,7 +200,7 @@ export default function Departments() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           {/* Header Skeleton */}
           <div className="mb-4">
@@ -303,7 +303,7 @@ export default function Departments() {
 
   if (employeesQuery.isError || departmentsQuery.isError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO {...seoConfig.departments} />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
@@ -337,7 +337,7 @@ export default function Departments() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.departments} />
 
       {/* Main Content */}
@@ -375,7 +375,6 @@ export default function Departments() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
                   setManagerMode("edit");
                   setShowDepartmentManager(true);
@@ -389,7 +388,7 @@ export default function Departments() {
         />
         {employees.length === 0 ? (
           /* Empty State */
-          <Card className="border-border/50 animate-fade-up">
+          <Card className="border-border/70 shadow-sm">
             <CardContent className="text-center py-16">
               <div className="p-4 rounded-full bg-muted inline-flex mb-4">
                 <Database className="h-12 w-12 text-muted-foreground" />
@@ -400,10 +399,7 @@ export default function Departments() {
               <p className="text-muted-foreground mb-6">
                 {t("departments.emptyDesc")}
               </p>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => navigate("/people/add")}
-              >
+              <Button onClick={() => navigate("/people/add")}>
                 <User className="mr-2 h-4 w-4" />
                 {t("departments.addFirstEmployee")}
               </Button>
@@ -715,7 +711,6 @@ export default function Departments() {
             )}
           </DialogContent>
         </Dialog>
-
       </div>
     </div>
   );

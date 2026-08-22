@@ -252,7 +252,7 @@ export default function VATReturnsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="VAT Returns - Xefe" />
       <MainNavigation />
 

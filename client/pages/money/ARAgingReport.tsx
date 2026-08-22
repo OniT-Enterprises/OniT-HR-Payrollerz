@@ -144,7 +144,7 @@ export default function ARAgingReport() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-start justify-between mb-8">
@@ -210,7 +210,7 @@ export default function ARAgingReport() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO title="A/R Aging - Xefe" description="Accounts receivable aging report" />
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -233,7 +233,7 @@ export default function ARAgingReport() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO title="A/R Aging - Xefe" description="Accounts receivable aging report" />
       <MainNavigation />
 

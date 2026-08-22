@@ -637,7 +637,7 @@ export default function HiringWorkspace() {
     interviewsQuery.isError
   ) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Hiring"
@@ -670,7 +670,7 @@ export default function HiringWorkspace() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Hiring"
@@ -682,7 +682,7 @@ export default function HiringWorkspace() {
               loading ? (
                 <Skeleton className="h-10 w-28 rounded-md" />
               ) : (
-                <Button onClick={() => navigate("/people/jobs/new")} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                <Button onClick={() => navigate("/people/jobs/new")} className="gap-2">
                   <Plus className="h-4 w-4" />
                   New job
                 </Button>
@@ -827,7 +827,7 @@ export default function HiringWorkspace() {
                   Add the role once, then share one link and review every applicant here.
                 </p>
               </div>
-              <Button onClick={() => navigate("/people/jobs/new")} className="w-full shrink-0 gap-2 bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">
+              <Button onClick={() => navigate("/people/jobs/new")} className="w-full shrink-0 gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" />
                 New job
               </Button>
@@ -1097,7 +1097,7 @@ export default function HiringWorkspace() {
                         Shortlist
                       </Button>
                       <Button
-                        className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                        className="gap-2"
                         disabled={busyAction === `schedule:${selectedApplication.id}`}
                         onClick={() => openSchedule(selectedApplication)}
                       >
@@ -1108,7 +1108,7 @@ export default function HiringWorkspace() {
                   )}
                   {selectedStage === "shortlisted" && (
                     <Button
-                      className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                      className="gap-2"
                       disabled={busyAction === `schedule:${selectedApplication.id}`}
                       onClick={() => openSchedule(selectedApplication)}
                     >
@@ -1122,7 +1122,7 @@ export default function HiringWorkspace() {
                         Reschedule
                       </Button>
                       <Button
-                        className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                        className="gap-2"
                         disabled={busyAction === `hire:${selectedApplication.id}`}
                         onClick={() => markReadyToHire(selectedApplication, selectedInterview)}
                       >
@@ -1133,7 +1133,7 @@ export default function HiringWorkspace() {
                   )}
                   {selectedStage === "ready" && canAddEmployee && (
                     <Button
-                      className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                      className="gap-2"
                       disabled={busyAction === `employee:${selectedApplication.id}`}
                       onClick={() => void startEmployee(selectedApplication)}
                     >
@@ -1232,7 +1232,7 @@ export default function HiringWorkspace() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScheduleApplication(null)}>Cancel</Button>
-            <Button onClick={saveInterview} disabled={busyAction === "save-interview"} className="bg-blue-600 text-white hover:bg-blue-700">
+            <Button onClick={saveInterview} disabled={busyAction === "save-interview"}>
               {busyAction === "save-interview" ? "Saving…" : "Save interview"}
             </Button>
           </DialogFooter>

@@ -105,7 +105,7 @@ export default function CompanySettings() {
 
   if (settingsQuery.isError && settings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsQuery.isFetching}
@@ -122,7 +122,7 @@ export default function CompanySettings() {
   const busy = pageSaving || saving;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title="Business details | Xefe"
         description="Company details, work locations, and teams"

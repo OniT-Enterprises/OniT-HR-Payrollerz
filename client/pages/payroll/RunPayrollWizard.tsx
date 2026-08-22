@@ -383,7 +383,7 @@ export default function RunPayrollWizard() {
 
   if (settingsError && tenantSettings === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={settingsFetching}
@@ -399,7 +399,7 @@ export default function RunPayrollWizard() {
 
   if (employeesError && activeEmployeeData === undefined) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={employeesFetching}
@@ -418,7 +418,7 @@ export default function RunPayrollWizard() {
   // never be disbursed at all.
   if (employeesLoaded && terminatedSettled && calc.rosterEmployees.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO {...seoConfig.runPayroll} />
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -471,7 +471,7 @@ export default function RunPayrollWizard() {
 
   if (calc.rosterEmployees.length > 0 && calc.isYtdError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <DashboardLoadError
           isRetrying={calc.isYtdFetching}
@@ -484,7 +484,7 @@ export default function RunPayrollWizard() {
   const currentStepId = wizardSteps[currentStep].id;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.runPayroll} />
       <MainNavigation />
 

@@ -89,7 +89,6 @@ interface RatingStarsProps {
   readonly?: boolean;
   size?: "sm" | "md" | "lg";
 }
-
 function RatingStars({ value, onChange, readonly = false, size = "md" }: RatingStarsProps) {
   const sizeClasses = {
     sm: "h-4 w-4",
@@ -378,7 +377,7 @@ export default function Reviews() {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -433,7 +432,7 @@ export default function Reviews() {
 
   if (reviewsQuery.isError || employeesQuery.isError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Performance Reviews"
@@ -459,7 +458,7 @@ export default function Reviews() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO {...seoConfig.reviews} />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -470,7 +469,7 @@ export default function Reviews() {
           iconColor="text-blue-500"
           actions={
             employees.length > 0 ? (
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => openNewReview()}>
+              <Button onClick={() => openNewReview()}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Review
               </Button>
@@ -487,7 +486,7 @@ export default function Reviews() {
             <p className="text-muted-foreground mb-6">
               Add employees to your database to start performance reviews
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => navigate("/people/add")}>
+            <Button onClick={() => navigate("/people/add")}>
               <User className="mr-2 h-4 w-4" />
               Add Employees First
             </Button>
@@ -560,7 +559,6 @@ export default function Reviews() {
                               variant={hasActiveReview ? "outline" : "default"}
                               onClick={() => openNewReview(employee)}
                               disabled={hasActiveReview}
-                              className={!hasActiveReview ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
                             >
                               {hasActiveReview ? "In Progress" : "Review"}
                             </Button>

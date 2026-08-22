@@ -41,7 +41,7 @@ export default function TaxReports() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="flex min-h-[50vh] items-center justify-center gap-2 px-4 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />

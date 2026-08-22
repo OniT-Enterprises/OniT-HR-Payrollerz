@@ -57,7 +57,7 @@ export default function HelpProductGuide() {
     ) ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
+    <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 [&>*]:max-w-4xl">
       <Link
         to={backToHelp}
         className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:min-h-0"
@@ -132,8 +132,7 @@ export default function HelpProductGuide() {
                 key={index}
                 block={block}
                 highlighted={
-                  block.type === "heading" &&
-                  block.id === highlightedTarget
+                  block.type === "heading" && block.id === highlightedTarget
                 }
               />
             ))}

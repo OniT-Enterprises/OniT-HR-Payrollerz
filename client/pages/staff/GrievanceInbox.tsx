@@ -355,7 +355,7 @@ export default function GrievanceInbox() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Grievance Inbox"
@@ -420,7 +420,7 @@ export default function GrievanceInbox() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Grievance Inbox"
@@ -445,7 +445,7 @@ export default function GrievanceInbox() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title="Grievance Inbox - Xefe"
         description="Anonymous employee grievance management"

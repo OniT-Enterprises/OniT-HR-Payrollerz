@@ -25,9 +25,9 @@ import {
 
 function MoneyDashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <ModuleSectionNav config={moneyNavConfig} />
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -77,7 +77,6 @@ function MoneyDashboardSkeleton() {
     </div>
   );
 }
-
 function formatCurrency(amount: number, locale: "en" | "tet" | "pt" | "id") {
   const numberLocale =
     locale === "en"
@@ -116,7 +115,7 @@ export default function MoneyDashboard() {
 
   if (dashboardQueries.some((query) => query.data === undefined)) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("moduleDashboards.money.title")}
           description={t("moduleDashboards.money.seoDescription")}
@@ -219,14 +218,14 @@ export default function MoneyDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("moduleDashboards.money.title")}
         description={t("moduleDashboards.money.seoDescription")}
       />
       <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           size="lg"
           title={t("moduleDashboards.money.title")}

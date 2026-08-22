@@ -424,7 +424,7 @@ export default function AnnualIncomeTaxPrep() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center gap-3 mb-6">
@@ -444,7 +444,7 @@ export default function AnnualIncomeTaxPrep() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("taxReports.formC.title")}
           description={t("taxReports.formC.dialogDescription")}
@@ -482,7 +482,7 @@ export default function AnnualIncomeTaxPrep() {
 
   if (!showAdvancedTax) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <SEO
           title={t("taxReports.formC.title")}
           description={t("taxReports.formC.dialogDescription")}
@@ -594,7 +594,7 @@ export default function AnnualIncomeTaxPrep() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <SEO
         title={t("taxReports.formC.workpaper.pageTitle")}
         description={t("taxReports.formC.workpaper.pageSubtitle")}

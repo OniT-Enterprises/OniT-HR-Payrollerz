@@ -14,20 +14,62 @@ const collectTsxFiles = (directory: string): string[] =>
     return entry.name.endsWith(".tsx") ? [path] : [];
   });
 
+const authenticatedPageDirectories = [
+  "accounting",
+  "help",
+  "hiring",
+  "money",
+  "payroll",
+  "performance",
+  "reports",
+  "settings",
+  "staff",
+  "time-leave",
+];
+const publicPageExceptions = new Set(["PublicApply.tsx", "PublicInvoice.tsx"]);
+const topLevelAuthenticatedPages = [
+  "AccountantPortfolioDashboard.tsx",
+  "AccountingDashboard.tsx",
+  "Billing.tsx",
+  "Dashboard.tsx",
+  "MoneyDashboard.tsx",
+  "PayrollDashboard.tsx",
+  "PeopleDashboard.tsx",
+  "ReportsDashboard.tsx",
+  "SchedulingDashboard.tsx",
+  "Settings.tsx",
+  "Sitemap.tsx",
+];
+const authenticatedPageFiles = () => [
+  ...authenticatedPageDirectories
+    .flatMap((directory) =>
+      collectTsxFiles(join(repoRoot, "client/pages", directory)),
+    )
+    .filter((path) => !publicPageExceptions.has(path.split("/").at(-1) ?? "")),
+  ...topLevelAuthenticatedPages.map((name) =>
+    join(repoRoot, "client/pages", name),
+  ),
+];
+
 describe("interface guardrails", () => {
   it("keeps shared phone controls at a comfortable target size", () => {
     expect(read("client/components/ui/button.tsx")).toContain("min-h-11");
     expect(read("client/components/ui/select.tsx")).toContain("h-11");
     expect(read("client/components/ui/textarea.tsx")).toContain("text-base");
+    expect(read("client/components/ui/card.tsx")).toContain(
+      "text-base font-semibold leading-snug",
+    );
 
     const calendar = read("client/components/ui/calendar.tsx");
     expect(calendar).not.toMatch(/button_(previous|next):[\s\S]*?h-7 w-7/);
     expect(calendar.match(/h-11 w-11/g)?.length).toBeGreaterThanOrEqual(3);
-    expect(calendar.match(/md:h-11 md:min-h-11/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(
+      calendar.match(/md:h-11 md:min-h-11/g)?.length,
+    ).toBeGreaterThanOrEqual(3);
     expect(calendar).toContain('className={cn("p-1 sm:p-3", className)}');
 
     const datePicker = read("client/components/ui/date-picker.tsx");
-    expect(datePicker).toContain('max-w-[calc(100vw-0.5rem)]');
+    expect(datePicker).toContain("max-w-[calc(100vw-0.5rem)]");
     expect(datePicker).toContain('align="center"');
   });
 
@@ -98,10 +140,19 @@ describe("interface guardrails", () => {
   });
 
   it("leaves authenticated page height and scrolling to AppLayout", () => {
+    for (const path of authenticatedPageFiles()) {
+      expect(readFileSync(path, "utf8"), path).not.toContain("min-h-screen");
+    }
+
     for (const path of [
-      "client/components/dashboard/DashboardShell.tsx",
       "client/components/reports/ReportLayout.tsx",
       "client/components/PageSkeleton.tsx",
+      "client/components/payroll/PayrollLoadingSkeleton.tsx",
+      "client/components/settings/SettingsHubSkeleton.tsx",
+      "client/components/settings/SettingsSkeleton.tsx",
+      "client/pages/AccountantPortfolioDashboard.tsx",
+      "client/pages/Billing.tsx",
+      "client/pages/Sitemap.tsx",
     ]) {
       expect(read(path)).not.toContain("min-h-screen");
     }
@@ -127,7 +178,39 @@ describe("interface guardrails", () => {
       "AccountingDashboard.tsx",
       "ReportsDashboard.tsx",
     ]) {
-      expect(read(`client/pages/${name}`)).toContain("grid grid-cols-2 gap-3");
+      const source = read(`client/pages/${name}`);
+      expect(source).toContain("grid grid-cols-2 gap-3");
+      expect(source).not.toContain("min-h-screen");
+      expect(source).not.toContain("sm:space-y-8");
+    }
+  });
+
+  it("keeps shared product chrome calm and consistent", () => {
+    const pageHeader = read("client/components/layout/PageHeader.tsx");
+    const hubCard = read("client/components/dashboard/HubCard.tsx");
+    const peopleDashboard = read("client/pages/PeopleDashboard.tsx");
+
+    expect(pageHeader).toContain('"absolute inset-y-0 left-0 w-16"');
+    expect(pageHeader).toContain("[&>*]:flex-1");
+    expect(pageHeader).not.toContain("animate-dashboard-header");
+
+    expect(hubCard).not.toMatch(/blur-|hover:shadow|group-hover:translate/);
+    expect(hubCard).toContain("hover:bg-");
+
+    // Module colour identifies the destination; the product's primary green
+    // still owns completion actions.
+    expect(peopleDashboard).not.toContain("bg-blue-600 text-white");
+  });
+
+  it("keeps authenticated screens still and primary actions recognizable", () => {
+    for (const path of authenticatedPageFiles()) {
+      const source = readFileSync(path, "utf8");
+      expect(source, path).not.toMatch(
+        /animate-(fade-in|fade-up|scale-in|slide-in-right|bounce-subtle|pulse-subtle)|stagger-[1-6]/,
+      );
+      expect(source, path).not.toMatch(
+        /bg-(blue|cyan|indigo|orange|violet)-600[^"']*hover:bg-(blue|cyan|indigo|orange|violet)-700/,
+      );
     }
   });
 
@@ -162,6 +245,7 @@ describe("interface guardrails", () => {
 
   it("keeps report pages compact, neutral, and phone-safe", () => {
     const reportsDir = join(repoRoot, "client/pages/reports");
+    const reportLayout = read("client/components/reports/ReportLayout.tsx");
     const reportSources = readdirSync(reportsDir)
       .filter((name) => name.endsWith(".tsx"))
       .map((name) => read(`client/pages/reports/${name}`));
@@ -171,6 +255,14 @@ describe("interface guardrails", () => {
       expect(source).not.toContain("drop-shadow-lg");
       expect(source).not.toContain('className="text-2xl font-bold"');
     }
+
+    expect(reportLayout).toContain(
+      "mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6",
+    );
+    expect(reportLayout).not.toContain("max-w-screen-xl");
+    expect(reportLayout).not.toContain(
+      'titleClassName="break-words whitespace-normal text-2xl"',
+    );
 
     for (const name of [
       "AttendanceReports.tsx",
